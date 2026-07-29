@@ -21,12 +21,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="es" className="h-full antialiased selection:bg-[#E89D4F]/30">
-      <body className="min-h-full flex flex-col bg-[#FAF8F5] text-[#2C221E]">
+    <html lang="es" suppressHydrationWarning={true}>
+      <body suppressHydrationWarning={true}>
         {children}
       </body>
     </html>

@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .terracotta-gradient {
+    background: linear-gradient(135deg, #D96B27 0%, #C84B31 100%);
+  }
+
+  .warm-shadow {
+    box-shadow: 0 10px 30px -10px rgba(44, 34, 30, 0.08);
+  }
+
+  .warm-shadow-lg {
+    box-shadow: 0 20px 40px -15px rgba(44, 34, 30, 0.12);
+  }
+
+  .backdrop-blur-xs {
+    backdrop-filter: blur(2px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

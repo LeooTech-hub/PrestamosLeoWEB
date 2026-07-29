@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Header } from '@/components/Header';
-import { Navigation, TabType } from '@/components/Navigation';
-import { DashboardView } from '@/components/Dashboard/DashboardView';
-import { CalculatorView } from '@/components/LoanCalculator/CalculatorView';
-import { DailyRouteView } from '@/components/DailyRoute/DailyRouteView';
-import { LoansListView } from '@/components/Loans/LoansListView';
-import { FinancialReportView } from '@/components/Reports/FinancialReportView';
-import { ClientsView } from '@/components/Clients/ClientsView';
-import { QuickCreateLoanModal } from '@/components/Modals/QuickCreateLoanModal';
-import { loanService } from '@/services/loanService';
+import { Header } from '@/frontend/components/Header';
+import { Navigation, TabType } from '@/frontend/components/Navigation';
+import { DashboardView } from '@/frontend/components/Dashboard/DashboardView';
+import { CalculatorView } from '@/frontend/components/LoanCalculator/CalculatorView';
+import { DailyRouteView } from '@/frontend/components/DailyRoute/DailyRouteView';
+import { LoansListView } from '@/frontend/components/Loans/LoansListView';
+import { FinancialReportView } from '@/frontend/components/Reports/FinancialReportView';
+import { ClientsView } from '@/frontend/components/Clients/ClientsView';
+import { QuickCreateLoanModal } from '@/frontend/components/Modals/QuickCreateLoanModal';
+import { loanService } from '@/backend/services/loanService';
 import {
   Client,
   Loan,
@@ -21,14 +21,25 @@ import {
   ReportPeriod,
   ExpenseCategory,
   AlertNotification,
-} from '@/types';
+} from '@/backend/types';
+
+const defaultDashboardSummary: DashboardSummary = {
+  totalCapitalLent: 0,
+  totalEstimatedProfit: 0,
+  collectedToday: 0,
+  pendingClientsTodayCount: 0,
+  totalActiveLoansCount: 0,
+  overdueCount: 0,
+  expiringSoonCount: 0,
+  collectionProgressPercent: 100,
+};
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [clients, setClients] = useState<Client[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [summary, setSummary] = useState<DashboardSummary>(defaultDashboardSummary);
   const [alerts, setAlerts] = useState<AlertNotification[]>([]);
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('WEEKLY');
   const [financialReport, setFinancialReport] = useState<FinancialReportData | null>(null);
@@ -37,31 +48,56 @@ export default function Home() {
     { loan: Loan; isPaidToday: boolean; amountPaidToday: number }[]
   >([]);
   const [isQuickCreateLoanOpen, setIsQuickCreateLoanOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Load all app data
+  // Load all app data with fast fault tolerance and zero-delay rendering
   const loadData = useCallback(async () => {
     try {
-      setIsLoading(true);
+      const fetchSafe = async <T,>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+        try {
+          return await fn();
+        } catch (err) {
+          console.error('Error cargando iniciales:', err);
+          return fallback;
+        }
+      };
+
       const [cList, lList, pList, sum, todayCol, alertList, report] = await Promise.all([
-        loanService.getClients(),
-        loanService.getLoans(),
-        loanService.getPayments(),
-        loanService.getDashboardSummary(),
-        loanService.getTodayCollections(),
-        loanService.getAlerts(),
-        loanService.getFinancialReport(reportPeriod),
+        fetchSafe(() => loanService.getClients(), []),
+        fetchSafe(() => loanService.getLoans(), []),
+        fetchSafe(() => loanService.getPayments(), []),
+        fetchSafe(() => loanService.getDashboardSummary(), defaultDashboardSummary),
+        fetchSafe(() => loanService.getTodayCollections(), []),
+        fetchSafe(() => loanService.getAlerts(), []),
+        fetchSafe(
+          () => loanService.getFinancialReport(reportPeriod),
+          {
+            period: reportPeriod,
+            periodLabel: 'Semanal',
+            startDate: '',
+            endDate: '',
+            capitalInvested: 0,
+            realCollected: 0,
+            projectedCollection: 0,
+            interestCollected: 0,
+            totalExpenses: 0,
+            netProfit: 0,
+            remainingToCollect: 0,
+            expensesList: [],
+          }
+        ),
       ]);
 
       setClients(cList);
       setLoans(lList);
       setPayments(pList);
-      setSummary(sum);
+      setSummary(sum || defaultDashboardSummary);
       setTodayCollections(todayCol);
       setAlerts(alertList);
       setFinancialReport(report);
     } catch (error) {
-      console.error('Error al cargar datos', error);
+      console.error('Error cargando iniciales (global catch):', error);
+      setSummary(defaultDashboardSummary);
     } finally {
       setIsLoading(false);
     }
@@ -143,8 +179,12 @@ export default function Home() {
   // Change financial report period
   const handlePeriodChange = async (period: ReportPeriod) => {
     setReportPeriod(period);
-    const report = await loanService.getFinancialReport(period);
-    setFinancialReport(report);
+    try {
+      const report = await loanService.getFinancialReport(period);
+      setFinancialReport(report);
+    } catch (err) {
+      console.error('Error cargando iniciales (reporte):', err);
+    }
   };
 
   // Reset to demo data
@@ -184,7 +224,7 @@ export default function Home() {
           <>
             {activeTab === 'dashboard' && (
               <DashboardView
-                summary={summary}
+                summary={summary || defaultDashboardSummary}
                 recentLoans={loans}
                 recentPayments={payments}
                 setActiveTab={setActiveTab}
