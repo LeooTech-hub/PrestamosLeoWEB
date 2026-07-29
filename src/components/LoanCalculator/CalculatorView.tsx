@@ -1,0 +1,494 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Client, NewClientLoanFormData } from '@/types';
+import { calculate20PercentLoan, formatCurrency, formatDatePE } from '@/services/loanService';
+import confetti from 'canvas-confetti';
+import {
+  UserPlus,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  CheckCircle2,
+  Phone,
+  MapPin,
+  FileText,
+  Percent,
+  Sparkles,
+  UserCheck,
+  CalendarCheck,
+} from 'lucide-react';
+
+interface CalculatorViewProps {
+  clients: Client[];
+  onSubmitLoan: (data: NewClientLoanFormData) => Promise<void>;
+}
+
+export const CalculatorView: React.FC<CalculatorViewProps> = ({
+  clients,
+  onSubmitLoan,
+}) => {
+  const [selectedClientId, setSelectedClientId] = useState<string>('new');
+  const [clientName, setClientName] = useState<string>('');
+  const [clientPhone, setClientPhone] = useState<string>('');
+  const [clientAddress, setClientAddress] = useState<string>('');
+  const [clientIdentification, setClientIdentification] = useState<string>('');
+
+  const [capital, setCapital] = useState<number>(500); // S/. 500 default
+  const [paymentDaysInput, setPaymentDaysInput] = useState<string>('20'); // Free string input
+  const [startDate, setStartDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
+  const [notes, setNotes] = useState<string>('');
+
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Capital presets
+  const capitalPresets = [100, 200, 500, 1000, 1500, 2000];
+  const daysPresets = [10, 15, 20, 30];
+
+  const parsedPaymentDays = Math.max(1, parseInt(paymentDaysInput, 10) || 1);
+
+  // Auto calculate due date: startDate + parsedPaymentDays
+  const computeDueDate = (): string => {
+    if (!startDate || !parsedPaymentDays) return '';
+    const start = new Date(startDate);
+    const due = new Date(start);
+    due.setDate(due.getDate() + parsedPaymentDays);
+    return due.toISOString().split('T')[0];
+  };
+
+  const dueDate = computeDueDate();
+
+  // Calculation breakdown
+  const breakdown = calculate20PercentLoan(capital, parsedPaymentDays);
+
+  const handleClientSelect = (clientId: string) => {
+    setSelectedClientId(clientId);
+    if (clientId === 'new') {
+      setClientName('');
+      setClientPhone('');
+      setClientAddress('');
+      setClientIdentification('');
+    } else {
+      const existing = clients.find((c) => c.id === clientId);
+      if (existing) {
+        setClientName(existing.name);
+        setClientPhone(existing.phone);
+        setClientAddress(existing.address);
+        setClientIdentification(existing.identification || '');
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!clientName.trim()) {
+      alert('Por favor ingrese el nombre del cliente');
+      return;
+    }
+
+    if (!capital || capital <= 0) {
+      alert('Por favor ingrese un monto de capital válido');
+      return;
+    }
+
+    if (!parsedPaymentDays || parsedPaymentDays <= 0) {
+      alert('Por favor ingrese un número válido de días de pago');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onSubmitLoan({
+        clientId: selectedClientId === 'new' ? undefined : selectedClientId,
+        clientName: clientName.trim(),
+        clientPhone: clientPhone.trim(),
+        clientAddress: clientAddress.trim(),
+        clientIdentification: clientIdentification.trim(),
+        capital,
+        paymentDays: parsedPaymentDays,
+        startDate,
+        notes: notes.trim(),
+      });
+
+      // Confetti celebration
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#D96B27', '#E89D4F', '#2D7A5D'],
+        });
+      } catch (err) {
+        console.log('Confetti error', err);
+      }
+
+      setSuccessMessage(
+        `¡Cliente ${clientName} registrado con préstamo de ${formatCurrency(capital)} a ${parsedPaymentDays} días!`
+      );
+
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+    } catch (error) {
+      console.error('Error al registrar préstamo', error);
+      alert('Ocurrió un error al registrar el cliente y préstamo');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 pb-24 md:pb-12 max-w-5xl mx-auto">
+      {/* Title */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] flex items-center gap-2">
+            <UserPlus className="w-6 h-6 text-[#D96B27]" />
+            Registrar Cliente y Nuevo Préstamo
+          </h2>
+          <p className="text-xs sm:text-sm text-[#6E615A] mt-0.5">
+            Alta rápida de clientes en Soles (S/.) con interés del 20% y días de pago acordados.
+          </p>
+        </div>
+      </div>
+
+      {successMessage && (
+        <div className="bg-[#EEF6F2] border border-[#2D7A5D]/30 text-[#2D7A5D] p-4 rounded-2xl flex items-center gap-3 warm-shadow">
+          <CheckCircle2 className="w-6 h-6 shrink-0" />
+          <span className="text-sm font-semibold">{successMessage}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Form Inputs (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Card 1: Personal Data */}
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] warm-shadow space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 pb-3">
+              <h3 className="font-bold text-base text-[#2C221E] flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-[#D96B27]" />
+                1. Datos Personales del Cliente
+              </h3>
+            </div>
+
+            {/* Select existing or new */}
+            <div>
+              <label className="block text-xs font-semibold text-[#6E615A] mb-1.5">
+                Cliente Nuevo o Seleccionar de Lista:
+              </label>
+              <select
+                value={selectedClientId}
+                onChange={(e) => handleClientSelect(e.target.value)}
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+              >
+                <option value="new">➕ Registrar un Cliente Nuevo</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    👤 {c.name} - 📱 {c.phone}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                  Nombre Completo*:
+                </label>
+                <div className="relative">
+                  <UserPlus className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    placeholder="Ej. Juan Carlos Quispe"
+                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                  Teléfono / WhatsApp*:
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                    placeholder="Ej. 912345678"
+                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                  Dirección / Referencia de Cobro*:
+                </label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={clientAddress}
+                    onChange={(e) => setClientAddress(e.target.value)}
+                    placeholder="Ej. Av. Larco 450, Miraflores (Puesto de mercado)"
+                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                  DNI / Cédula (Opcional):
+                </label>
+                <div className="relative">
+                  <FileText className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={clientIdentification}
+                    onChange={(e) => setClientIdentification(e.target.value)}
+                    placeholder="Ej. 45987654"
+                    className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                  Notas / Observaciones:
+                </label>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Ej. Cobrar en la mañana"
+                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Loan Setup */}
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] warm-shadow space-y-5">
+            <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 pb-3">
+              <h3 className="font-bold text-base text-[#2C221E] flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-[#D96B27]" />
+                2. Condición del Préstamo (S/.)
+              </h3>
+              <span className="bg-[#FDF3ED] text-[#D96B27] text-xs font-extrabold px-2.5 py-1 rounded-full border border-[#D96B27]/20 flex items-center gap-1">
+                <Percent className="w-3.5 h-3.5" />
+                Interés: 20% Fijo
+              </span>
+            </div>
+
+            {/* Presets Soles */}
+            <div>
+              <label className="block text-xs font-semibold text-[#6E615A] mb-2">
+                Montos Frecuentes en Soles:
+              </label>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {capitalPresets.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setCapital(preset)}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border ${
+                      capital === preset
+                        ? 'terracotta-gradient text-white border-transparent shadow-sm'
+                        : 'bg-[#FAF8F5] text-[#2C221E] border-[#E6DCD2] hover:bg-[#F5F0EB]'
+                    }`}
+                  >
+                    S/. {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Capital */}
+            <div>
+              <label className="block text-xs font-semibold text-[#6E615A] mb-1.5">
+                Monto Prestado en Soles (S/.):
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-lg text-[#D96B27]">
+                  S/.
+                </span>
+                <input
+                  type="number"
+                  step="10"
+                  min="10"
+                  value={capital || ''}
+                  onChange={(e) => setCapital(Number(e.target.value))}
+                  placeholder="Ej. 500"
+                  className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl font-black text-lg text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Payment Days Setup */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-[#6E615A]">
+                Días de Pago Acordados:
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {daysPresets.map((days) => {
+                  const isSelected = parsedPaymentDays === days;
+                  return (
+                    <button
+                      key={days}
+                      type="button"
+                      onClick={() => setPaymentDaysInput(String(days))}
+                      className={`py-2.5 px-2 rounded-2xl text-xs font-bold border transition-all ${
+                        isSelected
+                          ? 'bg-[#2C221E] text-white border-[#2C221E] shadow-sm'
+                          : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#F5F0EB]'
+                      }`}
+                    >
+                      {days} Días
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2">
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                  O ingrese días personalizados (ej. 12, 18, 24 días):
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={paymentDaysInput}
+                  onChange={(e) => setPaymentDaysInput(e.target.value)}
+                  placeholder="Escriba el número de días..."
+                  className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Dates Calculation */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-[#E89D4F]" />
+                  Fecha de Inicio:
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1 flex items-center gap-1">
+                  <CalendarCheck className="w-3.5 h-3.5 text-[#2D7A5D]" />
+                  Fecha de Vencimiento (+{parsedPaymentDays} días):
+                </label>
+                <div className="px-3 py-2 bg-[#EEF6F2] border border-[#2D7A5D]/30 rounded-xl text-xs sm:text-sm font-black text-[#2D7A5D]">
+                  {formatDatePE(dueDate)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Breakdown Card & Action (5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-gradient-to-b from-[#2C221E] via-[#382C27] to-[#2C221E] text-white rounded-3xl p-6 shadow-xl sticky top-20 border border-[#4A3B35]">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <h3 className="font-bold text-base text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#E89D4F]" />
+                Resumen del Acuerdo
+              </h3>
+              <span className="bg-[#E89D4F]/20 text-[#E89D4F] border border-[#E89D4F]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                Perú S/.
+              </span>
+            </div>
+
+            <div className="py-5 space-y-4">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-[#D5C8BC]">Capital a entregar:</span>
+                <span className="font-bold text-white text-base">{formatCurrency(breakdown.capital)}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-[#E89D4F] font-semibold flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4" />
+                  Interés Ganancia (20%):
+                </span>
+                <span className="font-extrabold text-[#E89D4F] text-base">
+                  +{formatCurrency(breakdown.interestAmount)}
+                </span>
+              </div>
+
+              <div className="pt-3 border-t border-white/10 flex justify-between items-center">
+                <span className="text-sm font-semibold text-white">Monto Total a Cancelar:</span>
+                <span className="font-black text-2xl text-[#E89D4F] tracking-tight">
+                  {formatCurrency(breakdown.totalToPay)}
+                </span>
+              </div>
+
+              {/* Daily Payment Spotlight */}
+              <div className="bg-white/10 rounded-2xl p-4 border border-white/15 text-center mt-4">
+                <span className="text-xs text-[#D5C8BC] uppercase tracking-wider block font-semibold">
+                  Cobro diario ({parsedPaymentDays} días acordados)
+                </span>
+                <p className="text-2xl sm:text-3xl font-black text-white mt-1 text-[#D96B27]">
+                  {formatCurrency(breakdown.dailyPaymentAmount)}
+                </p>
+                <span className="text-[11px] text-[#E89D4F] font-medium mt-1 block">
+                  Cobro periódico sugerido
+                </span>
+              </div>
+            </div>
+
+            {/* Terms Summary */}
+            <div className="text-xs text-[#D5C8BC] bg-black/20 rounded-2xl p-3.5 space-y-1.5 border border-white/5">
+              <div className="flex justify-between">
+                <span>Fecha Inicio:</span>
+                <strong className="text-white">{formatDatePE(startDate)}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Fecha Vencimiento:</span>
+                <strong className="text-white">{formatDatePE(dueDate)}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Plazo Acordado:</span>
+                <strong className="text-white">{parsedPaymentDays} días de pago</strong>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full mt-6 py-4 px-6 rounded-2xl terracotta-gradient text-white font-extrabold text-base shadow-lg hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <span>Guardando...</span>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>Registrar Cliente & Préstamo</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+};

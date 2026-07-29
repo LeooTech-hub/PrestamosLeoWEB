@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #FAF8F5;
+    --bg-surface: #FFFFFF;
+    --bg-card: #F5F0EB;
+    --bg-card-hover: #EFE8E0;
+    --border-warm: #E6DCD2;
+    
+    --terracotta: #D96B27;
+    --terracotta-hover: #C25A19;
+    --terracotta-light: #FDF3ED;
+    
+    --amber-warm: #E89D4F;
+    --amber-light: #FDF6EE;
+    
+    --sage: #2D7A5D;
+    --sage-hover: #24634B;
+    --sage-light: #EEF6F2;
+    
+    --rust: #C84B31;
+    --rust-hover: #AA3D26;
+    --rust-light: #FDF2F0;
+    
+    --espresso: #2C221E;
+    --espresso-muted: #6E615A;
+    --espresso-light: #A89B92;
+  }
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--espresso);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FAF8F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D5C8BC;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #BFAEA0;
+}
+
+/* Glassmorphism & custom utility shadows */
+.warm-shadow {
+  box-shadow: 0 4px 20px -2px rgba(44, 34, 30, 0.06), 0 2px 6px -1px rgba(44, 34, 30, 0.04);
+}
+
+.warm-shadow-lg {
+  box-shadow: 0 10px 30px -4px rgba(44, 34, 30, 0.1), 0 4px 12px -2px rgba(44, 34, 30, 0.06);
+}
+
+.terracotta-gradient {
+  background: linear-gradient(135deg, #E27937 0%, #D96B27 50%, #C25A19 100%);
+}
+
+.sage-gradient {
+  background: linear-gradient(135deg, #368B6C 0%, #2D7A5D 100%);
+}
+
+.amber-gradient {
+  background: linear-gradient(135deg, #F0AA5E 0%, #E89D4F 100%);
+}
+
+/* Animations */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(0.99); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
