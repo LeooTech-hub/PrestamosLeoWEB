@@ -43,13 +43,13 @@ export async function seedDatabaseIfEmpty() {
       ['loan_3', 'cli_3', 'Jorge Luis Valencia', '920123456', 'Av. Arequipa 1200, Lince', 2000, 20, 400, 2400, 20, 120, '2026-07-15', tomorrowStr, 'ACTIVE', 1200, 1200, 10, 'Vence mañana', new Date().toISOString(), 0]
     );
 
-    // Seed Payments & Expenses
+    // Seed Payments (payment_date) & Expenses (expense_date)
     await connection.execute(
-      `INSERT INTO payments (id, loan_id, client_id, client_name, amount, date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO payments (id, loan_id, client_id, client_name, amount, payment_date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ['pay_1', 'loan_1', 'cli_1', 'Carlos Andrés Mendoza', 30, todayStr, 'FULL_DAY', 12, 'Pago del día']
     );
     await connection.execute(
-      `INSERT INTO expenses (id, amount, category, description, date, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO expenses (id, amount, category, description, expense_date, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
       ['exp_1', 25, 'COMBUSTIBLE', 'Gasolina para moto de cobranza', todayStr, new Date().toISOString()]
     );
   } catch (error) {

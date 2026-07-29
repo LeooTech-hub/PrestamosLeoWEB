@@ -59,7 +59,7 @@ function mapRowToLoan(row: any): Loan {
   };
 }
 
-// Utility helper to map SQL row to Payment
+// Utility helper to map SQL row to Payment (using payment_date from TiDB)
 function mapRowToPayment(row: any): Payment {
   return {
     id: String(row.id),
@@ -67,21 +67,21 @@ function mapRowToPayment(row: any): Payment {
     clientId: String(row.client_id),
     clientName: String(row.client_name),
     amount: Number(row.amount),
-    date: String(row.date),
+    date: String(row.payment_date || row.date),
     type: row.type as any,
     dayNumber: Number(row.day_number),
     notes: row.notes ? String(row.notes) : undefined,
   };
 }
 
-// Utility helper to map SQL row to Expense
+// Utility helper to map SQL row to Expense (using expense_date from TiDB)
 function mapRowToExpense(row: any): Expense {
   return {
     id: String(row.id),
     amount: Number(row.amount),
     category: row.category as ExpenseCategory,
     description: String(row.description),
-    date: String(row.date),
+    date: String(row.expense_date || row.date),
     createdAt: String(row.created_at),
   };
 }
@@ -341,7 +341,7 @@ export async function deleteLoanAction(loanId: string, mode: 'ARCHIVE' | 'PERMAN
 
 export async function getPaymentsAction(): Promise<Payment[]> {
   await seedDatabaseIfEmpty();
-  const [rows]: any = await dbPool.query('SELECT * FROM payments ORDER BY date DESC');
+  const [rows]: any = await dbPool.query('SELECT * FROM payments ORDER BY payment_date DESC');
   return (rows as any[]).map(mapRowToPayment);
 }
 
@@ -401,7 +401,7 @@ export async function registerPaymentAction(
       [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, todayStr, loanId]
     );
     await connection.execute(
-      `INSERT INTO payments (id, loan_id, client_id, client_name, amount, date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO payments (id, loan_id, client_id, client_name, amount, payment_date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
     );
     await connection.commit();
@@ -417,7 +417,7 @@ export async function registerPaymentAction(
 
 export async function getExpensesAction(): Promise<Expense[]> {
   await seedDatabaseIfEmpty();
-  const [rows]: any = await dbPool.query('SELECT * FROM expenses ORDER BY date DESC');
+  const [rows]: any = await dbPool.query('SELECT * FROM expenses ORDER BY expense_date DESC');
   return (rows as any[]).map(mapRowToExpense);
 }
 
@@ -427,7 +427,7 @@ export async function addExpenseAction(data: Omit<Expense, 'id' | 'createdAt'>):
   const createdAt = new Date().toISOString();
 
   await dbPool.execute(
-    `INSERT INTO expenses (id, amount, category, description, date, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO expenses (id, amount, category, description, expense_date, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
     [id, data.amount, data.category, data.description, data.date, createdAt]
   );
 

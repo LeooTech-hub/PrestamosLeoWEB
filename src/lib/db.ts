@@ -34,6 +34,9 @@ export const dbPool = createDbPool();
 
 /**
  * MySQL / TiDB Schema Initialization.
+ * Column names explicitly match TiDB:
+ * - payments: id, loan_id, client_id, client_name, amount, payment_date, type, day_number, notes
+ * - expenses: id, amount, category, description, expense_date, created_at
  */
 export async function initDbSchema() {
   const connection = await dbPool.getConnection();
@@ -86,13 +89,13 @@ export async function initDbSchema() {
         client_id VARCHAR(64) NOT NULL,
         client_name VARCHAR(255) NOT NULL,
         amount DECIMAL(12, 2) NOT NULL,
-        date VARCHAR(64) NOT NULL,
+        payment_date VARCHAR(64) NOT NULL,
         type VARCHAR(64) NOT NULL,
         day_number INT NOT NULL,
         notes TEXT,
         INDEX idx_loan_id (loan_id),
         INDEX idx_client_id (client_id),
-        INDEX idx_date (date)
+        INDEX idx_payment_date (payment_date)
       );
     `);
 
@@ -102,9 +105,9 @@ export async function initDbSchema() {
         amount DECIMAL(12, 2) NOT NULL,
         category VARCHAR(64) NOT NULL,
         description TEXT NOT NULL,
-        date VARCHAR(64) NOT NULL,
+        expense_date VARCHAR(64) NOT NULL,
         created_at VARCHAR(64) NOT NULL,
-        INDEX idx_date (date)
+        INDEX idx_expense_date (expense_date)
       );
     `);
   } catch (error) {
