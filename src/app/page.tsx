@@ -291,7 +291,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="hidden md:block py-6 border-t border-[#E6DCD2] text-center text-xs text-[#6E615A] bg-white">
-        <p>PrestamosLeoWEB (Perú) — Gestión de Préstamos del 20% en Soles (S/.) por Días de Pago</p>
+        <p>PrestamosLeoWEB</p>
       </footer>
     </div>
   );

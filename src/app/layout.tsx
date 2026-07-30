@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PrestamosLeoWEB - Gestión de Préstamos al 20%",
-  description: "Sistema de control de cobranzas, diario, semanal y quincenal para negocios de préstamos.",
+  title: "PrestamosLeoWEB - Administracion de Prestamos",
+  description: "Sistema de control de cobranzas, prestamos",
   keywords: ["prestamos", "cobranzas", "gestion de prestamos", "ruta diaria", "20 por ciento"],
   authors: [{ name: "PrestamosLeoWEB" }],
   icons: {

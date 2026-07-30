@@ -47,7 +47,7 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#6E615A] uppercase tracking-wider">
-              PRESTAMOS TOTALES
+            MONTO PRESTAMOS TOTALES
             </span>
             <div className="p-2 rounded-xl bg-[#FDF3ED] text-[#D96B27] font-black text-xs leading-none flex items-center justify-center min-w-[32px] h-[32px]">
               S/.
@@ -57,15 +57,14 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
             {formatCurrency(summary.totalCapitalLent)}
           </div>
           <p className="text-[11px] text-[#6E615A] flex items-center gap-1">
-            <Percent className="w-3 h-3 text-[#E89D4F]" />
-            <span>20 interés</span>
+            <span>Monto total prestado hasta la fecha</span>
           </p>
         </div>
 
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#6E615A] uppercase tracking-wider">
-              Ganancia Estimada
+              Ganancia
             </span>
             <div className="p-2 rounded-xl bg-[#EEF6F2] text-[#2D7A5D]">
               <TrendingUp className="w-4 h-4" />
@@ -75,7 +74,7 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
             {formatCurrency(summary.totalEstimatedProfit)}
           </div>
           <p className="text-[11px] text-[#2D7A5D] font-semibold">
-            +20% Ganancia bruta proyectada
+            +20% Ganancia bruta
           </p>
         </div>
 
