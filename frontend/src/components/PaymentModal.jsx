@@ -138,10 +138,10 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
               <input
                 type="number"
                 required
-                min={1}
-                step={1}
+                min="0.01"
+                step="any"
                 value={amount || ''}
-                onChange={(e) => setAmount(Number(e.target.value))}
+                onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-extrabold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>

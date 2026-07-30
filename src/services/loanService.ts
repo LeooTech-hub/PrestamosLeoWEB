@@ -29,6 +29,8 @@ export const loanService = {
   getClients: () => fetchAPI('/clients'),
   updateClient: (id: string, data: Record<string, unknown>) =>
     fetchAPI(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  restoreClient: (id: string) =>
+    fetchAPI(`/clients/${id}/restore`, { method: 'PUT' }),
   deleteClient: (id: string, mode: 'ARCHIVE' | 'PERMANENT') =>
     fetchAPI(`/clients/${id}?mode=${mode}`, { method: 'DELETE' }),
 
@@ -37,8 +39,12 @@ export const loanService = {
     fetchAPI('/loans', { method: 'POST', body: JSON.stringify(data) }),
   updateLoan: (id: string, data: Record<string, unknown>) =>
     fetchAPI(`/loans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  restoreLoan: (id: string) =>
+    fetchAPI(`/loans/${id}/restore`, { method: 'PUT' }),
   deleteLoan: (id: string, mode: 'ARCHIVE' | 'PERMANENT') =>
     fetchAPI(`/loans/${id}?mode=${mode}`, { method: 'DELETE' }),
+
+  getTrash: () => fetchAPI('/trash'),
 
   createClientAndLoan: (data: NewClientLoanFormData) =>
     fetchAPI('/clients-with-loan', { method: 'POST', body: JSON.stringify(data) }),
@@ -66,14 +72,15 @@ export const loanService = {
 
 // Calculations & Helpers
 export function calculate20PercentLoan(capital: number, paymentDays: number) {
+  const cap = Number(capital) || 0;
   const interestRate = 20;
-  const interestAmount = Math.round((capital || 0) * 0.20);
-  const totalToPay = (capital || 0) + interestAmount;
-  const days = paymentDays && paymentDays > 0 ? paymentDays : 20;
-  const dailyPaymentAmount = Math.round(totalToPay / days);
+  const interestAmount = Number((cap * 0.20).toFixed(2));
+  const totalToPay = Number((cap + interestAmount).toFixed(2));
+  const days = paymentDays && paymentDays > 0 ? Number(paymentDays) : 20;
+  const dailyPaymentAmount = Math.ceil(totalToPay / days);
 
   return {
-    capital,
+    capital: cap,
     interestRate,
     interestAmount,
     totalToPay,

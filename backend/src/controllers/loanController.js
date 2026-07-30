@@ -106,7 +106,20 @@ const loanController = {
   // GET /api/clients
   async getClients(req, res) {
     try {
-      const [rows] = await pool.query('SELECT * FROM clients ORDER BY id DESC');
+      const includeArchived = req.query.archived === 'true' || req.query.includeArchived === 'true';
+      let rows = [];
+      if (includeArchived) {
+        const [r] = await pool.query('SELECT * FROM clients ORDER BY id DESC');
+        rows = r;
+      } else {
+        try {
+          const [r] = await pool.query("SELECT * FROM clients WHERE (status != 'INACTIVE' OR status IS NULL) AND (is_archived = 0 OR is_archived IS NULL) ORDER BY id DESC");
+          rows = r;
+        } catch {
+          const [r] = await pool.query("SELECT * FROM clients WHERE status != 'INACTIVE' OR status IS NULL ORDER BY id DESC");
+          rows = r;
+        }
+      }
       return res.json(rows.map(mapRowToClient));
     } catch (error) {
       console.error('Error in getClients:', error);
@@ -174,6 +187,68 @@ const loanController = {
     }
   },
 
+  // PUT /api/clients/:id/restore
+  async restoreClient(req, res) {
+    try {
+      const { id } = req.params;
+      try {
+        await pool.execute(`UPDATE clients SET status = 'ACTIVE', is_archived = 0 WHERE id = ?`, [id]);
+      } catch {
+        await pool.execute(`UPDATE clients SET status = 'ACTIVE' WHERE id = ?`, [id]);
+      }
+      return res.json({ success: true, message: 'Cliente restaurado' });
+    } catch (error) {
+      console.error('Error in restoreClient:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // PUT /api/loans/:id/restore
+  async restoreLoan(req, res) {
+    try {
+      const { id } = req.params;
+      await pool.execute(`UPDATE loans SET is_archived = 0, status = 'ACTIVE' WHERE id = ?`, [id]);
+      return res.json({ success: true, message: 'Préstamo restaurado' });
+    } catch (error) {
+      console.error('Error in restoreLoan:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // GET /api/trash
+  async getTrash(req, res) {
+    try {
+      let clients = [];
+      let loans = [];
+
+      try {
+        const [cRows] = await pool.query(
+          `SELECT * FROM clients WHERE status = 'INACTIVE' OR is_archived = 1 ORDER BY id DESC`
+        );
+        clients = cRows.map(mapRowToClient);
+      } catch {
+        const [cRows] = await pool.query(
+          `SELECT * FROM clients WHERE status = 'INACTIVE' ORDER BY id DESC`
+        );
+        clients = cRows.map(mapRowToClient);
+      }
+
+      const [lRows] = await pool.query(
+        `SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address 
+         FROM loans l 
+         LEFT JOIN clients c ON l.client_id = c.id 
+         WHERE l.is_archived = 1 
+         ORDER BY l.id DESC`
+      );
+      loans = lRows.map(mapRowToLoan);
+
+      return res.json({ clients, loans });
+    } catch (error) {
+      console.error('Error in getTrash:', error);
+      return res.json({ clients: [], loans: [] });
+    }
+  },
+
   // DELETE /api/clients/:id
   async deleteClient(req, res) {
     try {
@@ -181,7 +256,11 @@ const loanController = {
       const mode = req.query.mode || 'ARCHIVE';
 
       if (mode === 'ARCHIVE') {
-        await pool.execute(`UPDATE clients SET status = 'INACTIVE' WHERE id = ?`, [id]);
+        try {
+          await pool.execute(`UPDATE clients SET status = 'INACTIVE', is_archived = 1 WHERE id = ?`, [id]);
+        } catch {
+          await pool.execute(`UPDATE clients SET status = 'INACTIVE' WHERE id = ?`, [id]);
+        }
       } else {
         const connection = await pool.getConnection();
         try {

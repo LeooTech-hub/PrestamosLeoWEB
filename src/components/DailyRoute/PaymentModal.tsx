@@ -209,11 +209,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <DollarSign className="w-4 h-4 text-[#D96B27] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="number"
-                    step="1"
-                    min="1"
+                    step="any"
+                    min="0.01"
                     max={loan.remainingAmount}
                     value={customAmount || ''}
-                    onChange={(e) => setCustomAmount(Number(e.target.value))}
+                    onChange={(e) => setCustomAmount(e.target.value === '' ? 0 : Number(e.target.value))}
                     className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                     required
                   />

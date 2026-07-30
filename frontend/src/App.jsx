@@ -5,6 +5,7 @@ import api from './api';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { QuickCreateLoanModal } from './components/QuickCreateLoanModal';
+import { TrashModal } from './components/TrashModal';
 
 import { VistaDashboard } from './pages/VistaDashboard';
 import { VistaRutaDiaria } from './pages/VistaRutaDiaria';
@@ -37,6 +38,7 @@ export default function App() {
   const [todayCollections, setTodayCollections] = useState([]);
 
   const [isQuickCreateLoanOpen, setIsQuickCreateLoanOpen] = useState(false);
+  const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Función reutilizable para recargar datos tras acciones (pagos, creaciones, etc.)
@@ -246,6 +248,7 @@ export default function App() {
         onRefresh={() => loadData()}
         onResetDemo={handleResetDemoData}
         onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
+        onOpenTrash={() => setIsTrashOpen(true)}
       />
 
       {/* Router Navigation Tabs */}
@@ -339,6 +342,13 @@ export default function App() {
         isOpen={isQuickCreateLoanOpen}
         onClose={() => setIsQuickCreateLoanOpen(false)}
         onSubmitLoan={handleCreateLoan}
+      />
+
+      {/* Recycle Bin Trash Modal */}
+      <TrashModal
+        isOpen={isTrashOpen}
+        onClose={() => setIsTrashOpen(false)}
+        onDataChanged={loadData}
       />
 
       {/* Footer */}

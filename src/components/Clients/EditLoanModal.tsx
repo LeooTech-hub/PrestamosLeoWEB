@@ -114,10 +114,10 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
               </span>
               <input
                 type="number"
-                step="10"
-                min="10"
+                step="any"
+                min="1"
                 value={capital || ''}
-                onChange={(e) => setCapital(Number(e.target.value))}
+                onChange={(e) => setCapital(e.target.value === '' ? 0 : Number(e.target.value))}
                 className="w-full pl-11 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-base font-extrabold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                 required
               />

@@ -39,7 +39,8 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!clientName.trim() || !capital || capital <= 0) return;
+    const capNum = Number(capital);
+    if (!clientName.trim() || !capNum || capNum <= 0) return;
 
     setIsSubmitting(true);
     try {
@@ -49,7 +50,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
         clientPhone,
         clientAddress,
         clientIdentification,
-        capital,
+        capital: capNum,
         paymentDays,
         startDate,
         notes,
@@ -182,10 +183,10 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                 <input
                   type="number"
                   required
-                  min={50}
-                  step={50}
+                  min="1"
+                  step="any"
                   value={capital || ''}
-                  onChange={(e) => setCapital(Number(e.target.value))}
+                  onChange={(e) => setCapital(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="500"
                   className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-sm font-extrabold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
                 />

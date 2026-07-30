@@ -24,12 +24,13 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!capital || capital <= 0) return;
+    const capNum = Number(capital);
+    if (!capNum || capNum <= 0) return;
 
     setIsSubmitting(true);
     try {
       await onConfirmEditLoan(loan.id, {
-        capital,
+        capital: capNum,
         paymentDays,
         startDate,
         notes: notes || undefined,
@@ -75,10 +76,10 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
             <input
               type="number"
               required
-              min={50}
-              step={50}
+              min="1"
+              step="any"
               value={capital}
-              onChange={(e) => setCapital(Number(e.target.value))}
+              onChange={(e) => setCapital(e.target.value === '' ? '' : Number(e.target.value))}
               className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-extrabold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
             />
           </div>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Wallet, RefreshCw, Calendar, Sparkles, Bell, PlusCircle } from 'lucide-react';
+import { Wallet, RefreshCw, Calendar, Sparkles, Bell, PlusCircle, Trash2 } from 'lucide-react';
 import { NotificationDropdown } from './NotificationDropdown';
 
-export function Header({ alerts = [], onRefresh, onResetDemo, onOpenQuickCreateLoan }) {
+export function Header({ alerts = [], onRefresh, onResetDemo, onOpenQuickCreateLoan, onOpenTrash }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const today = new Intl.DateTimeFormat('es-PE', {
@@ -46,6 +46,14 @@ export function Header({ alerts = [], onRefresh, onResetDemo, onOpenQuickCreateL
               <PlusCircle className="w-4 h-4" />
               <span className="hidden sm:inline">Crear Préstamo</span>
               <span className="sm:hidden">Préstamo</span>
+            </button>
+
+            <button
+              onClick={onOpenTrash}
+              title="Papelera de Reciclaje"
+              className="p-2 rounded-xl bg-white border border-[#E6DCD2] text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FDF3ED] transition-all active:scale-95 warm-shadow"
+            >
+              <Trash2 className="w-4 h-4 text-[#2C221E]" />
             </button>
 
             <button

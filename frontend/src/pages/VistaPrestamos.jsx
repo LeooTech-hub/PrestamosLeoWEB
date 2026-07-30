@@ -197,7 +197,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
 
                   <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]/60 space-y-1 text-xs mb-4">
                     <div className="flex justify-between">
-                      <span className="text-[#6E615A]">Capital + 20%:</span>
+                      <span className="text-[#6E615A]">Prestamo + 20%:</span>
                       <strong className="text-[#2C221E]">
                         {formatCurrency(loan.capital)} + {formatCurrency(loan.interestAmount)} = {formatCurrency(loan.totalToPay)}
                       </strong>

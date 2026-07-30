@@ -1,12 +1,13 @@
 export function calculate20PercentLoan(capital, paymentDays) {
+  const cap = Number(capital) || 0;
   const interestRate = 20;
-  const interestAmount = Math.round((capital || 0) * 0.20);
-  const totalToPay = (capital || 0) + interestAmount;
-  const days = paymentDays && paymentDays > 0 ? paymentDays : 20;
-  const dailyPaymentAmount = Math.round(totalToPay / days);
+  const interestAmount = Number((cap * 0.20).toFixed(2));
+  const totalToPay = Number((cap + interestAmount).toFixed(2));
+  const days = paymentDays && paymentDays > 0 ? Number(paymentDays) : 20;
+  const dailyPaymentAmount = Math.ceil(totalToPay / days);
 
   return {
-    capital,
+    capital: cap,
     interestRate,
     interestAmount,
     totalToPay,

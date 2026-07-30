@@ -52,8 +52,9 @@ export function VistaClientes({
     setIsDetailModalOpen(true);
   };
 
-  const clientLoans = selectedClient ? loans.filter((l) => l.clientId === selectedClient.id) : [];
-  const clientPayments = selectedClient ? payments.filter((p) => p.clientId === selectedClient.id) : [];
+  const activeSelectedClient = selectedClient ? (clients.find((c) => c.id === selectedClient.id) || selectedClient) : null;
+  const clientLoans = activeSelectedClient ? loans.filter((l) => l.clientId === activeSelectedClient.id) : [];
+  const clientPayments = activeSelectedClient ? payments.filter((p) => p.clientId === activeSelectedClient.id) : [];
   const activeLoans = clientLoans.filter((l) => l.status !== 'PAID' && !l.isArchived);
   const paidLoans = clientLoans.filter((l) => l.status === 'PAID' && !l.isArchived);
 
@@ -138,13 +139,26 @@ export function VistaClientes({
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setDeletingClient(client)}
-                      className="p-1.5 rounded-xl text-[#6E615A] hover:bg-[#FDF2F0] hover:text-[#C84B31] transition-all"
-                      title="Eliminar Cliente"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          setSelectedClient(client);
+                          setIsEditClientOpen(true);
+                        }}
+                        className="p-1.5 rounded-xl text-[#6E615A] hover:bg-[#FDF3ED] hover:text-[#D96B27] transition-all"
+                        title="Editar Cliente"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => setDeletingClient(client)}
+                        className="p-1.5 rounded-xl text-[#6E615A] hover:bg-[#FDF2F0] hover:text-[#C84B31] transition-all"
+                        title="Eliminar Cliente"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5 text-xs text-[#6E615A] mb-4">
@@ -441,7 +455,7 @@ export function VistaClientes({
       )}
 
       <EditClientModal
-        client={selectedClient}
+        client={activeSelectedClient}
         isOpen={isEditClientOpen}
         onClose={() => setIsEditClientOpen(false)}
         onConfirmEdit={onUpdateClient}
