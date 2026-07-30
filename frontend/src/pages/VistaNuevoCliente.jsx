@@ -70,7 +70,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
         </div>
         <div>
           <h2 className="text-xl font-extrabold text-[#2C221E]">
-            Generar Préstamo al 20%
+            Generar Préstamo
           </h2>
           <p className="text-xs text-[#6E615A]">
             Selecciona un cliente existente o registra uno nuevo calculando el total y días acordados.

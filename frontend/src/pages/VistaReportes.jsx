@@ -41,10 +41,10 @@ export function VistaReportes({ report, period = 'WEEKLY', onPeriodChange, onAdd
           </div>
           <div>
             <h2 className="text-xl font-extrabold text-[#2C221E]">
-              Reporte Financiero de Ganancias y Gastos
+              Reporte Financiero De Ingresos y Egresos
             </h2>
             <p className="text-xs text-[#6E615A]">
-              Análisis contable en Soles (S/.) en períodos semanales, quincenales y mensuales.
+              Análisis de ingresos, gastos y ganancias netas por período seleccionado.
             </p>
           </div>
         </div>
@@ -86,7 +86,7 @@ export function VistaReportes({ report, period = 'WEEKLY', onPeriodChange, onAdd
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
           <span className="text-[10px] font-bold text-[#6E615A] uppercase tracking-wider block">
-            Cobrado Real ({report.periodLabel})
+            Cobranza Real Recaudada
           </span>
           <div className="text-xl sm:text-2xl font-black text-[#2D7A5D]">
             {formatCurrency(report.realCollected)}
@@ -98,7 +98,7 @@ export function VistaReportes({ report, period = 'WEEKLY', onPeriodChange, onAdd
 
         <div className="bg-white p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
           <span className="text-[10px] font-bold text-[#6E615A] uppercase tracking-wider block">
-            Ganancia Bruta (20%)
+            Ganancia Bruta
           </span>
           <div className="text-xl sm:text-2xl font-black text-[#D96B27]">
             {formatCurrency(report.interestCollected)}
