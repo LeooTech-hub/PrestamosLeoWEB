@@ -18,6 +18,8 @@ router.delete('/loans/:id', loanController.deleteLoan);
 // Payments Routes
 router.get('/payments', loanController.getPayments);
 router.post('/payments', loanController.registerPayment);
+router.post('/payments/revert', loanController.revertLastPayment);
+router.post('/loans/:id/revert-payment', loanController.revertLastPayment);
 
 // Expenses Routes
 router.get('/expenses', loanController.getExpenses);

@@ -516,6 +516,101 @@ const loanController = {
     }
   },
 
+  // POST /api/loans/:id/revert-payment or POST /api/payments/revert
+  async revertLastPayment(req, res) {
+    const connection = await pool.getConnection();
+    try {
+      const loanId = req.params.id || req.body.loanId;
+      if (!loanId) {
+        return res.status(400).json({ error: 'ID de préstamo requerido' });
+      }
+
+      const [rows] = await connection.execute(`SELECT * FROM loans WHERE id = ?`, [loanId]);
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Préstamo no encontrado' });
+      }
+
+      const loan = mapRowToLoan(rows[0]);
+
+      if (loan.paidAmount <= 0) {
+        return res.status(400).json({ error: 'El préstamo no tiene pagos para revertir' });
+      }
+
+      let pRows = [];
+      try {
+        const [result] = await connection.execute(`SELECT * FROM payments WHERE loan_id = ?`, [loanId]);
+        pRows = result;
+      } catch (_) {
+        const [result] = await connection.execute(`SELECT * FROM payments WHERE loan_id = ?`, [loanId]);
+        pRows = result;
+      }
+
+      let revertedAmount = 0;
+      let newLastPaymentDate = null;
+
+      if (pRows.length > 0) {
+        const mappedPayments = pRows.map(mapRowToPayment);
+        mappedPayments.sort((a, b) => {
+          if (a.dayNumber !== b.dayNumber) return b.dayNumber - a.dayNumber;
+          return (b.date || '').localeCompare(a.date || '');
+        });
+        const lastPayment = mappedPayments[0];
+        revertedAmount = lastPayment.amount;
+
+        await connection.beginTransaction();
+        await connection.execute(`DELETE FROM payments WHERE id = ?`, [lastPayment.id]);
+
+        if (mappedPayments.length > 1) {
+          newLastPaymentDate = mappedPayments[1].date;
+        }
+      } else {
+        revertedAmount = loan.dailyPaymentAmount || loan.paidAmount;
+        await connection.beginTransaction();
+      }
+
+      const newPaidAmount = Math.max(0, loan.paidAmount - revertedAmount);
+      const newRemainingAmount = Math.max(0, loan.totalToPay - newPaidAmount);
+      const newPaidDaysCount = Math.min(
+        loan.paymentDays,
+        Math.floor(newPaidAmount / (loan.dailyPaymentAmount || 1))
+      );
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      let newStatus = loan.status;
+      if (newRemainingAmount <= 0) {
+        newStatus = 'PAID';
+      } else if (new Date(loan.dueDate) < new Date(todayStr)) {
+        newStatus = 'OVERDUE';
+      } else {
+        newStatus = 'ACTIVE';
+      }
+
+      await connection.execute(
+        `UPDATE loans SET paid_amount = ?, remaining_amount = ?, paid_days_count = ?, status = ?, last_payment_date = ? WHERE id = ?`,
+        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, loanId]
+      );
+
+      await connection.commit();
+
+      const updatedLoan = {
+        ...loan,
+        paidAmount: newPaidAmount,
+        remainingAmount: newRemainingAmount,
+        paidDaysCount: newPaidDaysCount,
+        status: newStatus,
+        lastPaymentDate: newLastPaymentDate,
+      };
+
+      return res.json({ success: true, message: 'Pago revertido exitosamente', updatedLoan });
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error in revertLastPayment:', error);
+      return res.status(500).json({ error: error.message });
+    } finally {
+      connection.release();
+    }
+  },
+
   // GET /api/expenses
   async getExpenses(req, res) {
     try {

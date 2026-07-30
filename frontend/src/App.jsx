@@ -153,6 +153,17 @@ export default function App() {
     }
   };
 
+  const handleRevertPayment = async (loanId) => {
+    try {
+      const res = await api.post(`/loans/${loanId}/revert-payment`);
+      await loadData();
+      return res.data;
+    } catch (err) {
+      console.error('Error revirtiendo pago:', err);
+      throw err;
+    }
+  };
+
   const handleUpdateClient = async (id, data) => {
     try {
       await api.put(`/clients/${id}`, data);
@@ -280,6 +291,7 @@ export default function App() {
                   onRegisterPayment={handleRegisterPayment}
                   onUpdateLoan={handleUpdateLoan}
                   onDeleteLoan={handleDeleteLoan}
+                  onRevertPayment={handleRevertPayment}
                 />
               }
             />

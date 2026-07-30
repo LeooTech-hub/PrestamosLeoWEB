@@ -49,6 +49,10 @@ export const loanService = {
       method: 'POST',
       body: JSON.stringify({ loanId, amount, notes }),
     }),
+  revertLastPayment: (loanId: string) =>
+    fetchAPI(`/loans/${loanId}/revert-payment`, {
+      method: 'POST',
+    }),
 
   getDashboardSummary: () => fetchAPI('/dashboard/summary'),
   getTodayCollections: () => fetchAPI('/today-collections'),

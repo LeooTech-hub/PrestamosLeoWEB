@@ -3,14 +3,31 @@ import { formatCurrency, formatDatePE, getDaysDifferenceInfo, generateWhatsAppRe
 import { PaymentModal } from '../components/PaymentModal';
 import { EditLoanModal } from '../components/EditLoanModal';
 import { SmartDeleteModal } from '../components/SmartDeleteModal';
-import { CreditCard, Search, Phone, Pencil, Trash2, MessageSquare } from 'lucide-react';
+import { CreditCard, Search, Phone, Pencil, Trash2, MessageSquare, RotateCcw } from 'lucide-react';
 
-export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, onDeleteLoan }) {
+export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, onDeleteLoan, onRevertPayment }) {
   const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentLoan, setPaymentLoan] = useState(null);
   const [editingLoan, setEditingLoan] = useState(null);
   const [deletingLoan, setDeletingLoan] = useState(null);
+  const [revertingLoanId, setRevertingLoanId] = useState(null);
+
+  const handleRevert = async (loan) => {
+    if (!onRevertPayment) return;
+    const confirmMsg = `¿Deseas reabrir el préstamo de ${loan.clientName} y deshacer el último pago registrado?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setRevertingLoanId(loan.id);
+      await onRevertPayment(loan.id);
+    } catch (err) {
+      console.error('Error al revertir pago:', err);
+      alert(err.response?.data?.error || err.message || 'Error al revertir el pago');
+    } finally {
+      setRevertingLoanId(null);
+    }
+  };
 
   const filteredLoans = loans.filter((loan) => {
     if (loan.isArchived) return false;
@@ -211,11 +228,22 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                     >
                       {/* CAMBIO AQUÍ: S/. estilizado y en negrita */}
                       <span className="font-black text-xs">S/.</span>
-                      <span>Cobrar / Abonar</span>
+                      <span>Cobrar</span>
                     </button>
                   ) : (
-                    <div className="flex-1 py-2 px-3 rounded-xl bg-[#2D7A5D] text-white text-xs font-extrabold text-center">
-                      CANCELADO COMPLETO
+                    <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                      <div className="flex-1 py-2 px-2.5 rounded-xl bg-[#2D7A5D] text-white text-xs font-extrabold text-center truncate">
+                        CANCELADO COMPLETO
+                      </div>
+                      <button
+                        onClick={() => handleRevert(loan)}
+                        disabled={revertingLoanId === loan.id}
+                        className="py-2 px-2.5 rounded-xl bg-white border border-[#E6DCD2] text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FAF8F5] text-xs font-bold flex items-center gap-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                        title="Reabrir / Deshacer Pago"
+                      >
+                        <RotateCcw className={`w-3.5 h-3.5 ${revertingLoanId === loan.id ? 'animate-spin' : ''}`} />
+                        <span>Reabrir</span>
+                      </button>
                     </div>
                   )}
 
