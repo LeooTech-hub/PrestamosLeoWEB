@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 import apiRoutes from './routes/apiRoutes.js';
-import { initDbSchema } from './config/db.js';
+import pool from './config/db.js';
 
 dotenv.config();
 
@@ -19,11 +19,10 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir peticiones sin origen (como Postman o curl) o si está en la lista permitida
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // O cambiar por callback(new Error('No permitido por CORS')) tras probar
+      callback(new Error('Acceso no permitido por CORS'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -31,17 +30,19 @@ app.use(cors({
   credentials: true
 }));
 
-// Responder explícitamente a las peticiones Preflight (OPTIONS)
-app.options('*', cors());
-
 app.use(express.json());
 
 // API Routes
 app.use('/api', apiRoutes);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'PrestamosLeoWEB API REST activa (S/.)' });
+// Health check endpoint con verificación de BD
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'connected', message: 'PrestamosLeoWEB API REST activa (S/.)' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', db: 'disconnected', message: err.message });
+  }
 });
 
 // eslint-disable-next-line no-unused-vars
@@ -51,10 +52,27 @@ app.use((err, req, res, _next) => {
 });
 
 // Start Express Server
-app.listen(PORT, async () => {
+const server = app.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(`🚀 Servidor backend Express.js escuchando en puerto ${PORT}`);
   console.log(`🔗 API REST base: http://localhost:${PORT}/api`);
   console.log(`=======================================================`);
-  await initDbSchema();
 });
+
+// Graceful shutdown
+const gracefulShutdown = async (signal) => {
+  console.log(`\nCerrando servidor (${signal})...`);
+  server.close(async () => {
+    try {
+      await pool.end();
+      console.log('Conexiones de TiDB Cloud cerradas limpiamente.');
+      process.exit(0);
+    } catch (err) {
+      console.error('Error cerrando el pool de conexiones:', err);
+      process.exit(1);
+    }
+  });
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

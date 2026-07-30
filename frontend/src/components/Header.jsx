@@ -29,9 +29,6 @@ export function Header({ alerts = [], onRefresh, onResetDemo, onOpenQuickCreateL
                 <h1 className="font-extrabold text-lg sm:text-xl tracking-tight text-[#2C221E]">
                   Prestamos<span className="text-[#D96B27]">Leo</span>
                 </h1>
-                <span className="bg-[#FDF3ED] text-[#D96B27] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D96B27]/20 uppercase">
-                  Perú S/. 20%
-                </span>
               </div>
               <div className="flex items-center gap-1 text-[12px] text-[#6E615A] capitalize">
                 <Calendar className="w-3 h-3 text-[#E89D4F]" />
@@ -70,15 +67,6 @@ export function Header({ alerts = [], onRefresh, onResetDemo, onOpenQuickCreateL
               className="p-2 rounded-xl bg-white border border-[#E6DCD2] text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FDF3ED] transition-all active:scale-95 warm-shadow"
             >
               <RefreshCw className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={onResetDemo}
-              title="Restablecer datos de prueba"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-[#E6DCD2] text-[#6E615A] hover:bg-[#F5F0EB] hover:text-[#2C221E] transition-all warm-shadow"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#E89D4F]" />
-              <span>Datos Demo</span>
             </button>
           </div>
         </div>

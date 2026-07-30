@@ -90,15 +90,6 @@ export const Header: React.FC<HeaderProps> = ({
               <RefreshCw className="w-4 h-4" />
             </button>
 
-            {/* Demo Data Reset */}
-            <button
-              onClick={onResetDemo}
-              title="Restablecer datos de prueba"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-[#E6DCD2] text-[#6E615A] hover:bg-[#F5F0EB] hover:text-[#2C221E] transition-all warm-shadow"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#E89D4F]" />
-              <span>Datos Demo</span>
-            </button>
           </div>
         </div>
       </header>

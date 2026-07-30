@@ -2,8 +2,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
 import {
+  
   TrendingUp,
-  DollarSign,
+  Coins,
   Users,
   ArrowUpRight,
   Plus,
@@ -22,13 +23,13 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
       <div className="terracotta-gradient text-white p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="relative z-10 space-y-1">
           <span className="bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            Modalidad Perú al 20%
+            PRESTAMOS LEITOTECH
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Panel de Control Financiero
+            PANEL DE ADMINISTRACION DE PRESTAMOS
           </h2>
           <p className="text-xs sm:text-sm text-white/90 max-w-xl">
-            Resumen diario de capital prestado, ganancias estimadas y cobranza en Soles (S/.).
+            Resumen de prestamos, ingresos y gastos
           </p>
         </div>
 
@@ -37,7 +38,7 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
           className="relative z-10 bg-white text-[#D96B27] px-5 py-3 rounded-2xl font-extrabold text-xs shadow-sm hover:bg-[#FAF8F5] active:scale-95 transition-all flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          <span>+ Crear Nuevo Préstamo</span>
+          <span> Crear Nuevo Préstamo</span>
         </button>
       </div>
 
@@ -46,10 +47,10 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#6E615A] uppercase tracking-wider">
-              Capital Colocado
+              PRESTAMOS TOTALES
             </span>
-            <div className="p-2 rounded-xl bg-[#FDF3ED] text-[#D96B27]">
-              <DollarSign className="w-4 h-4" />
+            <div className="p-2 rounded-xl bg-[#FDF3ED] text-[#D96B27] font-black text-xs leading-none flex items-center justify-center min-w-[32px] h-[32px]">
+              S/.
             </div>
           </div>
           <div className="text-lg sm:text-2xl font-black text-[#2C221E]">
@@ -57,7 +58,7 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
           </div>
           <p className="text-[11px] text-[#6E615A] flex items-center gap-1">
             <Percent className="w-3 h-3 text-[#E89D4F]" />
-            <span>20% de interés acordado</span>
+            <span>20 interés</span>
           </p>
         </div>
 

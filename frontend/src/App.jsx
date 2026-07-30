@@ -287,7 +287,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="hidden md:block py-6 border-t border-[#E6DCD2] text-center text-xs text-[#6E615A] bg-white">
-        <p>PrestamosLeoWEB (Perú) — React + Vite SPA / Node.js + Express.js API REST con TiDB Cloud (S/.)</p>
+        <p>PrestamosLeoWEB ©2026 Todos los Derechos Reservados.</p>
       </footer>
     </div>
   );

@@ -1,4 +1,4 @@
-import pool, { initDbSchema } from '../config/db.js';
+import pool from '../config/db.js';
 import crypto from 'crypto';
 
 function generateUUID() {
@@ -106,7 +106,6 @@ const loanController = {
   // GET /api/clients
   async getClients(req, res) {
     try {
-      await initDbSchema();
       const [rows] = await pool.query('SELECT * FROM clients ORDER BY id DESC');
       return res.json(rows.map(mapRowToClient));
     } catch (error) {
@@ -118,7 +117,6 @@ const loanController = {
   // POST /api/clients
   async createClient(req, res) {
     try {
-      await initDbSchema();
       const { name, phone, address, identification, notes } = req.body;
       const id = generateUUID();
       const createdAt = new Date().toISOString();
@@ -148,7 +146,6 @@ const loanController = {
   async updateClient(req, res) {
     const connection = await pool.getConnection();
     try {
-      await initDbSchema();
       const { id } = req.params;
       const { name, phone, address, identification, notes } = req.body;
 
@@ -180,7 +177,6 @@ const loanController = {
   // DELETE /api/clients/:id
   async deleteClient(req, res) {
     try {
-      await initDbSchema();
       const { id } = req.params;
       const mode = req.query.mode || 'ARCHIVE';
 
@@ -211,7 +207,6 @@ const loanController = {
   // GET /api/loans
   async getLoans(req, res) {
     try {
-      await initDbSchema();
       const [rows] = await pool.query(`
         SELECT 
           l.*,
@@ -232,8 +227,9 @@ const loanController = {
 
   // POST /api/loans
   async createClientAndLoan(req, res) {
+    const connection = await pool.getConnection();
     try {
-      await initDbSchema();
+      await connection.beginTransaction();
       const formData = req.body;
 
       let clientId = formData.clientId;
@@ -247,12 +243,12 @@ const loanController = {
         const identification = formData.clientIdentification?.trim() || null;
         const notes = formData.notes?.trim() || null;
 
-        await pool.execute(
+        await connection.execute(
           `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [clientId, clientName, clientPhone, clientAddress, identification, notes, createdAt, 'ACTIVE']
         );
       } else {
-        const [rows] = await pool.execute(`SELECT * FROM clients WHERE id = ?`, [clientId]);
+        const [rows] = await connection.execute(`SELECT * FROM clients WHERE id = ?`, [clientId]);
         if (rows.length > 0) {
           const c = mapRowToClient(rows[0]);
           clientName = c.name || clientName;
@@ -277,7 +273,7 @@ const loanController = {
       const loanId = generateUUID();
       const createdAt = new Date().toISOString();
 
-      await pool.execute(
+      await connection.execute(
         `INSERT INTO loans (
           id, client_id, client_name, client_phone, client_address,
           capital, amount_borrowed,
@@ -314,6 +310,8 @@ const loanController = {
         ]
       );
 
+      await connection.commit();
+
       return res.status(201).json({
         id: loanId,
         clientId,
@@ -337,15 +335,17 @@ const loanController = {
         isArchived: false,
       });
     } catch (error) {
+      await connection.rollback();
       console.error('Error in createClientAndLoan:', error);
       return res.status(500).json({ error: error.message });
+    } finally {
+      connection.release();
     }
   },
 
   // PUT /api/loans/:id
   async updateLoan(req, res) {
     try {
-      await initDbSchema();
       const { id } = req.params;
       const { capital, paymentDays, startDate, notes } = req.body;
 
@@ -395,7 +395,6 @@ const loanController = {
   // DELETE /api/loans/:id
   async deleteLoan(req, res) {
     try {
-      await initDbSchema();
       const { id } = req.params;
       const mode = req.query.mode || 'ARCHIVE';
 
@@ -425,7 +424,6 @@ const loanController = {
   // GET /api/payments
   async getPayments(req, res) {
     try {
-      await initDbSchema();
       let rows = [];
       try {
         const [result] = await pool.query('SELECT * FROM payments ORDER BY id DESC');
@@ -445,7 +443,6 @@ const loanController = {
   async registerPayment(req, res) {
     const connection = await pool.getConnection();
     try {
-      await initDbSchema();
       const { loanId, amount, notes } = req.body;
 
       const [rows] = await connection.execute(`SELECT * FROM loans WHERE id = ?`, [loanId]);
@@ -522,7 +519,6 @@ const loanController = {
   // GET /api/expenses
   async getExpenses(req, res) {
     try {
-      await initDbSchema();
       let rows = [];
       try {
         const [result] = await pool.query('SELECT * FROM expenses ORDER BY id DESC');
@@ -541,7 +537,6 @@ const loanController = {
   // POST /api/expenses
   async addExpense(req, res) {
     try {
-      await initDbSchema();
       const { amount, category, description, date } = req.body;
       const id = generateUUID();
       const createdAt = new Date().toISOString();
@@ -576,7 +571,6 @@ const loanController = {
   // DELETE /api/expenses/:id
   async deleteExpense(req, res) {
     try {
-      await initDbSchema();
       const { id } = req.params;
       await pool.execute(`DELETE FROM expenses WHERE id = ?`, [id]);
       return res.json({ success: true, message: 'Gasto eliminado' });
@@ -833,9 +827,15 @@ const loanController = {
 
   // POST /api/seed
   async seedDatabase(req, res) {
-    try {
-      await initDbSchema();
+    if (process.env.NODE_ENV === 'production') {
+      const adminSecret = process.env.ADMIN_SECRET;
+      const requestSecret = req.headers['x-admin-secret'];
+      if (!adminSecret || requestSecret !== adminSecret) {
+        return res.status(403).json({ error: 'Operación no permitida en producción sin clave administrativa' });
+      }
+    }
 
+    try {
       await pool.execute('DELETE FROM payments');
       await pool.execute('DELETE FROM expenses');
       await pool.execute('DELETE FROM loans');

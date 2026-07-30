@@ -15,11 +15,9 @@ const pool = mysql.createPool({
   },
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000
 });
-
-export async function initDbSchema() {
-  // Tu lógica de inicialización de tablas aquí...
-}
 
 export default pool;

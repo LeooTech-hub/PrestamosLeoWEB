@@ -3,7 +3,7 @@ import { formatCurrency, formatDatePE, getDaysDifferenceInfo, generateWhatsAppRe
 import { PaymentModal } from '../components/PaymentModal';
 import { EditLoanModal } from '../components/EditLoanModal';
 import { SmartDeleteModal } from '../components/SmartDeleteModal';
-import { CreditCard, Search, Phone, DollarSign, Pencil, Trash2, MessageSquare } from 'lucide-react';
+import { CreditCard, Search, Phone, Pencil, Trash2, MessageSquare } from 'lucide-react';
 
 export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, onDeleteLoan }) {
   const [filter, setFilter] = useState('ALL');
@@ -207,9 +207,10 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                   {loan.status !== 'PAID' ? (
                     <button
                       onClick={() => setPaymentLoan(loan)}
-                      className="flex-1 py-2 px-3 rounded-xl terracotta-gradient text-white text-xs font-extrabold shadow-xs hover:brightness-110 active:scale-95 flex items-center justify-center gap-1"
+                      className="flex-1 py-2 px-3 rounded-xl terracotta-gradient text-white text-xs font-extrabold shadow-xs hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5"
                     >
-                      <DollarSign className="w-4 h-4" />
+                      {/* CAMBIO AQUÍ: S/. estilizado y en negrita */}
+                      <span className="font-black text-xs">S/.</span>
                       <span>Cobrar / Abonar</span>
                     </button>
                   ) : (
