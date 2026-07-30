@@ -39,8 +39,8 @@ export default function App() {
   const [isQuickCreateLoanOpen, setIsQuickCreateLoanOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from Express REST API
-  const loadData = useCallback(async () => {
+  // Función reutilizable para recargar datos tras acciones (pagos, creaciones, etc.)
+  const loadData = useCallback(async (period = reportPeriod) => {
     try {
       const fetchSafe = async (url, fallback) => {
         try {
@@ -59,7 +59,7 @@ export default function App() {
         fetchSafe('/dashboard/summary', defaultDashboardSummary),
         fetchSafe('/today-collections', []),
         fetchSafe('/alerts', []),
-        fetchSafe(`/reports/financial?period=${reportPeriod}`, null),
+        fetchSafe(`/reports/financial?period=${period}`, null),
       ]);
 
       setClients(cList || []);
@@ -77,9 +77,59 @@ export default function App() {
     }
   }, [reportPeriod]);
 
+  // Carga inicial y por cambio de periodo
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let isMounted = true;
+
+    const initData = async () => {
+      try {
+        const fetchSafe = async (url, fallback) => {
+          try {
+            const res = await api.get(url);
+            return res.data;
+          } catch (err) {
+            console.error(`Error cargando ${url}:`, err.message);
+            return fallback;
+          }
+        };
+
+        const [cList, lList, pList, sum, todayCol, alertList, report] = await Promise.all([
+          fetchSafe('/clients', []),
+          fetchSafe('/loans', []),
+          fetchSafe('/payments', []),
+          fetchSafe('/dashboard/summary', defaultDashboardSummary),
+          fetchSafe('/today-collections', []),
+          fetchSafe('/alerts', []),
+          fetchSafe(`/reports/financial?period=${reportPeriod}`, null),
+        ]);
+
+        if (isMounted) {
+          setClients(cList || []);
+          setLoans(lList || []);
+          setPayments(pList || []);
+          setSummary(sum || defaultDashboardSummary);
+          setTodayCollections(todayCol || []);
+          setAlerts(alertList || []);
+          setFinancialReport(report);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error cargando datos del backend:', error);
+          setSummary(defaultDashboardSummary);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reportPeriod]);
 
   // Handlers communicating with REST API
   const handleCreateLoan = async (formData) => {
@@ -164,12 +214,6 @@ export default function App() {
 
   const handlePeriodChange = async (period) => {
     setReportPeriod(period);
-    try {
-      const res = await api.get(`/reports/financial?period=${period}`);
-      setFinancialReport(res.data);
-    } catch (err) {
-      console.error('Error cargando reporte:', err);
-    }
   };
 
   const handleResetDemoData = async () => {
@@ -188,7 +232,7 @@ export default function App() {
       {/* Top Header */}
       <Header
         alerts={alerts}
-        onRefresh={loadData}
+        onRefresh={() => loadData()}
         onResetDemo={handleResetDemoData}
         onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
       />
