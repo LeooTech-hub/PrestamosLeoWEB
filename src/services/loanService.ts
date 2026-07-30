@@ -1,7 +1,13 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const API_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+import {
+  ReportPeriod,
+  ExpenseCategory,
+  NewClientLoanFormData,
+} from '@/types';
 
-// Función auxiliar para manejar peticiones HTTP
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const API_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) || 'http://localhost:5000/api';
+
+// Helper function for HTTP requests
 async function fetchAPI(endpoint: string, options?: RequestInit) {
   const response = await fetch(`${API_URL}${endpoint}`, {
     headers: {
@@ -18,30 +24,176 @@ async function fetchAPI(endpoint: string, options?: RequestInit) {
   return response.json();
 }
 
-// Servicios para la aplicación
+// Service functions
 export const loanService = {
-  // Clientes
   getClients: () => fetchAPI('/clients'),
+  updateClient: (id: string, data: Record<string, unknown>) =>
+    fetchAPI(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteClient: (id: string, mode: 'ARCHIVE' | 'PERMANENT') =>
+    fetchAPI(`/clients/${id}?mode=${mode}`, { method: 'DELETE' }),
 
-  // Préstamos
   getLoans: () => fetchAPI('/loans'),
   createLoan: (data: Record<string, unknown>) =>
-    fetchAPI('/loans', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    fetchAPI('/loans', { method: 'POST', body: JSON.stringify(data) }),
+  updateLoan: (id: string, data: Record<string, unknown>) =>
+    fetchAPI(`/loans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteLoan: (id: string, mode: 'ARCHIVE' | 'PERMANENT') =>
+    fetchAPI(`/loans/${id}?mode=${mode}`, { method: 'DELETE' }),
 
-  // Pagos
+  createClientAndLoan: (data: NewClientLoanFormData) =>
+    fetchAPI('/clients-with-loan', { method: 'POST', body: JSON.stringify(data) }),
+
   getPayments: () => fetchAPI('/payments'),
-  registerPayment: (data: Record<string, unknown>) =>
+  registerPayment: (loanId: string, amount: number, notes?: string) =>
     fetchAPI('/payments', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ loanId, amount, notes }),
     }),
 
-  // Métricas del Dashboard y Colecciones del día
   getDashboardSummary: () => fetchAPI('/dashboard/summary'),
   getTodayCollections: () => fetchAPI('/today-collections'),
+  getAlerts: () => fetchAPI('/alerts'),
+  getFinancialReport: (period: ReportPeriod) => fetchAPI(`/reports/financial?period=${period}`),
+  addExpense: (data: { amount: number; category: ExpenseCategory; description: string; date: string }) =>
+    fetchAPI('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  deleteExpense: (id: string) => fetchAPI(`/expenses/${id}`, { method: 'DELETE' }),
+  resetToDemoData: () => fetchAPI('/demo/reset', { method: 'POST' }),
 };
+
+// Calculations & Helpers
+export function calculate20PercentLoan(capital: number, paymentDays: number) {
+  const interestRate = 20;
+  const interestAmount = Math.round((capital || 0) * 0.20);
+  const totalToPay = (capital || 0) + interestAmount;
+  const days = paymentDays && paymentDays > 0 ? paymentDays : 20;
+  const dailyPaymentAmount = Math.round(totalToPay / days);
+
+  return {
+    capital,
+    interestRate,
+    interestAmount,
+    totalToPay,
+    paymentDays: days,
+    dailyPaymentAmount,
+  };
+}
+
+export function formatCurrency(amount?: number) {
+  return `S/. ${new Intl.NumberFormat('es-PE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount || 0)}`;
+}
+
+export function formatDatePE(dateStr?: string) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+}
+
+export function getDaysDifferenceInfo(dueDateStr: string) {
+  if (!dueDateStr) return { label: 'Sin fecha', color: 'GRAY', diffDays: 0 };
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const today = new Date(todayStr);
+  const due = new Date(dueDateStr);
+
+  const diffMs = due.getTime() - today.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    const absDays = Math.abs(diffDays);
+    return {
+      label: `Vencido hace ${absDays} día${absDays > 1 ? 's' : ''}`,
+      color: 'RED',
+      diffDays,
+    };
+  } else if (diffDays === 0) {
+    return {
+      label: 'Vence HOY',
+      color: 'YELLOW',
+      diffDays,
+    };
+  } else if (diffDays === 1) {
+    return {
+      label: 'Vence mañana (1 día)',
+      color: 'YELLOW',
+      diffDays,
+    };
+  } else {
+    return {
+      label: `Quedan ${diffDays} días`,
+      color: 'GREEN',
+      diffDays,
+    };
+  }
+}
+
+export function generateWhatsAppReminderMessage(params: {
+  phone?: string;
+  dueDate?: string;
+  daysDifference?: number;
+  clientName?: string;
+  remainingAmount?: number;
+  totalToPay?: number;
+}) {
+  const cleanPhone = (params.phone || '').replace(/\D/g, '');
+  const phoneWithCode = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
+  const dueDateFormatted = formatDatePE(params.dueDate);
+
+  const diff = params.daysDifference ?? 0;
+  let statusHeader = '';
+  if (diff < 0) {
+    statusHeader = `⚠️ *RECORDATORIO DE PRÉSTAMO VENCIDO*`;
+  } else if (diff === 0) {
+    statusHeader = `🔔 *RECORDATORIO DE PRÉSTAMO - VENCE HOY*`;
+  } else {
+    statusHeader = `🗓️ *RECORDATORIO DE PRÉSTAMO*`;
+  }
+
+  const text = `${statusHeader}
+---------------------------------------
+Estimado(a) *${params.clientName}*, le saludamos de *Prestamos Leo*.
+
+📌 *Estado de su Cuenta:*
+- *Saldo Pendiente:* ${formatCurrency(params.remainingAmount)} de ${formatCurrency(params.totalToPay)}
+- *Fecha de Vencimiento:* ${dueDateFormatted}
+
+Le invitamos a realizar su abono del día para mantener su crédito al día. ¡Agradecemos su puntualidad! 🙏✨`;
+
+  return `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(text)}`;
+}
+
+export function generateWhatsAppMessage(params: {
+  phone: string;
+  clientName: string;
+  paymentAmount: number;
+  paidDaysCount: number;
+  totalPaymentDays: number;
+  remainingAmount: number;
+  totalToPay: number;
+}) {
+  const dateStr = formatDatePE(new Date().toISOString().split('T')[0]);
+  const cleanPhone = (params.phone || '').replace(/\D/g, '');
+  const phoneWithCode = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
+
+  const text = `📄 *COMPROBANTE DE PAGO - PRESTAMOS LEO*
+---------------------------------------
+👤 *Cliente:* ${params.clientName}
+💰 *Monto Recibido:* ${formatCurrency(params.paymentAmount)}
+📅 *Fecha:* ${dateStr}
+
+📊 *ESTADO DE LA CUENTA:*
+- *Días Pagados:* ${params.paidDaysCount} de ${params.totalPaymentDays} días
+- *Saldo Restante:* ${formatCurrency(params.remainingAmount)}
+- *Total Préstamo:* ${formatCurrency(params.totalToPay)}
+
+¡Muchas gracias por su puntualidad! 🙏✨`;
+
+  return `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(text)}`;
+}
 
 export default loanService;

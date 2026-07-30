@@ -1,1 +1,1 @@
-export * from '@/backend/db/seed';
+export const seed = null;

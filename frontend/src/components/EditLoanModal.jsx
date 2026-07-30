@@ -87,22 +87,19 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
             <label className="block text-xs font-bold text-[#6E615A] mb-1">
               Días de Pago Acordados:
             </label>
-            <div className="grid grid-cols-4 gap-2 mb-2">
-              {[10, 15, 20, 30].map((days) => (
-                <button
-                  type="button"
-                  key={days}
-                  onClick={() => setPaymentDays(days)}
-                  className={`py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                    paymentDays === days
-                      ? 'terracotta-gradient text-white border-transparent'
-                      : 'bg-[#FAF8F5] text-[#2C221E] border-[#E6DCD2] hover:bg-[#FDF3ED]'
-                  }`}
-                >
-                  {days} Días
-                </button>
-              ))}
-            </div>
+            <input
+              type="number"
+              required
+              min="1"
+              max="365"
+              value={paymentDays}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPaymentDays(val === '' ? '' : Math.min(365, Math.max(1, parseInt(val, 10) || 1)));
+              }}
+              placeholder="Número de días (1 - 365)"
+              className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+            />
           </div>
 
           <div>
@@ -146,7 +143,7 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Observaciones..."
+                placeholder="Observaciones de cobro"
                 className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>

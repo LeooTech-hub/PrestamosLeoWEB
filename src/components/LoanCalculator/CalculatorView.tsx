@@ -205,7 +205,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                     type="text"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Ej. Juan Carlos Quispe"
+                    placeholder="Juan Carlos Quispe"
                     className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                     required
                   />
@@ -222,7 +222,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                     type="tel"
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
-                    placeholder="Ej. 912345678"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                     required
                   />
@@ -239,7 +239,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                     type="text"
                     value={clientAddress}
                     onChange={(e) => setClientAddress(e.target.value)}
-                    placeholder="Ej. Av. Larco 450, Miraflores (Puesto de mercado)"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                     required
                   />
@@ -256,7 +256,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                     type="text"
                     value={clientIdentification}
                     onChange={(e) => setClientIdentification(e.target.value)}
-                    placeholder="Ej. 45987654"
+                    placeholder="45987654"
                     className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                   />
                 </div>
@@ -270,7 +270,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Ej. Cobrar en la mañana"
+                  placeholder="Observaciones de cobro"
                   className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                 />
               </div>
@@ -328,7 +328,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                   min="10"
                   value={capital || ''}
                   onChange={(e) => setCapital(Number(e.target.value))}
-                  placeholder="Ej. 500"
+                  placeholder="500"
                   className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl font-black text-lg text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
                   required
                 />
@@ -336,45 +336,20 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
             </div>
 
             {/* Payment Days Setup */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-[#6E615A]">
                 Días de Pago Acordados:
               </label>
-              <div className="grid grid-cols-4 gap-2">
-                {daysPresets.map((days) => {
-                  const isSelected = parsedPaymentDays === days;
-                  return (
-                    <button
-                      key={days}
-                      type="button"
-                      onClick={() => setPaymentDaysInput(String(days))}
-                      className={`py-2.5 px-2 rounded-2xl text-xs font-bold border transition-all ${
-                        isSelected
-                          ? 'bg-[#2C221E] text-white border-[#2C221E] shadow-sm'
-                          : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#F5F0EB]'
-                      }`}
-                    >
-                      {days} Días
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="pt-2">
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
-                  O ingrese días personalizados (ej. 12, 18, 24 días):
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="365"
-                  value={paymentDaysInput}
-                  onChange={(e) => setPaymentDaysInput(e.target.value)}
-                  placeholder="Escriba el número de días..."
-                  className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
-                  required
-                />
-              </div>
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={paymentDaysInput}
+                onChange={(e) => setPaymentDaysInput(e.target.value)}
+                placeholder="Número de días (1 - 365)"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
+                required
+              />
             </div>
 
             {/* Dates Calculation */}

@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Header } from '@/frontend/components/Header';
-import { Navigation, TabType } from '@/frontend/components/Navigation';
-import { DashboardView } from '@/frontend/components/Dashboard/DashboardView';
-import { CalculatorView } from '@/frontend/components/LoanCalculator/CalculatorView';
-import { DailyRouteView } from '@/frontend/components/DailyRoute/DailyRouteView';
-import { LoansListView } from '@/frontend/components/Loans/LoansListView';
-import { FinancialReportView } from '@/frontend/components/Reports/FinancialReportView';
-import { ClientsView } from '@/frontend/components/Clients/ClientsView';
-import { QuickCreateLoanModal } from '@/frontend/components/Modals/QuickCreateLoanModal';
-import { loanService } from '@/backend/services/loanService';
+import { Header } from '@/components/Header';
+import { Navigation, TabType } from '@/components/Navigation';
+import { DashboardView } from '@/components/Dashboard/DashboardView';
+import { CalculatorView } from '@/components/LoanCalculator/CalculatorView';
+import { DailyRouteView } from '@/components/DailyRoute/DailyRouteView';
+import { LoansListView } from '@/components/Loans/LoansListView';
+import { FinancialReportView } from '@/components/Reports/FinancialReportView';
+import { ClientsView } from '@/components/Clients/ClientsView';
+import { QuickCreateLoanModal } from '@/components/Modals/QuickCreateLoanModal';
+import { loanService } from '@/services/loanService';
 import {
   Client,
   Loan,
@@ -21,7 +21,7 @@ import {
   ReportPeriod,
   ExpenseCategory,
   AlertNotification,
-} from '@/backend/types';
+} from '@/types';
 
 const defaultDashboardSummary: DashboardSummary = {
   totalCapitalLent: 0,

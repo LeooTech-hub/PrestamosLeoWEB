@@ -145,7 +145,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                       }`}
                     >
                       {isOverdue
-                        ? `Vencido (${Math.abs(item.daysDifference)}d)`
+                        ? `Vencido (${Math.abs(item.daysDifference || 0)}d)`
                         : isToday
                         ? 'Vence HOY'
                         : 'Vence Mañana'}

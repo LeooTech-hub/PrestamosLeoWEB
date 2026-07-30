@@ -183,7 +183,7 @@ export function VistaReportes({ report, period = 'WEEKLY', onPeriodChange, onAdd
                 required
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ej. Gasolina para moto de cobranza"
+                placeholder="Descripción del gasto"
                 className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>

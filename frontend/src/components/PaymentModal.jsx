@@ -154,7 +154,7 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ej. Cobrado por yape, pago parcial..."
+                placeholder="Observaciones de cobro"
                 className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>

@@ -44,7 +44,7 @@ export function Header({ alerts = [], onRefresh, onResetDemo, onOpenQuickCreateL
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-sm hover:brightness-110 active:scale-95 transition-all"
             >
               <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">+ Crear Préstamo</span>
+              <span className="hidden sm:inline">Crear Préstamo</span>
               <span className="sm:hidden">Préstamo</span>
             </button>
 

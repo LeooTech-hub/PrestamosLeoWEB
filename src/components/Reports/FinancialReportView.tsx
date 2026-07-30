@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FinancialReportData, ReportPeriod, ExpenseCategory } from '@/types';
+import { FinancialReportData, ReportPeriod, ExpenseCategory, OperationalExpense } from '@/types';
 import { formatCurrency, formatDatePE } from '@/services/loanService';
 import {
   BarChart3,
@@ -277,7 +277,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
                   min="1"
                   value={amount || ''}
                   onChange={(e) => setAmount(Number(e.target.value))}
-                  placeholder="Ej. 20"
+                  placeholder="Monto"
                   className="w-full pl-10 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
                   required
                 />
@@ -309,7 +309,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ej. Gasolina para moto de cobro"
+                placeholder="Descripción del gasto"
                 className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
                 required
               />
@@ -344,7 +344,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
             </div>
           ) : (
             <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-              {report.expensesList.map((exp) => (
+              {report.expensesList.map((exp: OperationalExpense) => (
                 <div
                   key={exp.id}
                   className="flex items-center justify-between p-3 rounded-2xl bg-[#FDF2F0]/60 border border-[#C84B31]/20 text-xs"

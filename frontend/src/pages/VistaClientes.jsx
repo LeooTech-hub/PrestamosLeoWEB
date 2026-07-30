@@ -80,7 +80,7 @@ export function VistaClientes({
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl terracotta-gradient text-white text-xs font-extrabold shadow-sm hover:brightness-110 active:scale-95 transition-all"
         >
           <Plus className="w-4 h-4" />
-          <span>+ Registrar Nuevo Cliente</span>
+          <span>Registrar Nuevo Cliente</span>
         </button>
       </div>
 

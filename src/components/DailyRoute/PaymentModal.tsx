@@ -230,7 +230,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ej. Recibido billete de S/. 50"
+                placeholder="Notas del cobro"
                 className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
               />
             </div>

@@ -117,7 +117,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
                 required
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                placeholder="Ej. Juan Pérez"
+                placeholder=""
                 className="w-full px-3 py-2 bg-white border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>
@@ -132,7 +132,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
                   required
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="Ej. 912345678"
+                  placeholder=""
                   className="w-full px-3 py-2 bg-white border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
                 />
               </div>
@@ -145,7 +145,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
                   type="text"
                   value={clientIdentification}
                   onChange={(e) => setClientIdentification(e.target.value)}
-                  placeholder="Ej. 45987654"
+                  placeholder=""
                   className="w-full px-3 py-2 bg-white border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
                 />
               </div>
@@ -160,7 +160,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
                 required
                 value={clientAddress}
                 onChange={(e) => setClientAddress(e.target.value)}
-                placeholder="Ej. Av. Larco 450"
+                placeholder=""
                 className="w-full px-3 py-2 bg-white border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>
@@ -169,7 +169,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                Capital Solicitado (S/.):
+                PRESTAMO SOLICITADO (S/.):
               </label>
               <input
                 type="number"
@@ -201,22 +201,19 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
             <label className="block text-xs font-bold text-[#6E615A] mb-1">
               Días de Pago Acordados:
             </label>
-            <div className="grid grid-cols-4 gap-2">
-              {[10, 15, 20, 30].map((days) => (
-                <button
-                  type="button"
-                  key={days}
-                  onClick={() => setPaymentDays(days)}
-                  className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                    paymentDays === days
-                      ? 'terracotta-gradient text-white border-transparent'
-                      : 'bg-[#FAF8F5] text-[#2C221E] border-[#E6DCD2]'
-                  }`}
-                >
-                  {days} Días
-                </button>
-              ))}
-            </div>
+            <input
+              type="number"
+              required
+              min="1"
+              max="365"
+              value={paymentDays}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPaymentDays(val === '' ? '' : Math.min(365, Math.max(1, parseInt(val, 10) || 1)));
+              }}
+              placeholder="Número de días (1 - 365)"
+              className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+            />
           </div>
 
           <div className="p-3 bg-[#FDF3ED] rounded-2xl border border-[#D96B27]/20 text-xs flex items-center justify-between">

@@ -38,7 +38,7 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
           className="relative z-10 bg-white text-[#D96B27] px-5 py-3 rounded-2xl font-extrabold text-xs shadow-sm hover:bg-[#FAF8F5] active:scale-95 transition-all flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          <span> Crear Nuevo Préstamo</span>
+          <span>Crear Nuevo Préstamo</span>
         </button>
       </div>
 

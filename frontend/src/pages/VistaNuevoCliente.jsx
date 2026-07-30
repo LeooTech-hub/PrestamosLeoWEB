@@ -113,7 +113,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                 required
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                placeholder="Ej. Juan Pérez"
+                placeholder=""
                 className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>
@@ -130,7 +130,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                     required
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
-                    placeholder="Ej. 912345678"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
                   />
                 </div>
@@ -144,7 +144,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                   type="text"
                   value={clientIdentification}
                   onChange={(e) => setClientIdentification(e.target.value)}
-                  placeholder="Ej. 45897612"
+                  placeholder=""
                   className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
                 />
               </div>
@@ -152,7 +152,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
             <div>
               <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                Dirección de Cobro:
+                Dirección:
               </label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-[#E89D4F] absolute left-3 top-3" />
@@ -161,7 +161,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                   required
                   value={clientAddress}
                   onChange={(e) => setClientAddress(e.target.value)}
-                  placeholder="Ej. Av. Larco 450, Miraflores"
+                  placeholder=""
                   className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
                 />
               </div>
@@ -171,13 +171,13 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
           <div className="bg-white p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-3">
             <h3 className="text-sm font-extrabold text-[#2C221E] flex items-center gap-2">
               <Percent className="w-4 h-4 text-[#D96B27]" />
-              <span>Condiciones del Préstamo (Modalidad 20%)</span>
+              <span>Condiciones del Préstamo</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                  Capital Prestado (S/.):
+                  Prestamo / Monto (S/.):
                 </label>
                 <input
                   type="number"
@@ -193,7 +193,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
               <div>
                 <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                  Fecha de Entrega:
+                  Fecha de Inicio:
                 </label>
                 <div className="relative">
                   <Calendar className="w-4 h-4 text-[#E89D4F] absolute left-3 top-3" />
@@ -210,35 +210,32 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
             <div>
               <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                Días de Pago Acordados:
+                Días de Pago:
               </label>
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[10, 15, 20, 30].map((days) => (
-                  <button
-                    type="button"
-                    key={days}
-                    onClick={() => setPaymentDays(days)}
-                    className={`py-2 rounded-2xl text-xs font-bold border transition-all ${
-                      paymentDays === days
-                        ? 'terracotta-gradient text-white border-transparent shadow-xs'
-                        : 'bg-[#FAF8F5] text-[#2C221E] border-[#E6DCD2] hover:bg-[#FDF3ED]'
-                    }`}
-                  >
-                    {days} Días
-                  </button>
-                ))}
-              </div>
+              <input
+                type="number"
+                required
+                min="1"
+                max="365"
+                value={paymentDays}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPaymentDays(val === '' ? '' : Math.min(365, Math.max(1, parseInt(val, 10) || 1)));
+                }}
+                placeholder="Número de días (1 - 365)"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+              />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                Observaciones (Opcional):
+                Observaciones:
               </label>
               <textarea
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Observaciones de cobro, referencia del local, etc."
+                placeholder="Observaciones del cliente"
                 className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-medium text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>

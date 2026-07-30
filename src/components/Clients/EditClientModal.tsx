@@ -99,6 +99,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder="Nombre completo"
                 className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                 required
               />
@@ -115,6 +116,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                placeholder="Número de teléfono"
                 className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                 required
               />
@@ -131,6 +133,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                placeholder="Dirección o referencia"
                 className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                 required
               />
@@ -147,6 +150,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                 type="text"
                 value={identification}
                 onChange={(e) => setIdentification(e.target.value)}
+                placeholder="Número de DNI"
                 className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
               />
             </div>
@@ -160,6 +164,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              placeholder="Observaciones de cobro"
               className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
             />
           </div>

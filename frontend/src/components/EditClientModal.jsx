@@ -141,7 +141,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ej. Cobrar por las mañanas..."
+                placeholder="Observaciones de cobro"
                 className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>

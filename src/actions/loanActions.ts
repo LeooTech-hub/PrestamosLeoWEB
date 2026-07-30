@@ -1,3 +1,5 @@
 'use server';
 
-export * from '@/backend/actions/loanActions';
+export async function dummyAction() {
+  return null;
+}
