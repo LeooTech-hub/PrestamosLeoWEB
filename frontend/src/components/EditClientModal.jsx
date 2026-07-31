@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, MapPin, FileText, CheckCircle2 } from 'lucide-react';
+import { fetchDniData } from '../utils/reniecHelper';
+import { X, User, Phone, MapPin, FileText, CheckCircle2, Search, Loader2 } from 'lucide-react';
 
 export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
   const [name, setName] = useState('');
@@ -8,6 +9,8 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
   const [identification, setIdentification] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSearchingDni, setIsSearchingDni] = useState(false);
+  const [dniStatusText, setDniStatusText] = useState('');
 
   useEffect(() => {
     if (client) {
@@ -20,6 +23,36 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
   }, [client]);
 
   if (!isOpen || !client) return null;
+
+  const handleDniSearch = async (dniToSearch) => {
+    const clean = String(dniToSearch || '').replace(/\D/g, '').slice(0, 8);
+    if (clean.length !== 8) return;
+
+    setIsSearchingDni(true);
+    setDniStatusText('Buscando en RENIEC...');
+    try {
+      const data = await fetchDniData(clean);
+      if (data && data.fullName) {
+        setName(data.fullName);
+        setDniStatusText('✓ Nombre autocompletado');
+        setTimeout(() => setDniStatusText(''), 3500);
+      }
+    } catch (err) {
+      console.warn('RENIEC Error:', err.response?.data?.error || err.message);
+      setDniStatusText('DNI no encontrado. Ingrese el nombre manualmente.');
+      setTimeout(() => setDniStatusText(''), 4000);
+    } finally {
+      setIsSearchingDni(false);
+    }
+  };
+
+  const handleIdentificationChange = (val) => {
+    const cleanVal = val.replace(/\D/g, '').slice(0, 8);
+    setIdentification(cleanVal);
+    if (cleanVal.length === 8) {
+      handleDniSearch(cleanVal);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,16 +135,50 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                DNI / Identificación:
-              </label>
-              <input
-                type="text"
-                value={identification}
-                onChange={(e) => setIdentification(e.target.value)}
-                placeholder="Opcional"
-                className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-[#6E615A]">
+                  DNI / Identificación:
+                </label>
+                {isSearchingDni && (
+                  <span className="text-[10px] font-bold text-[#D96B27] animate-pulse flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-[#D96B27]" />
+                    RENIEC...
+                  </span>
+                )}
+                {!isSearchingDni && dniStatusText && (
+                  <span className="text-[10px] font-semibold text-[#6E615A]">
+                    {dniStatusText}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  maxLength={8}
+                  value={identification}
+                  onChange={(e) => handleIdentificationChange(e.target.value)}
+                  onBlur={() => {
+                    if (identification.length === 8 && !isSearchingDni && !name) {
+                      handleDniSearch(identification);
+                    }
+                  }}
+                  placeholder="Opcional"
+                  className="w-full pl-3 pr-8 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleDniSearch(identification)}
+                  disabled={isSearchingDni || identification.length !== 8}
+                  className="absolute right-2 top-2 p-0.5 text-[#6E615A] hover:text-[#D96B27] disabled:opacity-40 transition-colors"
+                  title="Buscar DNI en RENIEC"
+                >
+                  {isSearchingDni ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D96B27]" />
+                  ) : (
+                    <Search className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 

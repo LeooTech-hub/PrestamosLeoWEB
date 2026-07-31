@@ -31,6 +31,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
 
   const filteredLoans = loans.filter((loan) => {
     if (loan.isArchived) return false;
+    if (filter === 'ALL' && (loan.status !== 'ACTIVE' && loan.status !== 'OVERDUE')) return false;
     if (filter === 'ACTIVE' && loan.status !== 'ACTIVE') return false;
     if (filter === 'OVERDUE' && loan.status !== 'OVERDUE') return false;
     if (filter === 'PAID' && loan.status !== 'PAID') return false;
@@ -71,7 +72,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                 : 'text-[#6E615A] hover:bg-[#FAF8F5]'
             }`}
           >
-            Todos ({loans.filter((l) => !l.isArchived).length})
+            Todos ({loans.filter((l) => !l.isArchived && (l.status === 'ACTIVE' || l.status === 'OVERDUE')).length})
           </button>
 
           <button

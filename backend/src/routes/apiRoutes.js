@@ -1,7 +1,11 @@
 import express from 'express';
 import loanController from '../controllers/loanController.js';
+import reniecController from '../controllers/reniecController.js';
 
 const router = express.Router();
+
+// RENIEC Route
+router.get('/reniec/:dni', reniecController.getDniInfo);
 
 // Clients Routes
 router.get('/clients', loanController.getClients);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { formatCurrency, calculate20PercentLoan } from '../utils/loanHelpers';
-import { X, PlusCircle, CheckCircle2 } from 'lucide-react';
+import { fetchDniData } from '../utils/reniecHelper';
+import { X, PlusCircle, CheckCircle2, Search, Loader2 } from 'lucide-react';
 
 export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLoan }) {
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -8,6 +9,8 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
   const [clientPhone, setClientPhone] = useState('');
   const [clientAddress, setClientAddress] = useState('');
   const [clientIdentification, setClientIdentification] = useState('');
+  const [isSearchingDni, setIsSearchingDni] = useState(false);
+  const [dniStatusText, setDniStatusText] = useState('');
 
   const [capital, setCapital] = useState(500);
   const [paymentDays, setPaymentDays] = useState(20);
@@ -32,6 +35,36 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
       setClientPhone('');
       setClientAddress('');
       setClientIdentification('');
+    }
+  };
+
+  const handleDniSearch = async (dniToSearch) => {
+    const clean = String(dniToSearch || '').replace(/\D/g, '').slice(0, 8);
+    if (clean.length !== 8) return;
+
+    setIsSearchingDni(true);
+    setDniStatusText('Buscando en RENIEC...');
+    try {
+      const data = await fetchDniData(clean);
+      if (data && data.fullName) {
+        setClientName(data.fullName);
+        setDniStatusText('✓ Autocompletado');
+        setTimeout(() => setDniStatusText(''), 3500);
+      }
+    } catch (err) {
+      console.warn('RENIEC Error:', err.response?.data?.error || err.message);
+      setDniStatusText('DNI no encontrado. Ingrese el nombre manualmente.');
+      setTimeout(() => setDniStatusText(''), 4000);
+    } finally {
+      setIsSearchingDni(false);
+    }
+  };
+
+  const handleIdentificationChange = (val) => {
+    const cleanVal = val.replace(/\D/g, '').slice(0, 8);
+    setClientIdentification(cleanVal);
+    if (cleanVal.length === 8) {
+      handleDniSearch(cleanVal);
     }
   };
 
@@ -139,16 +172,50 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                  DNI (Opcional):
-                </label>
-                <input
-                  type="text"
-                  value={clientIdentification}
-                  onChange={(e) => setClientIdentification(e.target.value)}
-                  placeholder=""
-                  className="w-full px-3 py-2 bg-white border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#6E615A]">
+                    DNI (Opcional):
+                  </label>
+                  {isSearchingDni && (
+                    <span className="text-[10px] font-bold text-[#D96B27] animate-pulse flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin text-[#D96B27]" />
+                      RENIEC...
+                    </span>
+                  )}
+                  {!isSearchingDni && dniStatusText && (
+                    <span className="text-[10px] font-semibold text-[#6E615A]">
+                      {dniStatusText}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    maxLength={8}
+                    value={clientIdentification}
+                    onChange={(e) => handleIdentificationChange(e.target.value)}
+                    onBlur={() => {
+                      if (clientIdentification.length === 8 && !isSearchingDni && !clientName) {
+                        handleDniSearch(clientIdentification);
+                      }
+                    }}
+                    placeholder="8 dígitos"
+                    className="w-full pl-3 pr-8 py-2 bg-white border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleDniSearch(clientIdentification)}
+                    disabled={isSearchingDni || clientIdentification.length !== 8}
+                    className="absolute right-2 top-2 p-0.5 text-[#6E615A] hover:text-[#D96B27] disabled:opacity-40 transition-colors"
+                    title="Buscar DNI en RENIEC"
+                  >
+                    {isSearchingDni ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D96B27]" />
+                    ) : (
+                      <Search className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
