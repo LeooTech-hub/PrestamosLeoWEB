@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 import apiRoutes from './routes/apiRoutes.js';
 import pool from './config/db.js';
+import { initDb } from './config/initDb.js';
 
 dotenv.config();
 
@@ -51,12 +52,15 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ status: 'error', message: err.message || 'Error interno del servidor' });
 });
 
-// Start Express Server
-const server = app.listen(PORT, () => {
+// Start Express Server & initialize DB
+const server = app.listen(PORT, async () => {
   console.log(`=======================================================`);
   console.log(`🚀 Servidor backend Express.js escuchando en puerto ${PORT}`);
   console.log(`🔗 API REST base: http://localhost:${PORT}/api`);
   console.log(`=======================================================`);
+  
+  // Auto-initialize DB tables if not present
+  await initDb();
 });
 
 // Graceful shutdown

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import api from './api';
 
 import { Header } from './components/Header';
@@ -7,6 +7,8 @@ import { Navigation } from './components/Navigation';
 import { QuickCreateLoanModal } from './components/QuickCreateLoanModal';
 import { TrashModal } from './components/TrashModal';
 
+import { VistaLogin } from './pages/VistaLogin';
+import { VistaResetPassword } from './pages/VistaResetPassword';
 import { VistaDashboard } from './pages/VistaDashboard';
 import { VistaRutaDiaria } from './pages/VistaRutaDiaria';
 import { VistaPrestamos } from './pages/VistaPrestamos';
@@ -27,7 +29,17 @@ const defaultDashboardSummary = {
 
 export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // Estados de Autenticación
+  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  // Estados Operativos
   const [clients, setClients] = useState([]);
   const [loans, setLoans] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -41,8 +53,67 @@ export default function App() {
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Función reutilizable para recargar datos tras acciones (pagos, creaciones, etc.)
+  // Función para cerrar sesión
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken('');
+    setUser(null);
+    navigate('/');
+  }, [navigate]);
+
+  // Escuchar evento de token no autorizado
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      handleLogout();
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, [handleLogout]);
+
+  // Verificar sesión con /api/auth/me al iniciar
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkSession = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) {
+        if (isMounted) setIsAuthChecking(false);
+        return;
+      }
+
+      try {
+        const response = await api.get('/auth/me');
+        if (isMounted && response.data?.user) {
+          setUser(response.data.user);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+      } catch (err) {
+        console.error('Sesión no válida o expirada:', err.message);
+        if (isMounted) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken('');
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) setIsAuthChecking(false);
+      }
+    };
+
+    checkSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
+
+  // Carga de datos de negocio tras autenticación
   const loadData = useCallback(async (period = reportPeriod) => {
+    if (!token) return;
     try {
       const fetchSafe = async (url, fallback) => {
         try {
@@ -77,63 +148,21 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [reportPeriod]);
+  }, [reportPeriod, token]);
 
-  // Carga inicial y por cambio de periodo
   useEffect(() => {
-    let isMounted = true;
+    if (token) {
+      loadData();
+    }
+  }, [loadData, reportPeriod, token]);
 
-    const initData = async () => {
-      try {
-        const fetchSafe = async (url, fallback) => {
-          try {
-            const res = await api.get(url);
-            return res.data;
-          } catch (err) {
-            console.error(`Error cargando ${url}:`, err.message);
-            return fallback;
-          }
-        };
+  const handleLoginSuccess = (newToken, newUser) => {
+    setToken(newToken);
+    setUser(newUser);
+    navigate('/');
+  };
 
-        const [cList, lList, pList, sum, todayCol, alertList, report] = await Promise.all([
-          fetchSafe('/clients', []),
-          fetchSafe('/loans', []),
-          fetchSafe('/payments', []),
-          fetchSafe('/dashboard/summary', defaultDashboardSummary),
-          fetchSafe('/today-collections', []),
-          fetchSafe('/alerts', []),
-          fetchSafe(`/reports/financial?period=${reportPeriod}`, null),
-        ]);
-
-        if (isMounted) {
-          setClients(cList || []);
-          setLoans(lList || []);
-          setPayments(pList || []);
-          setSummary(sum || defaultDashboardSummary);
-          setTodayCollections(todayCol || []);
-          setAlerts(alertList || []);
-          setFinancialReport(report);
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error('Error cargando datos del backend:', error);
-          setSummary(defaultDashboardSummary);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    initData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [reportPeriod]);
-
-  // Handlers communicating with REST API
+  // Handlers operacionales de préstamos, clientes, pagos
   const handleCreateLoan = async (formData) => {
     try {
       await api.post('/loans', formData);
@@ -273,15 +302,37 @@ export default function App() {
     }
   };
 
+  // Si la ruta actual es /reset-password (por el enlace del correo)
+  if (location.pathname === '/reset-password') {
+    return <VistaResetPassword />;
+  }
+
+  // Mientras verifica sesión
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center space-y-3">
+        <div className="w-10 h-10 border-4 border-[#D96B27] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-semibold text-[#6E615A]">Verificando sesión segura...</p>
+      </div>
+    );
+  }
+
+  // Si no está autenticado, renderiza VistaLogin
+  if (!token || !user) {
+    return <VistaLogin onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF8F5]">
-      {/* Top Header */}
+      {/* Top Header con datos del usuario e icono de cerrar sesión */}
       <Header
         alerts={alerts}
         onRefresh={() => loadData()}
         onResetDemo={handleResetDemoData}
         onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
         onOpenTrash={() => setIsTrashOpen(true)}
+        user={user}
+        onLogout={handleLogout}
       />
 
       {/* Router Navigation Tabs */}
@@ -295,7 +346,7 @@ export default function App() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
             <div className="w-10 h-10 border-4 border-[#D96B27] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs font-semibold text-[#6E615A]">Cargando PrestamosLeoWEB (Vite + Express)...</p>
+            <p className="text-xs font-semibold text-[#6E615A]">Cargando datos de PrestamosLeoWEB (S/.)...</p>
           </div>
         ) : (
           <Routes>
@@ -370,6 +421,7 @@ export default function App() {
                 />
               }
             />
+            <Route path="/reset-password" element={<VistaResetPassword />} />
           </Routes>
         )}
       </main>
@@ -391,7 +443,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="hidden md:block py-6 border-t border-[#E6DCD2] text-center text-xs text-[#6E615A] bg-white">
-        <p>PrestamosLeoWEB ©2026 Todos los Derechos Reservados.</p>
+        <p>PrestamosLeoWEB ©2026 Todos los Derechos Reservados (S/.).</p>
       </footer>
     </div>
   );
