@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import api from './api';
 
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { QuickCreateLoanModal } from './components/QuickCreateLoanModal';
 import { TrashModal } from './components/TrashModal';
+import { PrivateRoute } from './components/PrivateRoute';
 
 import { VistaLogin } from './pages/VistaLogin';
 import { VistaResetPassword } from './pages/VistaResetPassword';
@@ -31,7 +32,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Estados de Autenticación
+  // Estados de Autenticación iniciales desde localStorage
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
@@ -53,16 +54,16 @@ export default function App() {
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Función para cerrar sesión
+  // Función para cerrar sesión y redirigir a Login
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken('');
     setUser(null);
-    navigate('/');
+    navigate('/login');
   }, [navigate]);
 
-  // Escuchar evento de token no autorizado
+  // Escuchar evento 401 'auth:unauthorized' emitido por el interceptor de api.js
   useEffect(() => {
     const handleUnauthorized = () => {
       handleLogout();
@@ -74,14 +75,20 @@ export default function App() {
     };
   }, [handleLogout]);
 
-  // Verificar sesión con /api/auth/me al iniciar
+  // Verificar sesión en el inicio. Si NO hay token, NO realiza peticiones iniciales.
   useEffect(() => {
     let isMounted = true;
 
     const checkSession = async () => {
       const storedToken = localStorage.getItem('token');
+
+      // REQUISITO: Si no existe un token válido en localStorage, NO intentar realizar peticiones iniciales
       if (!storedToken) {
-        if (isMounted) setIsAuthChecking(false);
+        if (isMounted) {
+          setToken('');
+          setUser(null);
+          setIsAuthChecking(false);
+        }
         return;
       }
 
@@ -89,10 +96,11 @@ export default function App() {
         const response = await api.get('/auth/me');
         if (isMounted && response.data?.user) {
           setUser(response.data.user);
+          setToken(storedToken);
           localStorage.setItem('user', JSON.stringify(response.data.user));
         }
       } catch (err) {
-        console.error('Sesión no válida o expirada:', err.message);
+        console.error('Error al verificar sesión inicial (401 / Token expirado):', err.message);
         if (isMounted) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
@@ -109,11 +117,13 @@ export default function App() {
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, []);
 
-  // Carga de datos de negocio tras autenticación
+  // Carga de datos de negocio tras verificación de token válido
   const loadData = useCallback(async (period = reportPeriod) => {
-    if (!token) return;
+    const activeToken = localStorage.getItem('token');
+    if (!activeToken) return;
+
     try {
       const fetchSafe = async (url, fallback) => {
         try {
@@ -148,13 +158,13 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [reportPeriod, token]);
+  }, [reportPeriod]);
 
   useEffect(() => {
-    if (token) {
+    if (token && user) {
       loadData();
     }
-  }, [loadData, reportPeriod, token]);
+  }, [loadData, reportPeriod, token, user]);
 
   const handleLoginSuccess = (newToken, newUser) => {
     setToken(newToken);
@@ -302,22 +312,22 @@ export default function App() {
     }
   };
 
-  // Si la ruta actual es /reset-password (por el enlace del correo)
+  // Si se abre el enlace de recuperación de contraseña desde el correo
   if (location.pathname === '/reset-password') {
     return <VistaResetPassword />;
   }
 
-  // Mientras verifica sesión
+  // Spinner mientras verifica sesión
   if (isAuthChecking) {
     return (
       <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center space-y-3">
         <div className="w-10 h-10 border-4 border-[#D96B27] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-xs font-semibold text-[#6E615A]">Verificando sesión segura...</p>
+        <p className="text-xs font-semibold text-[#6E615A]">Verificando sesión segura (S/.)...</p>
       </div>
     );
   }
 
-  // Si no está autenticado, renderiza VistaLogin
+  // Si no hay token o usuario, renderizar directamente la VistaLogin
   if (!token || !user) {
     return <VistaLogin onLoginSuccess={handleLoginSuccess} />;
   }
@@ -341,7 +351,7 @@ export default function App() {
         overdueCount={summary?.overdueCount || 0}
       />
 
-      {/* Main Content Pages Area */}
+      {/* Main Content Pages Area (Encapsuladas bajo PrivateRoute) */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:px-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
@@ -351,77 +361,107 @@ export default function App() {
         ) : (
           <Routes>
             <Route
-              path="/"
+              path="/login"
               element={
-                <VistaDashboard
-                  summary={summary || defaultDashboardSummary}
-                  recentLoans={loans}
-                  recentPayments={payments}
-                  onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
-                  onUpdatePayment={handleUpdatePayment}
-                  onDeletePayment={handleDeletePayment}
-                />
+                token && user ? (
+                  <Navigate to="/" replace />
+                ) : (
+                  <VistaLogin onLoginSuccess={handleLoginSuccess} />
+                )
               }
             />
+
+            <Route
+              path="/"
+              element={
+                <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
+                  <VistaDashboard
+                    summary={summary || defaultDashboardSummary}
+                    recentLoans={loans}
+                    recentPayments={payments}
+                    onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
+                    onUpdatePayment={handleUpdatePayment}
+                    onDeletePayment={handleDeletePayment}
+                  />
+                </PrivateRoute>
+              }
+            />
+
             <Route
               path="/ruta-diaria"
               element={
-                <VistaRutaDiaria
-                  todayCollections={todayCollections}
-                  onRegisterPayment={handleRegisterPayment}
-                />
+                <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
+                  <VistaRutaDiaria
+                    todayCollections={todayCollections}
+                    onRegisterPayment={handleRegisterPayment}
+                  />
+                </PrivateRoute>
               }
             />
+
             <Route
               path="/prestamos"
               element={
-                <VistaPrestamos
-                  loans={loans}
-                  onRegisterPayment={handleRegisterPayment}
-                  onUpdateLoan={handleUpdateLoan}
-                  onDeleteLoan={handleDeleteLoan}
-                  onRevertPayment={handleRevertPayment}
-                />
+                <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
+                  <VistaPrestamos
+                    loans={loans}
+                    onRegisterPayment={handleRegisterPayment}
+                    onUpdateLoan={handleUpdateLoan}
+                    onDeleteLoan={handleDeleteLoan}
+                    onRevertPayment={handleRevertPayment}
+                  />
+                </PrivateRoute>
               }
             />
+
             <Route
               path="/nuevo-cliente"
               element={
-                <VistaNuevoCliente
-                  clients={clients}
-                  onSubmitLoan={handleCreateLoan}
-                />
+                <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
+                  <VistaNuevoCliente
+                    clients={clients}
+                    onSubmitLoan={handleCreateLoan}
+                  />
+                </PrivateRoute>
               }
             />
+
             <Route
               path="/reportes"
               element={
-                <VistaReportes
-                  report={financialReport}
-                  period={reportPeriod}
-                  onPeriodChange={handlePeriodChange}
-                  onAddExpense={handleAddExpense}
-                  onUpdateExpense={handleUpdateExpense}
-                  onDeleteExpense={handleDeleteExpense}
-                />
+                <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
+                  <VistaReportes
+                    report={financialReport}
+                    period={reportPeriod}
+                    onPeriodChange={handlePeriodChange}
+                    onAddExpense={handleAddExpense}
+                    onUpdateExpense={handleUpdateExpense}
+                    onDeleteExpense={handleDeleteExpense}
+                  />
+                </PrivateRoute>
               }
             />
+
             <Route
               path="/clientes"
               element={
-                <VistaClientes
-                  clients={clients}
-                  loans={loans}
-                  payments={payments}
-                  onUpdateClient={handleUpdateClient}
-                  onUpdateLoan={handleUpdateLoan}
-                  onDeleteClient={handleDeleteClient}
-                  onDeletePayment={handleDeletePayment}
-                  onUpdatePayment={handleUpdatePayment}
-                />
+                <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
+                  <VistaClientes
+                    clients={clients}
+                    loans={loans}
+                    payments={payments}
+                    onUpdateClient={handleUpdateClient}
+                    onUpdateLoan={handleUpdateLoan}
+                    onDeleteClient={handleDeleteClient}
+                    onDeletePayment={handleDeletePayment}
+                    onUpdatePayment={handleUpdatePayment}
+                  />
+                </PrivateRoute>
               }
             />
+
             <Route path="/reset-password" element={<VistaResetPassword />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}
       </main>

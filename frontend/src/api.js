@@ -8,7 +8,7 @@ const api = axios.create({
   },
 });
 
-// Interceptor de peticiones: agrega el token JWT si está disponible
+// Interceptor de peticiones: asegura que todas las peticiones salientes adjunten el token guardado
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -20,16 +20,18 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor de respuestas: maneja 401 (token no válido / expirado)
+// Interceptor de respuestas: captura 401 (Unauthorized), limpia localStorage y notifica redirección a Login
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // No redirigir si el 401 viene de /auth/login
       const isLoginRequest = error.config?.url?.includes('/auth/login');
       if (!isLoginRequest) {
+        // Limpiar sesión en localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+
+        // Disparar evento para actualizar el estado global en App.jsx y redirigir a VistaLogin
         window.dispatchEvent(new Event('auth:unauthorized'));
       }
     }
