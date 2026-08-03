@@ -55,6 +55,15 @@ export const loanService = {
       method: 'POST',
       body: JSON.stringify({ loanId, amount, notes }),
     }),
+  updatePayment: (id: string, data: { amount?: number; date?: string; notes?: string }) =>
+    fetchAPI(`/payments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deletePayment: (id: string) =>
+    fetchAPI(`/payments/${id}`, {
+      method: 'DELETE',
+    }),
   revertLastPayment: (loanId: string) =>
     fetchAPI(`/loans/${loanId}/revert-payment`, {
       method: 'POST',
@@ -66,6 +75,8 @@ export const loanService = {
   getFinancialReport: (period: ReportPeriod) => fetchAPI(`/reports/financial?period=${period}`),
   addExpense: (data: { amount: number; category: ExpenseCategory; description: string; date: string }) =>
     fetchAPI('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  updateExpense: (id: string, data: { amount?: number; category?: ExpenseCategory; description?: string; date?: string }) =>
+    fetchAPI(`/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteExpense: (id: string) => fetchAPI(`/expenses/${id}`, { method: 'DELETE' }),
   resetToDemoData: () => fetchAPI('/demo/reset', { method: 'POST' }),
 };

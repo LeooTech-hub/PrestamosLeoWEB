@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
 import {
-  
   TrendingUp,
   Coins,
   Users,
@@ -12,10 +11,39 @@ import {
   CreditCard,
   Percent,
   Clock,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
-export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments = [], onOpenQuickCreateLoan }) {
+import { EditPaymentModal } from '../components/EditPaymentModal';
+
+export function VistaDashboard({
+  summary = {},
+  recentLoans = [],
+  recentPayments = [],
+  onOpenQuickCreateLoan,
+  onUpdatePayment,
+  onDeletePayment,
+}) {
   const navigate = useNavigate();
+  const [editingPayment, setEditingPayment] = useState(null);
+  const [deletingPaymentId, setDeletingPaymentId] = useState(null);
+
+  const handleDeletePaymentClick = async (payment) => {
+    if (!onDeletePayment) return;
+    const confirmMsg = `¿Deseas anular este pago de ${formatCurrency(payment.amount)} de ${payment.clientName}?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setDeletingPaymentId(payment.id);
+      await onDeletePayment(payment.id);
+    } catch (err) {
+      console.error('Error al anular pago:', err);
+      alert(err.response?.data?.error || err.message || 'Error al anular el pago');
+    } finally {
+      setDeletingPaymentId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -222,19 +250,52 @@ export function VistaDashboard({ summary = {}, recentLoans = [], recentPayments 
                   </span>
                 </div>
 
-                <div className="text-right">
-                  <strong className="text-[#2D7A5D] font-extrabold block text-sm">
-                    +{formatCurrency(payment.amount)}
-                  </strong>
-                  <span className="text-[10px] text-[#6E615A]">
-                    {formatDatePE(payment.date)}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <strong className="text-[#2D7A5D] font-extrabold block text-sm">
+                      +{formatCurrency(payment.amount)}
+                    </strong>
+                    <span className="text-[10px] text-[#6E615A]">
+                      {formatDatePE(payment.date)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {onUpdatePayment && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingPayment(payment)}
+                        className="p-1 rounded-lg text-[#6E615A] hover:text-[#D96B27] hover:bg-white border border-transparent hover:border-[#E6DCD2] transition-all cursor-pointer"
+                        title="Editar Pago"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {onDeletePayment && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePaymentClick(payment)}
+                        disabled={deletingPaymentId === payment.id}
+                        className="p-1 rounded-lg text-[#A89B92] hover:text-[#DC2626] hover:bg-[#FDF2F0] border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
+                        title="Anular Pago"
+                      >
+                        <Trash2 className={`w-3.5 h-3.5 ${deletingPaymentId === payment.id ? 'animate-spin' : ''}`} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      <EditPaymentModal
+        payment={editingPayment}
+        isOpen={!!editingPayment}
+        onClose={() => setEditingPayment(null)}
+        onConfirmEditPayment={onUpdatePayment}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FinancialReportData, ReportPeriod, ExpenseCategory, OperationalExpense } from '@/types';
 import { formatCurrency, formatDatePE } from '@/services/loanService';
+import { EditExpenseModal } from '../Modals/EditExpenseModal';
 import {
   BarChart3,
   TrendingUp,
@@ -14,9 +15,7 @@ import {
   PieChart,
   Trash2,
   CheckCircle2,
-  ArrowUpRight,
-  ArrowDownRight,
-  HelpCircle,
+  Pencil,
 } from 'lucide-react';
 
 interface FinancialReportViewProps {
@@ -24,6 +23,7 @@ interface FinancialReportViewProps {
   period: ReportPeriod;
   onPeriodChange: (period: ReportPeriod) => void;
   onAddExpense: (amount: number, category: ExpenseCategory, description: string) => Promise<void>;
+  onUpdateExpense?: (id: string, data: { amount?: number; category?: ExpenseCategory; description?: string; date?: string }) => Promise<void>;
   onDeleteExpense: (id: string) => Promise<void>;
 }
 
@@ -32,8 +32,10 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
   period,
   onPeriodChange,
   onAddExpense,
+  onUpdateExpense,
   onDeleteExpense,
 }) => {
+  const [editingExpense, setEditingExpense] = useState<OperationalExpense | null>(null);
   const [amount, setAmount] = useState<number>(10);
   const [category, setCategory] = useState<ExpenseCategory>('COMBUSTIBLE');
   const [description, setDescription] = useState<string>('');
@@ -363,10 +365,19 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <strong className="text-[#C84B31] text-sm font-extrabold">
+                  <div className="flex items-center gap-2">
+                    <strong className="text-[#C84B31] text-sm font-extrabold mr-1">
                       -{formatCurrency(exp.amount)}
                     </strong>
+                    {onUpdateExpense && (
+                      <button
+                        onClick={() => setEditingExpense(exp)}
+                        className="p-1.5 rounded-lg hover:bg-white text-[#D96B27] transition-all"
+                        title="Editar gasto"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => onDeleteExpense(exp.id)}
                       className="p-1.5 rounded-lg hover:bg-white text-[#C84B31] transition-all"
@@ -381,6 +392,13 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
           )}
         </div>
       </div>
+
+      <EditExpenseModal
+        expense={editingExpense}
+        isOpen={!!editingExpense}
+        onClose={() => setEditingExpense(null)}
+        onConfirmEditExpense={onUpdateExpense}
+      />
     </div>
   );
 };

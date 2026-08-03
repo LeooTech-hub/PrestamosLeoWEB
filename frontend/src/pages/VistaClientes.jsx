@@ -4,6 +4,7 @@ import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
 import { SmartDeleteModal } from '../components/SmartDeleteModal';
 import { EditClientModal } from '../components/EditClientModal';
 import { EditLoanModal } from '../components/EditLoanModal';
+import { EditPaymentModal } from '../components/EditPaymentModal';
 import {
   Users,
   Search,
@@ -27,6 +28,8 @@ export function VistaClientes({
   onUpdateClient,
   onUpdateLoan,
   onDeleteClient,
+  onDeletePayment,
+  onUpdatePayment,
 }) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,7 +38,25 @@ export function VistaClientes({
   const [deletingClient, setDeletingClient] = useState(null);
   const [isEditClientOpen, setIsEditClientOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState(null);
+  const [editingPayment, setEditingPayment] = useState(null);
   const [activeTab, setActiveTab] = useState('LOANS');
+  const [deletingPaymentId, setDeletingPaymentId] = useState(null);
+
+  const handleDeletePaymentClick = async (payment) => {
+    if (!onDeletePayment) return;
+    const confirmMsg = `¿Deseas anular este pago de ${formatCurrency(payment.amount)}?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setDeletingPaymentId(payment.id);
+      await onDeletePayment(payment.id);
+    } catch (err) {
+      console.error('Error al anular pago:', err);
+      alert(err.response?.data?.error || err.message || 'Error al anular el pago');
+    } finally {
+      setDeletingPaymentId(null);
+    }
+  };
 
   const filteredClients = clients.filter((client) => {
     const term = searchTerm.toLowerCase();
@@ -423,7 +444,9 @@ export function VistaClientes({
                   {clientPayments.map((payment) => (
                     <div
                       key={payment.id}
-                      className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-3 flex justify-between items-center text-xs"
+                      className={`bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-3 flex justify-between items-center text-xs transition-all ${
+                        deletingPaymentId === payment.id ? 'opacity-50 pointer-events-none' : ''
+                      }`}
                     >
                       <div>
                         <strong className="text-[#2C221E] text-sm block">
@@ -433,9 +456,30 @@ export function VistaClientes({
                           {formatDatePE(payment.date)} • {payment.notes || 'Abono'}
                         </span>
                       </div>
-                      <span className="bg-[#E89D4F]/20 text-[#2C221E] font-semibold text-[10px] px-2 py-0.5 rounded-full border border-[#E89D4F]/30">
-                        Día {payment.dayNumber}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="bg-[#E89D4F]/20 text-[#2C221E] font-semibold text-[10px] px-2 py-0.5 rounded-full border border-[#E89D4F]/30">
+                          Día {payment.dayNumber}
+                        </span>
+                        {onUpdatePayment && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingPayment(payment)}
+                            className="p-1.5 rounded-xl text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FAF8F5] border border-transparent hover:border-[#E6DCD2] transition-all cursor-pointer"
+                            title="Editar este pago"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePaymentClick(payment)}
+                          disabled={deletingPaymentId === payment.id}
+                          className="p-1.5 rounded-xl text-[#A89B92] hover:text-[#DC2626] hover:bg-[#FDF2F0] border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
+                          title="Anular / Eliminar este pago"
+                        >
+                          <Trash2 className={`w-3.5 h-3.5 ${deletingPaymentId === payment.id ? 'animate-spin' : ''}`} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -466,6 +510,13 @@ export function VistaClientes({
         isOpen={!!editingLoan}
         onClose={() => setEditingLoan(null)}
         onConfirmEditLoan={onUpdateLoan}
+      />
+
+      <EditPaymentModal
+        payment={editingPayment}
+        isOpen={!!editingPayment}
+        onClose={() => setEditingPayment(null)}
+        onConfirmEditPayment={onUpdatePayment}
       />
 
       <SmartDeleteModal

@@ -524,13 +524,22 @@ const loanController = {
     try {
       const { loanId, amount, notes } = req.body;
 
+      const numericAmount = Number(amount);
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        return res.status(400).json({ error: 'El monto del abono debe ser mayor a 0' });
+      }
+
       const [rows] = await connection.execute(`SELECT * FROM loans WHERE id = ?`, [loanId]);
       if (rows.length === 0) return res.status(404).json({ error: 'Préstamo no encontrado' });
 
       const loan = mapRowToLoan(rows[0]);
+      if (loan.status === 'PAID' || loan.remainingAmount <= 0) {
+        return res.status(400).json({ error: 'Este préstamo ya se encuentra cancelado' });
+      }
+
       const todayStr = new Date().toISOString().split('T')[0];
 
-      const newPaidAmount = loan.paidAmount + amount;
+      const newPaidAmount = loan.paidAmount + numericAmount;
       const newRemainingAmount = Math.max(0, loan.totalToPay - newPaidAmount);
       const newPaidDaysCount = Math.min(loan.paymentDays, Math.floor(newPaidAmount / (loan.dailyPaymentAmount || 1)));
 
@@ -552,14 +561,14 @@ const loanController = {
         lastPaymentDate: todayStr,
       };
 
-      const isFullDay = amount >= loan.dailyPaymentAmount;
+      const isFullDay = numericAmount >= loan.dailyPaymentAmount;
       const paymentId = generateUUID();
       const newPayment = {
         id: paymentId,
         loanId: loan.id,
         clientId: loan.clientId,
         clientName: loan.clientName,
-        amount,
+        amount: numericAmount,
         date: todayStr,
         type: newRemainingAmount <= 0 ? 'FULL_PAYOFF' : isFullDay ? 'FULL_DAY' : 'PARTIAL',
         dayNumber: newPaidDaysCount + (isFullDay ? 0 : 1),
@@ -690,6 +699,99 @@ const loanController = {
     }
   },
 
+  // DELETE /api/payments/:id
+  async deletePayment(req, res) {
+    const connection = await pool.getConnection();
+    try {
+      const { id } = req.params;
+
+      let pRows = [];
+      try {
+        const [result] = await connection.execute(`SELECT * FROM payments WHERE id = ?`, [id]);
+        pRows = result;
+      } catch (_) {}
+
+      if (pRows.length === 0) {
+        return res.status(404).json({ error: 'Pago no encontrado' });
+      }
+
+      const payment = mapRowToPayment(pRows[0]);
+      const loanId = payment.loanId;
+
+      const [lRows] = await connection.execute(`SELECT * FROM loans WHERE id = ?`, [loanId]);
+      if (lRows.length === 0) {
+        return res.status(404).json({ error: 'Préstamo asociado no encontrado' });
+      }
+
+      const loan = mapRowToLoan(lRows[0]);
+
+      await connection.beginTransaction();
+      await connection.execute(`DELETE FROM payments WHERE id = ?`, [id]);
+
+      let remainingPaymentsRows = [];
+      try {
+        const [remResult] = await connection.execute(`SELECT * FROM payments WHERE loan_id = ?`, [loanId]);
+        remainingPaymentsRows = remResult;
+      } catch (_) {}
+
+      const remainingPayments = remainingPaymentsRows.map(mapRowToPayment);
+
+      const newPaidAmount = remainingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const newRemainingAmount = Math.max(0, loan.totalToPay - newPaidAmount);
+      const newPaidDaysCount = Math.min(loan.paymentDays, Math.floor(newPaidAmount / (loan.dailyPaymentAmount || 1)));
+
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      let newStatus = loan.status;
+      if (newRemainingAmount <= 0) {
+        newStatus = 'PAID';
+      } else {
+        const dueDateObj = new Date(loan.dueDate);
+        const todayObj = new Date(todayStr);
+        if (dueDateObj < todayObj) {
+          newStatus = 'OVERDUE';
+        } else {
+          newStatus = 'ACTIVE';
+        }
+      }
+
+      let newLastPaymentDate = null;
+      if (remainingPayments.length > 0) {
+        remainingPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        newLastPaymentDate = remainingPayments[0].date;
+      }
+
+      await connection.execute(
+        `UPDATE loans SET paid_amount = ?, remaining_amount = ?, paid_days_count = ?, status = ?, last_payment_date = ? WHERE id = ?`,
+        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, loanId]
+      );
+
+      await connection.commit();
+
+      const updatedLoan = {
+        ...loan,
+        paidAmount: newPaidAmount,
+        remainingAmount: newRemainingAmount,
+        paidDaysCount: newPaidDaysCount,
+        status: newStatus,
+        lastPaymentDate: newLastPaymentDate,
+      };
+
+      return res.json({
+        success: true,
+        message: 'Pago anulado correctamente',
+        deletedPaymentId: id,
+        updatedLoan,
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error in deletePayment:', error);
+      return res.status(500).json({ error: error.message });
+    } finally {
+      connection.release();
+    }
+  },
+
   // GET /api/expenses
   async getExpenses(req, res) {
     try {
@@ -751,6 +853,160 @@ const loanController = {
     } catch (error) {
       console.error('Error in deleteExpense:', error);
       return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // PUT /api/expenses/:id
+  async updateExpense(req, res) {
+    try {
+      const { id } = req.params;
+      const { amount, category, description, date } = req.body;
+      const expenseDate = formatToMySQLDate(date || new Date().toISOString().split('T')[0]);
+
+      try {
+        await pool.execute(
+          `UPDATE expenses SET amount = ?, category = ?, description = ?, expense_date = ? WHERE id = ?`,
+          [Number(amount) || 0, category || 'OTROS', description || '', expenseDate, id]
+        );
+      } catch (_) {
+        await pool.execute(
+          `UPDATE expenses SET amount = ?, category = ?, description = ?, date = ? WHERE id = ?`,
+          [Number(amount) || 0, category || 'OTROS', description || '', expenseDate, id]
+        );
+      }
+
+      return res.json({
+        success: true,
+        message: 'Gasto actualizado',
+        id,
+        amount: Number(amount) || 0,
+        category: category || 'OTROS',
+        description: description || '',
+        date: expenseDate,
+      });
+    } catch (error) {
+      console.error('Error in updateExpense:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // PUT /api/payments/:id
+  async updatePayment(req, res) {
+    const connection = await pool.getConnection();
+    try {
+      const { id } = req.params;
+      const { amount, date, notes } = req.body;
+
+      let pRows = [];
+      try {
+        const [result] = await connection.execute(`SELECT * FROM payments WHERE id = ?`, [id]);
+        pRows = result;
+      } catch (_) {}
+
+      if (pRows.length === 0) {
+        return res.status(404).json({ error: 'Pago no encontrado' });
+      }
+
+      const existingPayment = mapRowToPayment(pRows[0]);
+      const loanId = existingPayment.loanId;
+
+      const [lRows] = await connection.execute(`SELECT * FROM loans WHERE id = ?`, [loanId]);
+      if (lRows.length === 0) {
+        return res.status(404).json({ error: 'Préstamo asociado no encontrado' });
+      }
+
+      const loan = mapRowToLoan(lRows[0]);
+
+      const newAmount = amount !== undefined ? Number(amount) : existingPayment.amount;
+      const newDate = date || existingPayment.date;
+      const newNotes = notes !== undefined ? notes : existingPayment.notes;
+
+      if (isNaN(newAmount) || newAmount <= 0) {
+        return res.status(400).json({ error: 'El monto del abono debe ser mayor a 0' });
+      }
+
+      await connection.beginTransaction();
+
+      try {
+        await connection.execute(
+          `UPDATE payments SET amount = ?, payment_date = ?, notes = ? WHERE id = ?`,
+          [newAmount, newDate, newNotes || null, id]
+        );
+      } catch (_) {
+        await connection.execute(
+          `UPDATE payments SET amount = ?, date = ?, notes = ? WHERE id = ?`,
+          [newAmount, newDate, newNotes || null, id]
+        );
+      }
+
+      let remainingPaymentsRows = [];
+      try {
+        const [remResult] = await connection.execute(`SELECT * FROM payments WHERE loan_id = ?`, [loanId]);
+        remainingPaymentsRows = remResult;
+      } catch (_) {}
+
+      const remainingPayments = remainingPaymentsRows.map(mapRowToPayment);
+
+      const newPaidAmount = remainingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const newRemainingAmount = Math.max(0, loan.totalToPay - newPaidAmount);
+      const newPaidDaysCount = Math.min(loan.paymentDays, Math.floor(newPaidAmount / (loan.dailyPaymentAmount || 1)));
+
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      let newStatus = loan.status;
+      if (newRemainingAmount <= 0) {
+        newStatus = 'PAID';
+      } else {
+        const dueDateObj = new Date(loan.dueDate);
+        const todayObj = new Date(todayStr);
+        if (dueDateObj < todayObj) {
+          newStatus = 'OVERDUE';
+        } else {
+          newStatus = 'ACTIVE';
+        }
+      }
+
+      let newLastPaymentDate = null;
+      if (remainingPayments.length > 0) {
+        remainingPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        newLastPaymentDate = remainingPayments[0].date;
+      }
+
+      await connection.execute(
+        `UPDATE loans SET paid_amount = ?, remaining_amount = ?, paid_days_count = ?, status = ?, last_payment_date = ? WHERE id = ?`,
+        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, loanId]
+      );
+
+      await connection.commit();
+
+      const updatedPayment = {
+        ...existingPayment,
+        amount: newAmount,
+        date: newDate,
+        notes: newNotes,
+      };
+
+      const updatedLoan = {
+        ...loan,
+        paidAmount: newPaidAmount,
+        remainingAmount: newRemainingAmount,
+        paidDaysCount: newPaidDaysCount,
+        status: newStatus,
+        lastPaymentDate: newLastPaymentDate,
+      };
+
+      return res.json({
+        success: true,
+        message: 'Pago actualizado correctamente',
+        payment: updatedPayment,
+        updatedLoan,
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error in updatePayment:', error);
+      return res.status(500).json({ error: error.message });
+    } finally {
+      connection.release();
     }
   },
 

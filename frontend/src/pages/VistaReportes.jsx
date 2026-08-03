@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
-import { BarChart3, Plus, Trash2, Receipt } from 'lucide-react';
+import { EditExpenseModal } from '../components/EditExpenseModal';
+import { BarChart3, Plus, Trash2, Receipt, Pencil } from 'lucide-react';
 
-export function VistaReportes({ report, period = 'WEEKLY', onPeriodChange, onAddExpense, onDeleteExpense }) {
+export function VistaReportes({
+  report,
+  period = 'WEEKLY',
+  onPeriodChange,
+  onAddExpense,
+  onUpdateExpense,
+  onDeleteExpense,
+}) {
   const [amount, setAmount] = useState(0);
   const [category, setCategory] = useState('OTROS');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   const handleExpenseSubmit = async (e) => {
     e.preventDefault();
@@ -191,7 +200,7 @@ export function VistaReportes({ report, period = 'WEEKLY', onPeriodChange, onAdd
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 rounded-xl terracotta-gradient text-white font-extrabold text-xs shadow-xs hover:brightness-110 flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 rounded-xl terracotta-gradient text-white font-extrabold text-xs shadow-xs hover:brightness-110 flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <Plus className="w-4 h-4" />
               <span>{isSubmitting ? 'Guardando...' : 'Agregar Gasto'}</span>
@@ -227,14 +236,24 @@ export function VistaReportes({ report, period = 'WEEKLY', onPeriodChange, onAdd
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <strong className="text-[#C84B31] font-extrabold text-sm">
+                  <div className="flex items-center gap-2">
+                    <strong className="text-[#C84B31] font-extrabold text-sm mr-1">
                       -{formatCurrency(exp.amount)}
                     </strong>
 
+                    {onUpdateExpense && (
+                      <button
+                        onClick={() => setEditingExpense(exp)}
+                        className="p-1.5 rounded-xl text-[#6E615A] hover:bg-white hover:text-[#D96B27] border border-transparent hover:border-[#E6DCD2] transition-all"
+                        title="Editar Gasto"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
                     <button
                       onClick={() => onDeleteExpense(exp.id)}
-                      className="p-1.5 rounded-xl text-[#6E615A] hover:bg-[#FDF2F0] hover:text-[#C84B31] transition-all"
+                      className="p-1.5 rounded-xl text-[#6E615A] hover:bg-[#FDF2F0] hover:text-[#C84B31] border border-transparent hover:border-[#C84B31]/20 transition-all"
                       title="Eliminar Gasto"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -246,6 +265,13 @@ export function VistaReportes({ report, period = 'WEEKLY', onPeriodChange, onAdd
           )}
         </div>
       </div>
+
+      <EditExpenseModal
+        expense={editingExpense}
+        isOpen={!!editingExpense}
+        onClose={() => setEditingExpense(null)}
+        onConfirmEditExpense={onUpdateExpense}
+      />
     </div>
   );
 }

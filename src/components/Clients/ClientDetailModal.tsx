@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Plus,
   Pencil,
+  Trash2,
 } from 'lucide-react';
 
 interface ClientDetailModalProps {
@@ -30,6 +31,7 @@ interface ClientDetailModalProps {
     id: string,
     data: { capital: number; paymentDays: number; startDate: string; notes?: string }
   ) => Promise<void>;
+  onDeletePayment?: (paymentId: string) => Promise<void>;
 }
 
 export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
@@ -41,9 +43,26 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
   onNewLoanForClient,
   onUpdateClient,
   onUpdateLoan,
+  onDeletePayment,
 }) => {
   const [isEditingClient, setIsEditingClient] = useState<boolean>(false);
   const [selectedLoanForEdit, setSelectedLoanForEdit] = useState<Loan | null>(null);
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
+
+  const handleDeleteClick = async (pay: Payment) => {
+    if (!onDeletePayment) return;
+    const confirmMsg = `¿Deseas anular este pago de ${formatCurrency(pay.amount)}?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setDeletingPaymentId(pay.id);
+      await onDeletePayment(pay.id);
+    } catch (err) {
+      console.error('Error al anular pago:', err);
+    } finally {
+      setDeletingPaymentId(null);
+    }
+  };
 
   if (!isOpen || !client) return null;
 
@@ -225,10 +244,12 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                           </span>
                         ) : (
                           <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                            {loanPayments.map((pay) => (
+                             {loanPayments.map((pay) => (
                               <div
                                 key={pay.id}
-                                className="flex items-center justify-between bg-[#EEF6F2]/40 p-2 rounded-xl text-[11px]"
+                                className={`flex items-center justify-between bg-[#EEF6F2]/40 p-2 rounded-xl text-[11px] transition-all ${
+                                  deletingPaymentId === pay.id ? 'opacity-50 pointer-events-none' : ''
+                                }`}
                               >
                                 <div className="flex items-center gap-2">
                                   <CheckCircle2 className="w-3.5 h-3.5 text-[#2D7A5D]" />
@@ -236,11 +257,22 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                                     {pay.notes || 'Pago del día'}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                   <span className="text-[#6E615A]">{formatDatePE(pay.date)}</span>
                                   <strong className="text-[#2D7A5D] font-bold">
                                     +{formatCurrency(pay.amount)}
                                   </strong>
+                                  {onDeletePayment && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteClick(pay)}
+                                      disabled={deletingPaymentId === pay.id}
+                                      className="p-1 rounded-lg text-[#A89B92] hover:text-[#DC2626] hover:bg-[#FDF2F0] border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
+                                      title="Anular este pago"
+                                    >
+                                      <Trash2 className={`w-3.5 h-3.5 ${deletingPaymentId === pay.id ? 'animate-spin' : ''}`} />
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             ))}

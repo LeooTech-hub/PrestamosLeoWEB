@@ -27,12 +27,15 @@ router.get('/trash', loanController.getTrash);
 // Payments Routes
 router.get('/payments', loanController.getPayments);
 router.post('/payments', loanController.registerPayment);
+router.put('/payments/:id', loanController.updatePayment);
+router.delete('/payments/:id', loanController.deletePayment);
 router.post('/payments/revert', loanController.revertLastPayment);
 router.post('/loans/:id/revert-payment', loanController.revertLastPayment);
 
 // Expenses Routes
 router.get('/expenses', loanController.getExpenses);
 router.post('/expenses', loanController.addExpense);
+router.put('/expenses/:id', loanController.updateExpense);
 router.delete('/expenses/:id', loanController.deleteExpense);
 
 // Operations & Analytics Routes

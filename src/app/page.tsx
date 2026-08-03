@@ -125,6 +125,12 @@ export default function Home() {
     return result;
   };
 
+  // Delete payment handler
+  const handleDeletePayment = async (paymentId: string) => {
+    await loanService.deletePayment(paymentId);
+    await loadData();
+  };
+
   // Edit client handler
   const handleUpdateClient = async (
     id: string,
@@ -173,6 +179,15 @@ export default function Home() {
   // Delete expense handler
   const handleDeleteExpense = async (id: string) => {
     await loanService.deleteExpense(id);
+    await loadData();
+  };
+
+  // Update expense handler
+  const handleUpdateExpense = async (
+    id: string,
+    data: { amount?: number; category?: ExpenseCategory; description?: string; date?: string }
+  ) => {
+    await loanService.updateExpense(id, data);
     await loadData();
   };
 
@@ -260,6 +275,7 @@ export default function Home() {
                 period={reportPeriod}
                 onPeriodChange={handlePeriodChange}
                 onAddExpense={handleAddExpense}
+                onUpdateExpense={handleUpdateExpense}
                 onDeleteExpense={handleDeleteExpense}
               />
             )}
@@ -274,6 +290,7 @@ export default function Home() {
                 onUpdateClient={handleUpdateClient}
                 onUpdateLoan={handleUpdateLoan}
                 onDeleteClient={handleDeleteClient}
+                onDeletePayment={handleDeletePayment}
               />
             )}
           </>

@@ -10,7 +10,8 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
 
   useEffect(() => {
     if (loan) {
-      setAmount(loan.dailyPaymentAmount || 0);
+      const defaultAmt = loan.remainingAmount < loan.dailyPaymentAmount ? loan.remainingAmount : (loan.dailyPaymentAmount || 0);
+      setAmount(defaultAmt);
       setNotes('');
       setSuccessData(null);
     }
@@ -24,7 +25,7 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
 
     setIsSubmitting(true);
     try {
-      const result = await onConfirmPayment(loan.id, amount, notes);
+      const result = await onConfirmPayment(loan.id, Number(amount), notes);
       setSuccessData(result);
     } catch (err) {
       console.error('Error registrando pago:', err);

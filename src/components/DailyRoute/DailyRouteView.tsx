@@ -162,7 +162,7 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredCollections.map(({ loan, isPaidToday }) => {
+          {filteredCollections.map(({ loan, isPaidToday, amountPaidToday }) => {
             const percent = Math.round((loan.paidAmount / loan.totalToPay) * 100);
             const isOverdue = loan.status === 'OVERDUE';
 
@@ -232,6 +232,15 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                       </strong>
                     </div>
 
+                    {amountPaidToday > 0 && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[#6E615A]">Cobrado Hoy:</span>
+                        <strong className="text-xs text-[#2D7A5D] font-extrabold">
+                          {formatCurrency(amountPaidToday)}
+                        </strong>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center text-[11px] text-[#6E615A]">
                       <span>
                         Días de pago:{' '}
@@ -265,14 +274,23 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                 <div className="pt-2 flex items-center gap-2">
                   <button
                     onClick={() => setSelectedLoanForPayment(loan)}
+                    disabled={loan.remainingAmount <= 0 || loan.status === 'PAID'}
                     className={`flex-1 py-3 px-3 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 ${
-                      isPaidToday
-                        ? 'bg-[#F5F0EB] text-[#2C221E] hover:bg-[#E6DCD2]'
+                      loan.remainingAmount <= 0 || loan.status === 'PAID'
+                        ? 'bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/20 cursor-default opacity-75'
+                        : isPaidToday
+                        ? 'bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/40 hover:bg-[#2D7A5D] hover:text-white cursor-pointer'
                         : 'terracotta-gradient text-white hover:brightness-110'
                     }`}
                   >
                     <CreditCard className="w-4 h-4" />
-                    <span>{isPaidToday ? 'Ver / Re-abonar' : 'Registrar Pago'}</span>
+                    <span>
+                      {loan.remainingAmount <= 0 || loan.status === 'PAID'
+                        ? 'Pagado Completo'
+                        : isPaidToday
+                        ? 'Abonar más'
+                        : 'Registrar Pago'}
+                    </span>
                   </button>
 
                   <button

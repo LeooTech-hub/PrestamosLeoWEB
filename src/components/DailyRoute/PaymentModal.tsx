@@ -23,13 +23,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onClose,
   onConfirmPayment,
 }) => {
-  if (!isOpen || !loan) return null;
-
   const [paymentType, setPaymentType] = useState<'FULL' | 'CUSTOM'>('FULL');
-  const [customAmount, setCustomAmount] = useState<number>(loan.dailyPaymentAmount);
+  const [customAmount, setCustomAmount] = useState<number>(loan?.dailyPaymentAmount || 0);
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [completedWhatsAppUrl, setCompletedWhatsAppUrl] = useState<string | null>(null);
+
+  if (!isOpen || !loan) return null;
 
   const targetAmount = paymentType === 'FULL' ? loan.dailyPaymentAmount : customAmount;
 

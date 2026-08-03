@@ -20,13 +20,11 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
   onClose,
   onConfirmEdit,
 }) => {
-  if (!isOpen || !client) return null;
-
-  const [name, setName] = useState<string>(client.name);
-  const [phone, setPhone] = useState<string>(client.phone);
-  const [address, setAddress] = useState<string>(client.address);
-  const [identification, setIdentification] = useState<string>(client.identification || '');
-  const [notes, setNotes] = useState<string>(client.notes || '');
+  const [name, setName] = useState<string>(client?.name || '');
+  const [phone, setPhone] = useState<string>(client?.phone || '');
+  const [address, setAddress] = useState<string>(client?.address || '');
+  const [identification, setIdentification] = useState<string>(client?.identification || '');
+  const [notes, setNotes] = useState<string>(client?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
@@ -38,6 +36,8 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
       setNotes(client.notes || '');
     }
   }, [client]);
+
+  if (!isOpen || !client) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

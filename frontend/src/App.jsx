@@ -155,6 +155,39 @@ export default function App() {
     }
   };
 
+  const handleDeletePayment = async (paymentId) => {
+    try {
+      const res = await api.delete(`/payments/${paymentId}`);
+      await loadData();
+      return res.data;
+    } catch (err) {
+      console.error('Error anulando pago:', err);
+      throw err;
+    }
+  };
+
+  const handleUpdatePayment = async (id, data) => {
+    try {
+      const res = await api.put(`/payments/${id}`, data);
+      await loadData();
+      return res.data;
+    } catch (err) {
+      console.error('Error actualizando pago:', err);
+      throw err;
+    }
+  };
+
+  const handleUpdateExpense = async (id, data) => {
+    try {
+      const res = await api.put(`/expenses/${id}`, data);
+      await loadData();
+      return res.data;
+    } catch (err) {
+      console.error('Error actualizando gasto:', err);
+      throw err;
+    }
+  };
+
   const handleRevertPayment = async (loanId) => {
     try {
       const res = await api.post(`/loans/${loanId}/revert-payment`);
@@ -274,6 +307,8 @@ export default function App() {
                   recentLoans={loans}
                   recentPayments={payments}
                   onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
+                  onUpdatePayment={handleUpdatePayment}
+                  onDeletePayment={handleDeletePayment}
                 />
               }
             />
@@ -315,6 +350,7 @@ export default function App() {
                   period={reportPeriod}
                   onPeriodChange={handlePeriodChange}
                   onAddExpense={handleAddExpense}
+                  onUpdateExpense={handleUpdateExpense}
                   onDeleteExpense={handleDeleteExpense}
                 />
               }
@@ -329,6 +365,8 @@ export default function App() {
                   onUpdateClient={handleUpdateClient}
                   onUpdateLoan={handleUpdateLoan}
                   onDeleteClient={handleDeleteClient}
+                  onDeletePayment={handleDeletePayment}
+                  onUpdatePayment={handleUpdatePayment}
                 />
               }
             />

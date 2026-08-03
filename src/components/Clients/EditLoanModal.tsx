@@ -21,12 +21,10 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
   onClose,
   onConfirmEditLoan,
 }) => {
-  if (!isOpen || !loan) return null;
-
-  const [capital, setCapital] = useState<number>(loan.capital);
-  const [paymentDaysInput, setPaymentDaysInput] = useState<string>(String(loan.paymentDays));
-  const [startDate, setStartDate] = useState<string>(loan.startDate);
-  const [notes, setNotes] = useState<string>(loan.notes || '');
+  const [capital, setCapital] = useState<number>(loan?.capital || 0);
+  const [paymentDaysInput, setPaymentDaysInput] = useState<string>(String(loan?.paymentDays || 20));
+  const [startDate, setStartDate] = useState<string>(loan?.startDate || '');
+  const [notes, setNotes] = useState<string>(loan?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
@@ -37,6 +35,8 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
       setNotes(loan.notes || '');
     }
   }, [loan]);
+
+  if (!isOpen || !loan) return null;
 
   const daysPresets = [10, 15, 20, 30];
   const parsedPaymentDays = Math.max(1, parseInt(paymentDaysInput, 10) || 1);

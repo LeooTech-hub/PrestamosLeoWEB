@@ -180,6 +180,15 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment }) {
                       </strong>
                     </div>
 
+                    {amountPaidToday > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-[#6E615A]">Cobrado Hoy:</span>
+                        <strong className="text-[#2D7A5D] font-extrabold">
+                          {formatCurrency(amountPaidToday)}
+                        </strong>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
                       <span className="text-[#6E615A]">Días Pagados:</span>
                       <span>
@@ -196,20 +205,27 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment }) {
                   </div>
                 </div>
 
-               <div className="flex items-center gap-2">
-  <button
-    onClick={() => setSelectedLoan(loan)}
-    disabled={isPaidToday}
-    className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all ${
-      isPaidToday
-        ? 'bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/20 cursor-default'
-        : 'terracotta-gradient text-white shadow-xs hover:brightness-110 active:scale-95'
-    }`}
-  >
-    {/* CAMBIO AQUÍ: Reemplazamos <DollarSign /> por S/. */}
-    <span className="text-xs font-black">S/.</span>
-    <span>{isPaidToday ? 'Cobrado Hoy' : 'Cobrar Cuota'}</span>
-  </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedLoan(loan)}
+                    disabled={loan.remainingAmount <= 0 || loan.status === 'PAID'}
+                    className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all ${
+                      loan.remainingAmount <= 0 || loan.status === 'PAID'
+                        ? 'bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/20 cursor-default opacity-75'
+                        : isPaidToday
+                        ? 'bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/40 hover:bg-[#2D7A5D] hover:text-white cursor-pointer active:scale-95'
+                        : 'terracotta-gradient text-white shadow-xs hover:brightness-110 active:scale-95'
+                    }`}
+                  >
+                    <span className="text-xs font-black">S/.</span>
+                    <span>
+                      {loan.remainingAmount <= 0 || loan.status === 'PAID'
+                        ? 'Pagado Completo'
+                        : isPaidToday
+                        ? 'Abonar más'
+                        : 'Cobrar Cuota'}
+                    </span>
+                  </button>
 
                   <a
                     href={generateWhatsAppReminderMessage({

@@ -32,6 +32,7 @@ interface ClientsViewProps {
     data: { capital: number; paymentDays: number; startDate: string; notes?: string }
   ) => Promise<void>;
   onDeleteClient: (clientId: string, mode: 'ARCHIVE' | 'PERMANENT') => Promise<void>;
+  onDeletePayment?: (paymentId: string) => Promise<void>;
 }
 
 export const ClientsView: React.FC<ClientsViewProps> = ({
@@ -43,6 +44,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   onUpdateClient,
   onUpdateLoan,
   onDeleteClient,
+  onDeletePayment,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedClientForDetail, setSelectedClientForDetail] = useState<Client | null>(null);
@@ -235,6 +237,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
         }}
         onUpdateClient={onUpdateClient}
         onUpdateLoan={onUpdateLoan}
+        onDeletePayment={onDeletePayment}
       />
 
       {/* Edit Client Modal */}
