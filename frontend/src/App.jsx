@@ -32,13 +32,16 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Estados de Autenticación iniciales desde localStorage
-  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
+  // Estados de Autenticación iniciales desde localStorage ('token' o 'jwt')
+  const [token, setToken] = useState(() => localStorage.getItem('token') || localStorage.getItem('jwt') || '');
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  // Estado booleano de autenticación
+  const isAuthenticated = Boolean(token && user);
 
   // Estados Operativos
   const [clients, setClients] = useState([]);
@@ -57,6 +60,7 @@ export default function App() {
   // Función para cerrar sesión y redirigir a Login
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
+    localStorage.removeItem('jwt');
     localStorage.removeItem('user');
     setToken('');
     setUser(null);
@@ -75,14 +79,14 @@ export default function App() {
     };
   }, [handleLogout]);
 
-  // Verificar sesión en el inicio. Si NO hay token, NO realiza peticiones iniciales.
+  // GUARDIÁN INICIAL: Al iniciar la aplicación, verificar si existe token ('token' o 'jwt').
+  // Si NO existe token, NO ejecutar ninguna función de carga inicial ('loadData', etc.) y renderizar directamente 'VistaLogin.jsx'.
   useEffect(() => {
     let isMounted = true;
 
     const checkSession = async () => {
-      const storedToken = localStorage.getItem('token');
+      const storedToken = localStorage.getItem('token') || localStorage.getItem('jwt');
 
-      // REQUISITO: Si no existe un token válido en localStorage, NO intentar realizar peticiones iniciales
       if (!storedToken) {
         if (isMounted) {
           setToken('');
@@ -103,6 +107,7 @@ export default function App() {
         console.error('Error al verificar sesión inicial (401 / Token expirado):', err.message);
         if (isMounted) {
           localStorage.removeItem('token');
+          localStorage.removeItem('jwt');
           localStorage.removeItem('user');
           setToken('');
           setUser(null);
@@ -121,7 +126,7 @@ export default function App() {
 
   // Carga de datos de negocio tras verificación de token válido
   const loadData = useCallback(async (period = reportPeriod) => {
-    const activeToken = localStorage.getItem('token');
+    const activeToken = localStorage.getItem('token') || localStorage.getItem('jwt');
     if (!activeToken) return;
 
     try {
@@ -160,11 +165,23 @@ export default function App() {
     }
   }, [reportPeriod]);
 
+  // Carga reactiva de datos al autenticar o cambiar reportPeriod utilizando bandera de montaje (isMounted)
   useEffect(() => {
-    if (token && user) {
-      loadData();
+    let isMounted = true;
+
+    if (isAuthenticated) {
+      const executeLoad = async () => {
+        if (isMounted) {
+          await loadData();
+        }
+      };
+      executeLoad();
     }
-  }, [loadData, reportPeriod, token, user]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, loadData]);
 
   const handleLoginSuccess = (newToken, newUser) => {
     setToken(newToken);
@@ -312,12 +329,12 @@ export default function App() {
     }
   };
 
-  // Si se abre el enlace de recuperación de contraseña desde el correo
+  // Enlace de recuperación de contraseña enviado al correo
   if (location.pathname === '/reset-password') {
     return <VistaResetPassword />;
   }
 
-  // Spinner mientras verifica sesión
+  // Spinner breve mientras verifica token en inicio
   if (isAuthChecking) {
     return (
       <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center space-y-3">
@@ -327,8 +344,8 @@ export default function App() {
     );
   }
 
-  // Si no hay token o usuario, renderizar directamente la VistaLogin
-  if (!token || !user) {
+  // GUARDIÁN DE RUTAS: Si NO existe estado autenticado, renderizar directamente la VistaLogin
+  if (!isAuthenticated) {
     return <VistaLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
@@ -351,7 +368,7 @@ export default function App() {
         overdueCount={summary?.overdueCount || 0}
       />
 
-      {/* Main Content Pages Area (Encapsuladas bajo PrivateRoute) */}
+      {/* Main Content Pages Area (Dashboard y Vistas Encapsuladas bajo isAuthenticated) */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:px-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
@@ -363,7 +380,7 @@ export default function App() {
             <Route
               path="/login"
               element={
-                token && user ? (
+                isAuthenticated ? (
                   <Navigate to="/" replace />
                 ) : (
                   <VistaLogin onLoginSuccess={handleLoginSuccess} />

@@ -8,10 +8,10 @@ const api = axios.create({
   },
 });
 
-// Interceptor de peticiones: asegura que todas las peticiones salientes adjunten el token guardado
+// Interceptor de peticiones: lee 'token' o 'jwt' de localStorage en CADA petición
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('jwt');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -20,18 +20,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor de respuestas: captura 401 (Unauthorized), limpia localStorage y notifica redirección a Login
+// Interceptor de respuestas: captura 401 (Unauthorized)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       const isLoginRequest = error.config?.url?.includes('/auth/login');
       if (!isLoginRequest) {
-        // Limpiar sesión en localStorage
+        // Borrar token y datos del usuario de localStorage
         localStorage.removeItem('token');
+        localStorage.removeItem('jwt');
         localStorage.removeItem('user');
 
-        // Disparar evento para actualizar el estado global en App.jsx y redirigir a VistaLogin
+        // Notificar cambio de estado a no autenticado para redirigir de inmediato al login
         window.dispatchEvent(new Event('auth:unauthorized'));
       }
     }

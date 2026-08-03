@@ -2,7 +2,7 @@ import React from 'react';
 import { VistaLogin } from '../pages/VistaLogin';
 
 export function PrivateRoute({ token, user, onLoginSuccess, children }) {
-  const storedToken = token || localStorage.getItem('token');
+  const storedToken = token || localStorage.getItem('token') || localStorage.getItem('jwt');
   
   if (!storedToken || !user) {
     return <VistaLogin onLoginSuccess={onLoginSuccess} />;
