@@ -201,10 +201,7 @@ export function VistaLogin({ onLoginSuccess }) {
         </div>
 
         {/* Demo Hint */}
-        <div className="mt-6 text-center text-xs text-[#6E615A] bg-white/70 border border-[#E6DCD2] rounded-2xl p-3.5">
-          <span className="font-bold text-[#2C221E]">Cuenta Demo Inicial:</span>{' '}
-          <code className="bg-[#FAF8F5] px-1.5 py-0.5 rounded border border-[#E6DCD2] font-mono text-[#D96B27]">admin@prestamosleo.com</code> / <code className="bg-[#FAF8F5] px-1.5 py-0.5 rounded border border-[#E6DCD2] font-mono text-[#2D7A5D]">admin123</code>
-        </div>
+        
       </div>
 
       {/* MODAL RECUPERACIÓN DE CONTRASEÑA */}
