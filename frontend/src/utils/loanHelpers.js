@@ -102,7 +102,8 @@ export function generateWhatsAppMessage(params) {
   const cleanPhone = (params.phone || '').replace(/\D/g, '');
   const phoneWithCode = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
 
-  const text = `📄 *COMPROBANTE DE PAGO - PRESTAMOS LEO*
+  const text = 
+  `📄 *COMPROBANTE DE PAGO - PRESTAMOS LEO*
 ---------------------------------------
 👤 *Cliente:* ${params.clientName}
 💰 *Monto Recibido:* ${formatCurrency(params.paymentAmount)}
@@ -113,7 +114,8 @@ export function generateWhatsAppMessage(params) {
 - *Saldo Restante:* ${formatCurrency(params.remainingAmount)}
 - *Total Préstamo:* ${formatCurrency(params.totalToPay)}
 
-¡Muchas gracias por su puntualidad! 🙏✨`;
+¡Muchas gracias por su puntualidad! 🙏✨
+Recordar que credito pagado, credito renovado`;
 
   return `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(text)}`;
 }

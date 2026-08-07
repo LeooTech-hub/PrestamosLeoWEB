@@ -30,12 +30,14 @@ function mapRowToClient(row) {
   return {
     id: String(row.id || ''),
     name: String(row.name || ''),
+    alias: row.alias ? String(row.alias) : undefined,
     phone: String(row.phone || ''),
     address: String(row.address || ''),
     identification: row.identification ? String(row.identification) : undefined,
     notes: row.notes ? String(row.notes) : undefined,
     createdAt: String(row.created_at || row.createdAt || new Date().toISOString()),
     status: row.status || 'ACTIVE',
+    routeOrder: Number(row.route_order ?? row.routeOrder ?? 0),
   };
 }
 
@@ -48,15 +50,19 @@ function mapRowToLoan(row) {
   const dailyPaymentAmount = Number(row.daily_payment_amount ?? row.daily_payment ?? Math.round(totalToPay / (paymentDays || 1)));
 
   const clientName = String(row.client_name || row.joined_client_name || row.name || 'Cliente');
+  const clientAlias = row.client_alias || row.joined_client_alias || row.alias || undefined;
   const clientPhone = String(row.client_phone || row.joined_client_phone || row.phone || '');
   const clientAddress = String(row.client_address || row.joined_client_address || row.address || '');
+  const routeOrder = Number(row.route_order ?? row.joined_client_route_order ?? 0);
 
   return {
     id: String(row.id || ''),
     clientId: String(row.client_id || ''),
     clientName,
+    clientAlias: clientAlias ? String(clientAlias) : undefined,
     clientPhone,
     clientAddress,
+    routeOrder,
     capital,
     interestRate,
     interestAmount,
@@ -83,6 +89,7 @@ function mapRowToPayment(row) {
     clientId: String(row.client_id || ''),
     clientName: String(row.client_name || 'Cliente'),
     amount: Number(row.amount || 0),
+    lateFee: Number(row.late_fee ?? row.lateFee ?? 0),
     date: String(row.payment_date || row.date || new Date().toISOString().split('T')[0]),
     type: row.type || 'FULL_DAY',
     dayNumber: Number(row.day_number || 1),
@@ -109,14 +116,14 @@ const loanController = {
       const includeArchived = req.query.archived === 'true' || req.query.includeArchived === 'true';
       let rows = [];
       if (includeArchived) {
-        const [r] = await pool.query('SELECT * FROM clients ORDER BY id DESC');
+        const [r] = await pool.query('SELECT * FROM clients ORDER BY route_order ASC, id DESC');
         rows = r;
       } else {
         try {
-          const [r] = await pool.query("SELECT * FROM clients WHERE (status != 'INACTIVE' OR status IS NULL) AND (is_archived = 0 OR is_archived IS NULL) ORDER BY id DESC");
+          const [r] = await pool.query("SELECT * FROM clients WHERE (status != 'INACTIVE' OR status IS NULL) AND (is_archived = 0 OR is_archived IS NULL) ORDER BY route_order ASC, id DESC");
           rows = r;
         } catch {
-          const [r] = await pool.query("SELECT * FROM clients WHERE status != 'INACTIVE' OR status IS NULL ORDER BY id DESC");
+          const [r] = await pool.query("SELECT * FROM clients WHERE status != 'INACTIVE' OR status IS NULL ORDER BY route_order ASC, id DESC");
           rows = r;
         }
       }
@@ -130,24 +137,33 @@ const loanController = {
   // POST /api/clients
   async createClient(req, res) {
     try {
-      const { name, phone, address, identification, notes } = req.body;
+      const { name, alias, phone, address, identification, notes, routeOrder } = req.body;
       const id = generateUUID();
       const createdAt = new Date().toISOString();
 
-      await pool.execute(
-        `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, name?.trim() || 'Sin Nombre', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE']
-      );
+      try {
+        await pool.execute(
+          `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0]
+        );
+      } catch (_) {
+        await pool.execute(
+          `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [id, name?.trim() || 'Sin Nombre', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE']
+        );
+      }
 
       return res.status(201).json({
         id,
         name: name?.trim(),
+        alias: alias?.trim() || undefined,
         phone: phone?.trim(),
         address: address?.trim(),
         identification: identification?.trim() || undefined,
         notes: notes?.trim() || undefined,
         createdAt,
         status: 'ACTIVE',
+        routeOrder: Number(routeOrder) || 0,
       });
     } catch (error) {
       console.error('Error in createClient:', error);
@@ -160,13 +176,20 @@ const loanController = {
     const connection = await pool.getConnection();
     try {
       const { id } = req.params;
-      const { name, phone, address, identification, notes } = req.body;
+      const { name, alias, phone, address, identification, notes, routeOrder } = req.body;
 
       await connection.beginTransaction();
-      await connection.execute(
-        `UPDATE clients SET name = ?, phone = ?, address = ?, identification = ?, notes = ? WHERE id = ?`,
-        [name?.trim() || '', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, id]
-      );
+      try {
+        await connection.execute(
+          `UPDATE clients SET name = ?, alias = ?, phone = ?, address = ?, identification = ?, notes = ?, route_order = ? WHERE id = ?`,
+          [name?.trim() || '', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, Number(routeOrder) || 0, id]
+        );
+      } catch (_) {
+        await connection.execute(
+          `UPDATE clients SET name = ?, phone = ?, address = ?, identification = ?, notes = ? WHERE id = ?`,
+          [name?.trim() || '', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, id]
+        );
+      }
       await connection.execute(
         `UPDATE loans SET client_name = ?, client_phone = ?, client_address = ? WHERE client_id = ?`,
         [name?.trim() || '', phone?.trim() || '', address?.trim() || '', id]
@@ -181,6 +204,38 @@ const loanController = {
     } catch (error) {
       await connection.rollback();
       console.error('Error in updateClient:', error);
+      return res.status(500).json({ error: error.message });
+    } finally {
+      connection.release();
+    }
+  },
+
+  // PUT /api/clients/reorder
+  async updateRouteOrders(req, res) {
+    const connection = await pool.getConnection();
+    try {
+      const { orders } = req.body; // Array of { id, routeOrder }
+      if (!Array.isArray(orders)) {
+        return res.status(400).json({ error: 'Formato inválido de órdenes' });
+      }
+
+      await connection.beginTransaction();
+      for (const item of orders) {
+        if (item.id) {
+          try {
+            await connection.execute(
+              `UPDATE clients SET route_order = ? WHERE id = ?`,
+              [Number(item.routeOrder) || 0, item.id]
+            );
+          } catch (_) {}
+        }
+      }
+      await connection.commit();
+
+      return res.json({ success: true, message: 'Orden de ruta actualizado' });
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error in updateRouteOrders:', error);
       return res.status(500).json({ error: error.message });
     } finally {
       connection.release();
@@ -290,12 +345,14 @@ const loanController = {
         SELECT 
           l.*,
           c.name AS joined_client_name,
+          c.alias AS joined_client_alias,
           c.phone AS joined_client_phone,
-          c.address AS joined_client_address
+          c.address AS joined_client_address,
+          c.route_order AS joined_client_route_order
         FROM loans l
         LEFT JOIN clients c ON l.client_id = c.id
         WHERE l.is_archived = 0 OR l.is_archived IS NULL
-        ORDER BY l.id DESC
+        ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC
       `);
       return res.json(rows.map(mapRowToLoan));
     } catch (error) {
@@ -522,9 +579,10 @@ const loanController = {
   async registerPayment(req, res) {
     const connection = await pool.getConnection();
     try {
-      const { loanId, amount, notes } = req.body;
+      const { loanId, amount, notes, lateFee, mora } = req.body;
 
       const numericAmount = Number(amount);
+      const numericLateFee = Math.max(0, Number(lateFee ?? mora ?? 0));
       if (isNaN(numericAmount) || numericAmount <= 0) {
         return res.status(400).json({ error: 'El monto del abono debe ser mayor a 0' });
       }
@@ -569,10 +627,11 @@ const loanController = {
         clientId: loan.clientId,
         clientName: loan.clientName,
         amount: numericAmount,
+        lateFee: numericLateFee,
         date: todayStr,
         type: newRemainingAmount <= 0 ? 'FULL_PAYOFF' : isFullDay ? 'FULL_DAY' : 'PARTIAL',
         dayNumber: newPaidDaysCount + (isFullDay ? 0 : 1),
-        notes: notes || (isFullDay ? 'Pago diario completo' : 'Abono parcial'),
+        notes: notes || (numericLateFee > 0 ? `Pago con mora de S/. ${numericLateFee.toFixed(2)}` : isFullDay ? 'Pago diario completo' : 'Abono parcial'),
       };
 
       await connection.beginTransaction();
@@ -583,14 +642,21 @@ const loanController = {
 
       try {
         await connection.execute(
-          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, payment_date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
+          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
         );
       } catch (_) {
-        await connection.execute(
-          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
-        );
+        try {
+          await connection.execute(
+            `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
+          );
+        } catch (_) {
+          await connection.execute(
+            `INSERT INTO payments (id, loan_id, client_id, client_name, amount, date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
+          );
+        }
       }
       await connection.commit();
 
@@ -1014,10 +1080,16 @@ const loanController = {
   async getTodayCollections(req, res) {
     try {
       const [rows] = await pool.query(`
-        SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
+        SELECT l.*, 
+          c.name AS joined_client_name, 
+          c.alias AS joined_client_alias, 
+          c.phone AS joined_client_phone, 
+          c.address AS joined_client_address,
+          c.route_order AS joined_client_route_order
         FROM loans l
         LEFT JOIN clients c ON l.client_id = c.id
         WHERE l.is_archived = 0 OR l.is_archived IS NULL
+        ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC
       `);
       const loans = rows.map(mapRowToLoan);
       const activeLoans = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
@@ -1215,11 +1287,14 @@ const loanController = {
 
       const capitalInvested = periodLoans.reduce((sum, l) => sum + (l.capital || 0), 0);
       const projectedCollection = periodLoans.reduce((sum, l) => sum + (l.totalToPay || 0), 0);
-      const realCollected = periodPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-      const interestCollected = Math.round(realCollected * (20 / 120));
+      const principalCollected = periodPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const totalMoras = periodPayments.reduce((sum, p) => sum + (p.lateFee || 0), 0);
+      const realCollected = principalCollected + totalMoras;
+      const interestCollected = Math.round(principalCollected * (20 / 120));
+      const grossProfit = interestCollected + totalMoras;
       const totalExpenses = periodExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const netProfit = interestCollected - totalExpenses;
-      const remainingToCollect = Math.max(0, projectedCollection - realCollected);
+      const netProfit = grossProfit - totalExpenses;
+      const remainingToCollect = Math.max(0, projectedCollection - principalCollected);
 
       return res.json({
         period,
@@ -1228,8 +1303,11 @@ const loanController = {
         endDate: formatDatePE(endDateStr),
         capitalInvested,
         realCollected,
+        principalCollected,
+        totalMoras,
         projectedCollection,
         interestCollected,
+        grossProfit,
         totalExpenses,
         netProfit,
         remainingToCollect,

@@ -4,21 +4,34 @@ import {
   NewClientLoanFormData,
 } from '@/types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const API_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) || 'http://localhost:5000/api';
 
-// Helper function for HTTP requests
+// Helper function for HTTP requests with automatic Bearer token injection
 async function fetchAPI(endpoint: string, options?: RequestInit) {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('jwt')) : null;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
-    throw new Error(`Error en la petición: ${response.statusText}`);
+    if (response.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('user');
+      window.dispatchEvent(new Event('auth:unauthorized'));
+    }
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.error || errData.message || `Error ${response.status}: ${response.statusText}`);
   }
 
   return response.json();
@@ -49,11 +62,21 @@ export const loanService = {
   createClientAndLoan: (data: NewClientLoanFormData) =>
     fetchAPI('/clients-with-loan', { method: 'POST', body: JSON.stringify(data) }),
 
+  reorderClients: (orderedClientIds: string[] | { id: string; routeOrder: number }[]) => {
+    const orders = orderedClientIds.map((item, idx) => {
+      if (typeof item === 'string') {
+        return { id: item, routeOrder: idx };
+      }
+      return { id: item.id, routeOrder: item.routeOrder ?? idx };
+    });
+    return fetchAPI('/clients/reorder', { method: 'PUT', body: JSON.stringify({ orders }) });
+  },
+
   getPayments: () => fetchAPI('/payments'),
-  registerPayment: (loanId: string, amount: number, notes?: string) =>
+  registerPayment: (loanId: string, amount: number, notes?: string, lateFee?: number) =>
     fetchAPI('/payments', {
       method: 'POST',
-      body: JSON.stringify({ loanId, amount, notes }),
+      body: JSON.stringify({ loanId, amount, notes, lateFee }),
     }),
   updatePayment: (id: string, data: { amount?: number; date?: string; notes?: string }) =>
     fetchAPI(`/payments/${id}`, {

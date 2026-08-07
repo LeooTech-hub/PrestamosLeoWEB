@@ -5,6 +5,7 @@ import { SmartDeleteModal } from '../components/SmartDeleteModal';
 import { EditClientModal } from '../components/EditClientModal';
 import { EditLoanModal } from '../components/EditLoanModal';
 import { EditPaymentModal } from '../components/EditPaymentModal';
+import { PaymentReceiptModal } from '../components/PaymentReceiptModal';
 import {
   Users,
   Search,
@@ -19,6 +20,7 @@ import {
   CreditCard,
   History,
   Pencil,
+  Receipt,
 } from 'lucide-react';
 
 export function VistaClientes({
@@ -33,6 +35,7 @@ export function VistaClientes({
 }) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'UP_TO_DATE', 'OVERDUE', 'PAID'
   const [selectedClient, setSelectedClient] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [deletingClient, setDeletingClient] = useState(null);
@@ -41,6 +44,7 @@ export function VistaClientes({
   const [editingPayment, setEditingPayment] = useState(null);
   const [activeTab, setActiveTab] = useState('LOANS');
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
+  const [selectedPaymentForReceipt, setSelectedPaymentForReceipt] = useState(null);
 
   const handleDeletePaymentClick = async (payment) => {
     if (!onDeletePayment) return;
@@ -58,14 +62,53 @@ export function VistaClientes({
     }
   };
 
+  const counts = React.useMemo(() => {
+    let all = 0;
+    let upToDate = 0;
+    let overdue = 0;
+    let paid = 0;
+
+    clients.forEach((c) => {
+      all++;
+      const cLoans = loans.filter((l) => l.clientId === c.id && !l.isArchived);
+      const hasOverdue = cLoans.some((l) => l.status === 'OVERDUE');
+      const hasActive = cLoans.some((l) => l.status === 'ACTIVE');
+      if (hasOverdue) {
+        overdue++;
+      } else if (hasActive) {
+        upToDate++;
+      } else if (cLoans.length > 0 && cLoans.every((l) => l.status === 'PAID')) {
+        paid++;
+      }
+    });
+
+    return { all, upToDate, overdue, paid };
+  }, [clients, loans]);
+
   const filteredClients = clients.filter((client) => {
-    const term = searchTerm.toLowerCase();
-    return (
+    const term = searchTerm.toLowerCase().trim();
+    const matchesSearch =
+      !term ||
       (client.name || '').toLowerCase().includes(term) ||
+      (client.alias || '').toLowerCase().includes(term) ||
       (client.phone || '').includes(term) ||
       (client.address || '').toLowerCase().includes(term) ||
-      (client.identification && client.identification.includes(term))
-    );
+      (client.identification && client.identification.toLowerCase().includes(term));
+
+    if (!matchesSearch) return false;
+
+    const cLoans = loans.filter((l) => l.clientId === client.id && !l.isArchived);
+    if (statusFilter === 'UP_TO_DATE') {
+      const hasActive = cLoans.some((l) => l.status === 'ACTIVE');
+      const hasOverdue = cLoans.some((l) => l.status === 'OVERDUE');
+      return hasActive && !hasOverdue;
+    } else if (statusFilter === 'OVERDUE') {
+      return cLoans.some((l) => l.status === 'OVERDUE');
+    } else if (statusFilter === 'PAID') {
+      return cLoans.length > 0 && cLoans.every((l) => l.status === 'PAID');
+    }
+
+    return true;
   });
 
   const handleOpenDetail = (client) => {
@@ -92,7 +135,7 @@ export function VistaClientes({
               Directorio de Clientes
             </h2>
             <p className="text-xs text-[#6E615A]">
-              Gestiona el historial de clientes, préstamos y pagos registrados.
+              Gestiona el historial de clientes, apodos, préstamos y estado de cartera.
             </p>
           </div>
         </div>
@@ -106,16 +149,65 @@ export function VistaClientes({
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="w-5 h-5 text-[#E89D4F] absolute left-4 top-3.5" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar por nombre, teléfono, DNI o dirección..."
-          className="w-full pl-12 pr-4 py-3 bg-white border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27] warm-shadow transition-all"
-        />
+      {/* Search Bar & Advanced Filter Chips */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="w-5 h-5 text-[#E89D4F] absolute left-4 top-3.5" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por nombre, apodo/alias, teléfono, DNI o dirección..."
+            className="w-full pl-12 pr-4 py-3 bg-white border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27] warm-shadow transition-all"
+          />
+        </div>
+
+        {/* Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setStatusFilter('ALL')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+              statusFilter === 'ALL'
+                ? 'terracotta-gradient text-white border-[#D96B27] shadow-xs'
+                : 'bg-white text-[#6E615A] border-[#E6DCD2] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            Todos ({counts.all})
+          </button>
+
+          <button
+            onClick={() => setStatusFilter('UP_TO_DATE')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+              statusFilter === 'UP_TO_DATE'
+                ? 'bg-[#2D7A5D] text-white border-[#2D7A5D] shadow-xs'
+                : 'bg-white text-[#6E615A] border-[#E6DCD2] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            Al Día ({counts.upToDate})
+          </button>
+
+          <button
+            onClick={() => setStatusFilter('OVERDUE')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+              statusFilter === 'OVERDUE'
+                ? 'bg-[#C84B31] text-white border-[#C84B31] shadow-xs'
+                : 'bg-white text-[#6E615A] border-[#E6DCD2] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            Con Retraso / En Mora ({counts.overdue})
+          </button>
+
+          <button
+            onClick={() => setStatusFilter('PAID')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+              statusFilter === 'PAID'
+                ? 'bg-[#2C221E] text-white border-[#2C221E] shadow-xs'
+                : 'bg-white text-[#6E615A] border-[#E6DCD2] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            Cancelados / Finalizados ({counts.paid})
+          </button>
+        </div>
       </div>
 
       {/* Clients Cards Grid */}
@@ -151,8 +243,13 @@ export function VistaClientes({
                         {client.name ? client.name.charAt(0) : 'C'}
                       </div>
                       <div>
-                        <h3 className="font-extrabold text-sm text-[#2C221E] line-clamp-1">
-                          {client.name}
+                        <h3 className="font-extrabold text-sm text-[#2C221E] flex items-center gap-1.5 flex-wrap">
+                          <span>{client.name}</span>
+                          {client.alias && (
+                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] text-[#D96B27] px-2 py-0.5 rounded-full border border-[#D96B27]/30">
+                              ({client.alias})
+                            </span>
+                          )}
                         </h3>
                         <span className="text-[11px] text-[#6E615A]">
                           Registrado: {formatDatePE((client.createdAt || '').split('T')[0])}
@@ -460,6 +557,14 @@ export function VistaClientes({
                         <span className="bg-[#E89D4F]/20 text-[#2C221E] font-semibold text-[10px] px-2 py-0.5 rounded-full border border-[#E89D4F]/30">
                           Día {payment.dayNumber}
                         </span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPaymentForReceipt({ payment, loan: loans.find(l => l.id === payment.loanId) })}
+                          className="p-1.5 rounded-xl text-[#2D7A5D] hover:text-[#D96B27] hover:bg-[#EEF6F2] border border-[#2D7A5D]/20 hover:border-[#D96B27]/30 transition-all cursor-pointer"
+                          title="Generar / Reenviar Constancia de Pago"
+                        >
+                          <Receipt className="w-3.5 h-3.5" />
+                        </button>
                         {onUpdatePayment && (
                           <button
                             type="button"
@@ -530,6 +635,14 @@ export function VistaClientes({
             setDeletingClient(null);
           }
         }}
+      />
+
+      <PaymentReceiptModal
+        isOpen={!!selectedPaymentForReceipt}
+        onClose={() => setSelectedPaymentForReceipt(null)}
+        payment={selectedPaymentForReceipt?.payment || null}
+        client={activeSelectedClient}
+        loan={selectedPaymentForReceipt?.loan || null}
       />
     </div>
   );

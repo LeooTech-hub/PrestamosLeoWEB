@@ -9,13 +9,7 @@ import {
   Search,
   CheckCircle2,
   DollarSign,
-  Calendar,
-  CalendarCheck,
   UserCheck,
-  UserPlus,
-  Percent,
-  TrendingUp,
-  Sparkles,
 } from 'lucide-react';
 
 interface QuickCreateLoanModalProps {
@@ -281,6 +275,22 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
               <label className="block text-xs font-semibold text-[#6E615A]">
                 Días de Pago Acordados:
               </label>
+              <div className="flex flex-wrap gap-1 mb-1">
+                {daysPresets.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setPaymentDaysInput(String(preset))}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold transition-all border ${
+                      parsedPaymentDays === preset
+                        ? 'terracotta-gradient text-white border-transparent'
+                        : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/30'
+                    }`}
+                  >
+                    {preset}d
+                  </button>
+                ))}
+              </div>
               <input
                 type="number"
                 min="1"

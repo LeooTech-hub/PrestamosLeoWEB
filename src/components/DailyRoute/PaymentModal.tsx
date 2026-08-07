@@ -13,7 +13,8 @@ interface PaymentModalProps {
   onConfirmPayment: (
     loanId: string,
     amount: number,
-    notes?: string
+    notes?: string,
+    lateFee?: number
   ) => Promise<{ updatedLoan: Loan }>;
 }
 
@@ -25,6 +26,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 }) => {
   const [paymentType, setPaymentType] = useState<'FULL' | 'CUSTOM'>('FULL');
   const [customAmount, setCustomAmount] = useState<number>(loan?.dailyPaymentAmount || 0);
+  const [lateFee, setLateFee] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [completedWhatsAppUrl, setCompletedWhatsAppUrl] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      const { updatedLoan } = await onConfirmPayment(loan.id, targetAmount, notes);
+      const { updatedLoan } = await onConfirmPayment(loan.id, targetAmount, notes, lateFee || 0);
 
       // Trigger Confetti
       try {
@@ -59,7 +61,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       const waUrl = generateWhatsAppMessage({
         clientName: updatedLoan.clientName,
         phone: updatedLoan.clientPhone,
-        paymentAmount: targetAmount,
+        paymentAmount: targetAmount + (lateFee || 0),
         remainingAmount: updatedLoan.remainingAmount,
         totalToPay: updatedLoan.totalToPay,
         paidDaysCount: updatedLoan.paidDaysCount,
@@ -217,6 +219,39 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                     required
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Mora / Penalidad */}
+            <div>
+              <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                Mora / Interés por Mora (S/.) <span className="text-[10px] text-[#6E615A] font-normal">(Opcional)</span>:
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={lateFee || ''}
+                onChange={(e) => setLateFee(e.target.value === '' ? 0 : Number(e.target.value))}
+                placeholder="0.00"
+                className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#C84B31] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
+              />
+            </div>
+
+            {lateFee > 0 && (
+              <div className="p-3 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs space-y-1 font-semibold text-[#2C221E]">
+                <div className="flex justify-between text-[#6E615A]">
+                  <span>Cuota Principal:</span>
+                  <span>{formatCurrency(targetAmount)}</span>
+                </div>
+                <div className="flex justify-between text-[#C84B31]">
+                  <span>Mora / Penalidad:</span>
+                  <span>+{formatCurrency(lateFee)}</span>
+                </div>
+                <div className="flex justify-between font-extrabold border-t border-[#E6DCD2] pt-1 text-[#2D7A5D]">
+                  <span>Total Cobrado:</span>
+                  <span>{formatCurrency(targetAmount + lateFee)}</span>
                 </div>
               </div>
             )}

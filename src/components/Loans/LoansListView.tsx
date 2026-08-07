@@ -14,15 +14,10 @@ import { EditLoanModal } from '../Clients/EditLoanModal';
 import {
   CreditCard,
   Search,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
   MessageCircle,
   Pencil,
   Trash2,
   Phone,
-  Calendar,
-  Sparkles,
 } from 'lucide-react';
 
 interface LoansListViewProps {

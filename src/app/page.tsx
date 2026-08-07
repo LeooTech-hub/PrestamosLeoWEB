@@ -118,16 +118,31 @@ export default function Home() {
   const handleRegisterPayment = async (
     loanId: string,
     amount: number,
-    notes?: string
+    notes?: string,
+    lateFee?: number
   ) => {
-    const result = await loanService.registerPayment(loanId, amount, notes);
+    const result = await loanService.registerPayment(loanId, amount, notes, lateFee);
     await loadData();
     return result;
+  };
+
+  const handleReorderClients = async (orderedClientIds: string[]) => {
+    await loanService.reorderClients(orderedClientIds);
+    await loadData();
   };
 
   // Delete payment handler
   const handleDeletePayment = async (paymentId: string) => {
     await loanService.deletePayment(paymentId);
+    await loadData();
+  };
+
+  // Edit payment handler
+  const handleUpdatePayment = async (
+    id: string,
+    data: { amount?: number; date?: string; notes?: string }
+  ) => {
+    await loanService.updatePayment(id, data);
     await loadData();
   };
 
@@ -250,6 +265,7 @@ export default function Home() {
               <DailyRouteView
                 todayCollections={todayCollections}
                 onRegisterPayment={handleRegisterPayment}
+                onReorderClients={handleReorderClients}
               />
             )}
 
@@ -291,6 +307,7 @@ export default function Home() {
                 onUpdateLoan={handleUpdateLoan}
                 onDeleteClient={handleDeleteClient}
                 onDeletePayment={handleDeletePayment}
+                onUpdatePayment={handleUpdatePayment}
               />
             )}
           </>

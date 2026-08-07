@@ -1,11 +1,13 @@
 export interface Client {
   id: string;
   name: string;
+  alias?: string;
   phone: string;
   address: string;
   identification?: string;
   notes?: string;
   status: 'ACTIVE' | 'ARCHIVED';
+  routeOrder?: number;
   createdAt?: string;
 }
 
@@ -13,8 +15,10 @@ export interface Loan {
   id: string;
   clientId: string;
   clientName: string;
+  clientAlias?: string;
   clientPhone: string;
   clientAddress?: string;
+  routeOrder?: number;
   capital: number;
   interestAmount: number;
   totalToPay: number;
@@ -37,6 +41,8 @@ export interface Payment {
   clientId: string;
   clientName: string;
   amount: number;
+  lateFee?: number;
+  dayNumber?: number;
   paymentDate?: string;
   date?: string;
   notes?: string;
@@ -57,6 +63,8 @@ export interface DashboardSummary {
 export interface NewClientLoanFormData {
   clientId?: string;
   clientName: string;
+  clientAlias?: string;
+  alias?: string;
   clientPhone: string;
   clientAddress: string;
   clientIdentification?: string;
@@ -84,8 +92,11 @@ export interface FinancialReportData {
   endDate: string;
   capitalInvested: number;
   realCollected: number;
+  principalCollected?: number;
+  totalMoras?: number;
   projectedCollection: number;
   interestCollected: number;
+  grossProfit?: number;
   totalExpenses: number;
   netProfit: number;
   remainingToCollect: number;

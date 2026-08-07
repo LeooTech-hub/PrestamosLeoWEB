@@ -5,6 +5,7 @@ import { Client, NewClientLoanFormData } from '@/types';
 import { calculate20PercentLoan, formatCurrency, formatDatePE } from '@/services/loanService';
 import confetti from 'canvas-confetti';
 import {
+  User,
   UserPlus,
   Calendar,
   DollarSign,
@@ -30,6 +31,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 }) => {
   const [selectedClientId, setSelectedClientId] = useState<string>('new');
   const [clientName, setClientName] = useState<string>('');
+  const [clientAlias, setClientAlias] = useState<string>('');
   const [clientPhone, setClientPhone] = useState<string>('');
   const [clientAddress, setClientAddress] = useState<string>('');
   const [clientIdentification, setClientIdentification] = useState<string>('');
@@ -68,6 +70,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
     setSelectedClientId(clientId);
     if (clientId === 'new') {
       setClientName('');
+      setClientAlias('');
       setClientPhone('');
       setClientAddress('');
       setClientIdentification('');
@@ -75,6 +78,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
       const existing = clients.find((c) => c.id === clientId);
       if (existing) {
         setClientName(existing.name);
+        setClientAlias(existing.alias || '');
         setClientPhone(existing.phone);
         setClientAddress(existing.address);
         setClientIdentification(existing.identification || '');
@@ -105,6 +109,8 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
       await onSubmitLoan({
         clientId: selectedClientId === 'new' ? undefined : selectedClientId,
         clientName: clientName.trim(),
+        clientAlias: clientAlias.trim(),
+        alias: clientAlias.trim(),
         clientPhone: clientPhone.trim(),
         clientAddress: clientAddress.trim(),
         clientIdentification: clientIdentification.trim(),
@@ -200,16 +206,29 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                   Nombre Completo*:
                 </label>
                 <div className="relative">
-                  <UserPlus className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Juan Carlos Quispe"
+                    placeholder="Belinda Facundo"
                     className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
                     required
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                  Apodo / Alias (Opcional):
+                </label>
+                <input
+                  type="text"
+                  value={clientAlias}
+                  onChange={(e) => setClientAlias(e.target.value)}
+                  placeholder="ej: Chino, Don Pepe, La Tía"
+                  className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                />
               </div>
 
               <div>
@@ -248,7 +267,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-[#6E615A] mb-1">
-                  DNI / Cédula (Opcional):
+                  DNI (Obligatorio):
                 </label>
                 <div className="relative">
                   <FileText className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -340,6 +359,22 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
               <label className="block text-xs font-semibold text-[#6E615A]">
                 Días de Pago Acordados:
               </label>
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {daysPresets.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setPaymentDaysInput(String(preset))}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-extrabold transition-all border ${
+                      parsedPaymentDays === preset
+                        ? 'terracotta-gradient text-white border-transparent'
+                        : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/30'
+                    }`}
+                  >
+                    {preset} días
+                  </button>
+                ))}
+              </div>
               <input
                 type="number"
                 min="1"

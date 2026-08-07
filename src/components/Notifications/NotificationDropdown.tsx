@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { AlertNotification } from '@/types';
 import { formatCurrency, formatDatePE, generateWhatsAppReminderMessage } from '@/services/loanService';
-import { Bell, X, AlertTriangle, Clock, MessageCircle, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Bell, X, MessageCircle, CheckCircle2 } from 'lucide-react';
 
 interface NotificationDropdownProps {
   alerts: AlertNotification[];

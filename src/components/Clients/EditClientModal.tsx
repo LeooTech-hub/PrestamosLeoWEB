@@ -10,7 +10,7 @@ interface EditClientModalProps {
   onClose: () => void;
   onConfirmEdit: (
     id: string,
-    data: { name: string; phone: string; address: string; identification?: string; notes?: string }
+    data: { name: string; alias?: string; phone: string; address: string; identification?: string; notes?: string }
   ) => Promise<void>;
 }
 
@@ -21,6 +21,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
   onConfirmEdit,
 }) => {
   const [name, setName] = useState<string>(client?.name || '');
+  const [alias, setAlias] = useState<string>(client?.alias || '');
   const [phone, setPhone] = useState<string>(client?.phone || '');
   const [address, setAddress] = useState<string>(client?.address || '');
   const [identification, setIdentification] = useState<string>(client?.identification || '');
@@ -30,6 +31,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
   useEffect(() => {
     if (client) {
       setName(client.name);
+      setAlias(client.alias || '');
       setPhone(client.phone);
       setAddress(client.address);
       setIdentification(client.identification || '');
@@ -54,6 +56,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
       setIsSubmitting(true);
       await onConfirmEdit(client.id, {
         name: name.trim(),
+        alias: alias.trim() || undefined,
         phone: phone.trim(),
         address: address.trim(),
         identification: identification.trim(),
@@ -77,7 +80,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
               Edición de Cliente
             </span>
             <h3 className="text-lg font-extrabold text-[#2C221E]">
-              {client.name}
+              {client.name} {client.alias ? `(${client.alias})` : ''}
             </h3>
           </div>
           <button
@@ -89,19 +92,34 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="py-4 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-[#6E615A] mb-1">
-              Nombre Completo*:
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                Nombre Completo*:
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nombre completo"
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                Apodo / Alias (Opcional):
+              </label>
               <input
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nombre completo"
-                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
-                required
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                placeholder="ej: Chino, Don Pepe"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
               />
             </div>
           </div>

@@ -4,6 +4,7 @@ import { X, User, Phone, MapPin, FileText, CheckCircle2, Search, Loader2 } from 
 
 export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
   const [name, setName] = useState('');
+  const [alias, setAlias] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [identification, setIdentification] = useState('');
@@ -15,6 +16,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
   useEffect(() => {
     if (client) {
       setName(client.name || '');
+      setAlias(client.alias || '');
       setPhone(client.phone || '');
       setAddress(client.address || '');
       setIdentification(client.identification || '');
@@ -62,6 +64,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
     try {
       await onConfirmEdit(client.id, {
         name,
+        alias: alias || undefined,
         phone,
         address,
         identification: identification || undefined,
@@ -101,18 +104,33 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="block text-xs font-bold text-[#6E615A] mb-1">
-              Nombre Completo:
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-[#E89D4F] absolute left-3 top-3" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#6E615A] mb-1">
+                Nombre Completo:
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 text-[#E89D4F] absolute left-3 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#6E615A] mb-1">
+                Apodo / Alias (Opcional):
+              </label>
               <input
                 type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                placeholder="ej: Chino, Don Pepe, Vecina Mari"
+                className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>
           </div>
@@ -137,7 +155,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-bold text-[#6E615A]">
-                  DNI / Identificación:
+                  DNI:
                 </label>
                 {isSearchingDni && (
                   <span className="text-[10px] font-bold text-[#D96B27] animate-pulse flex items-center gap-1">

@@ -33,6 +33,7 @@ interface ClientsViewProps {
   ) => Promise<void>;
   onDeleteClient: (clientId: string, mode: 'ARCHIVE' | 'PERMANENT') => Promise<void>;
   onDeletePayment?: (paymentId: string) => Promise<void>;
+  onUpdatePayment?: (id: string, data: { amount?: number; date?: string; notes?: string }) => Promise<void>;
 }
 
 export const ClientsView: React.FC<ClientsViewProps> = ({
@@ -45,8 +46,10 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   onUpdateLoan,
   onDeleteClient,
   onDeletePayment,
+  onUpdatePayment,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'UP_TO_DATE' | 'OVERDUE' | 'PAID'>('ALL');
   const [selectedClientForDetail, setSelectedClientForDetail] = useState<Client | null>(null);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
@@ -54,16 +57,54 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   // Active unarchived clients
   const activeClients = clients.filter((c) => c.status === 'ACTIVE');
 
+  const counts = React.useMemo(() => {
+    let all = 0;
+    let upToDate = 0;
+    let overdue = 0;
+    let paid = 0;
+
+    activeClients.forEach((c) => {
+      all++;
+      const cLoans = loans.filter((l) => l.clientId === c.id && !l.isArchived);
+      const hasOverdue = cLoans.some((l) => l.status === 'OVERDUE');
+      const hasActive = cLoans.some((l) => l.status === 'ACTIVE');
+      if (hasOverdue) {
+        overdue++;
+      } else if (hasActive) {
+        upToDate++;
+      } else if (cLoans.length > 0 && cLoans.every((l) => l.status === 'PAID')) {
+        paid++;
+      }
+    });
+
+    return { all, upToDate, overdue, paid };
+  }, [activeClients, loans]);
+
   // Search filter
   const filteredClients = activeClients.filter((client) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
       client.name.toLowerCase().includes(q) ||
+      (client.alias && client.alias.toLowerCase().includes(q)) ||
       client.phone.includes(q) ||
       client.address.toLowerCase().includes(q) ||
-      (client.identification && client.identification.includes(q))
-    );
+      (client.identification && client.identification.includes(q));
+
+    if (!matchesSearch) return false;
+
+    const cLoans = loans.filter((l) => l.clientId === client.id && !l.isArchived);
+    if (statusFilter === 'UP_TO_DATE') {
+      const hasActive = cLoans.some((l) => l.status === 'ACTIVE');
+      const hasOverdue = cLoans.some((l) => l.status === 'OVERDUE');
+      return hasActive && !hasOverdue;
+    } else if (statusFilter === 'OVERDUE') {
+      return cLoans.some((l) => l.status === 'OVERDUE');
+    } else if (statusFilter === 'PAID') {
+      return cLoans.length > 0 && cLoans.every((l) => l.status === 'PAID');
+    }
+
+    return true;
   });
 
   return (
@@ -76,7 +117,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             Gestión de Clientes & Historial
           </h2>
           <p className="text-xs sm:text-sm text-[#6E615A] mt-0.5">
-            Directorio de clientes, edición, borrado inteligente e historial de créditos en Soles (S/.).
+            Directorio de clientes, apodos/alias, edición, filtro por estado y créditos en Soles (S/.).
           </p>
         </div>
 
@@ -89,17 +130,61 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
         </button>
       </div>
 
-      {/* Search Input */}
-      <div className="bg-white rounded-3xl p-4 border border-[#E6DCD2] warm-shadow">
+      {/* Search & Filter Chips */}
+      <div className="bg-white rounded-3xl p-4 border border-[#E6DCD2] warm-shadow space-y-3">
         <div className="relative">
           <Search className="w-4 h-4 text-[#A89B92] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre, teléfono, dirección o DNI..."
+            placeholder="Buscar por nombre, apodo/alias, teléfono, dirección o DNI..."
             className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
           />
+        </div>
+
+        {/* Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setStatusFilter('ALL')}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
+              statusFilter === 'ALL'
+                ? 'terracotta-gradient text-white border-[#D96B27]'
+                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
+            }`}
+          >
+            Todos ({counts.all})
+          </button>
+          <button
+            onClick={() => setStatusFilter('UP_TO_DATE')}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
+              statusFilter === 'UP_TO_DATE'
+                ? 'bg-[#2D7A5D] text-white border-[#2D7A5D]'
+                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
+            }`}
+          >
+            Al Día ({counts.upToDate})
+          </button>
+          <button
+            onClick={() => setStatusFilter('OVERDUE')}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
+              statusFilter === 'OVERDUE'
+                ? 'bg-[#C84B31] text-white border-[#C84B31]'
+                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
+            }`}
+          >
+            Con Retraso / En Mora ({counts.overdue})
+          </button>
+          <button
+            onClick={() => setStatusFilter('PAID')}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
+              statusFilter === 'PAID'
+                ? 'bg-[#2C221E] text-white border-[#2C221E]'
+                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
+            }`}
+          >
+            Cancelados / Finalizados ({counts.paid})
+          </button>
         </div>
       </div>
 
@@ -145,8 +230,13 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                         {client.name.charAt(0)}
                       </div>
                       <div>
-                        <h3 className="font-extrabold text-base text-[#2C221E]">
-                          {client.name}
+                        <h3 className="font-extrabold text-base text-[#2C221E] flex items-center gap-1.5 flex-wrap">
+                          <span>{client.name}</span>
+                          {client.alias && (
+                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] text-[#D96B27] px-2 py-0.5 rounded-full border border-[#D96B27]/30">
+                              ({client.alias})
+                            </span>
+                          )}
                         </h3>
                         <div className="flex items-center gap-2 text-xs text-[#6E615A] mt-0.5">
                           <span className="flex items-center gap-1">
@@ -238,6 +328,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
         onUpdateClient={onUpdateClient}
         onUpdateLoan={onUpdateLoan}
         onDeletePayment={onDeletePayment}
+        onUpdatePayment={onUpdatePayment}
       />
 
       {/* Edit Client Modal */}

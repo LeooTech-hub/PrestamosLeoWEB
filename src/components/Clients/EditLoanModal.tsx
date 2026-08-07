@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Loan } from '@/types';
 import { calculate20PercentLoan, formatCurrency, formatDatePE } from '@/services/loanService';
-import { X, CheckCircle2, DollarSign, Calendar, CalendarCheck, Percent, TrendingUp } from 'lucide-react';
+import { X, CheckCircle2 } from 'lucide-react';
 
 interface EditLoanModalProps {
   loan: Loan | null;
@@ -26,19 +26,17 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
   const [startDate, setStartDate] = useState<string>(loan?.startDate || '');
   const [notes, setNotes] = useState<string>(loan?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [prevId, setPrevId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (loan) {
-      setCapital(loan.capital);
-      setPaymentDaysInput(String(loan.paymentDays));
-      setStartDate(loan.startDate);
-      setNotes(loan.notes || '');
-    }
-  }, [loan]);
+  if (loan && loan.id !== prevId) {
+    setPrevId(loan.id);
+    setCapital(loan.capital);
+    setPaymentDaysInput(String(loan.paymentDays));
+    setStartDate(loan.startDate);
+    setNotes(loan.notes || '');
+  }
 
   if (!isOpen || !loan) return null;
-
-  const daysPresets = [10, 15, 20, 30];
   const parsedPaymentDays = Math.max(1, parseInt(paymentDaysInput, 10) || 1);
 
   // Compute due date: startDate + parsedPaymentDays

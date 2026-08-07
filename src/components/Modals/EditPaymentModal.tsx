@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Payment } from '@/types';
-import { formatCurrency } from '@/services/loanService';
 import { X, CheckCircle2, DollarSign, Calendar, FileText } from 'lucide-react';
 
 interface EditPaymentModalProps {
@@ -25,14 +24,14 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({
   const [date, setDate] = useState<string>(payment?.date || '');
   const [notes, setNotes] = useState<string>(payment?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [prevId, setPrevId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (payment) {
-      setAmount(payment.amount);
-      setDate(payment.date || payment.paymentDate || '');
-      setNotes(payment.notes || '');
-    }
-  }, [payment]);
+  if (payment && payment.id !== prevId) {
+    setPrevId(payment.id);
+    setAmount(payment.amount);
+    setDate(payment.date || payment.paymentDate || '');
+    setNotes(payment.notes || '');
+  }
 
   if (!isOpen || !payment) return null;
 

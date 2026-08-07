@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Loan } from '@/types';
-import { formatCurrency, generateWhatsAppMessage, formatDatePE } from '@/services/loanService';
+import { formatCurrency, generateWhatsAppMessage } from '@/services/loanService';
 import { PaymentModal } from './PaymentModal';
 import {
   Route,
@@ -14,6 +14,8 @@ import {
   MessageCircle,
   CreditCard,
   AlertTriangle,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 
 interface DailyRouteViewProps {
@@ -25,17 +27,42 @@ interface DailyRouteViewProps {
   onRegisterPayment: (
     loanId: string,
     amount: number,
-    notes?: string
+    notes?: string,
+    lateFee?: number
   ) => Promise<{ updatedLoan: Loan }>;
+  onReorderClients?: (orderedClientIds: string[]) => Promise<void>;
 }
 
 export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
   todayCollections,
   onRegisterPayment,
+  onReorderClients,
 }) => {
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'PAID'>('PENDING');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<Loan | null>(null);
+
+  const handleMoveOrder = async (index: number, direction: 'UP' | 'DOWN') => {
+    if (!onReorderClients) return;
+    const newIndex = direction === 'UP' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= filteredCollections.length) return;
+
+    const currentList = [...todayCollections];
+    const itemA = filteredCollections[index];
+    const itemB = filteredCollections[newIndex];
+
+    const posA = currentList.findIndex((x) => x.loan?.clientId === itemA.loan?.clientId);
+    const posB = currentList.findIndex((x) => x.loan?.clientId === itemB.loan?.clientId);
+
+    if (posA !== -1 && posB !== -1) {
+      const temp = currentList[posA];
+      currentList[posA] = currentList[posB];
+      currentList[posB] = temp;
+
+      const orderedIds = currentList.map((x) => x.loan?.clientId).filter(Boolean) as string[];
+      await onReorderClients(orderedIds);
+    }
+  };
 
   // Apply filters & search
   const filteredCollections = todayCollections.filter(({ loan, isPaidToday }) => {
@@ -45,9 +72,10 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = loan.clientName.toLowerCase().includes(q);
+      const matchAlias = (loan.clientAlias || '').toLowerCase().includes(q);
       const matchPhone = loan.clientPhone.includes(q);
       const matchAddress = (loan.clientAddress || '').toLowerCase().includes(q);
-      return matchName || matchPhone || matchAddress;
+      return matchName || matchAlias || matchPhone || matchAddress;
     }
 
     return true;
@@ -162,7 +190,7 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredCollections.map(({ loan, isPaidToday, amountPaidToday }) => {
+          {filteredCollections.map(({ loan, isPaidToday, amountPaidToday }, idx) => {
             const percent = Math.round((loan.paidAmount / loan.totalToPay) * 100);
             const isOverdue = loan.status === 'OVERDUE';
 
@@ -180,31 +208,41 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                 {/* Top Card Info */}
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-extrabold text-base text-[#2C221E]">
-                        {loan.clientName}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-[#6E615A] mt-1">
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
-                          <a
-                            href={`tel:${loan.clientPhone}`}
-                            className="hover:underline hover:text-[#D96B27]"
-                          >
-                            {loan.clientPhone}
-                          </a>
-                        </span>
-                        {loan.clientAddress && (
-                          <span className="flex items-center gap-1 truncate max-w-[180px]">
-                            <MapPin className="w-3.5 h-3.5 text-[#E89D4F]" />
-                            <span className="truncate">{loan.clientAddress}</span>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[11px] font-black text-white bg-[#2C221E] px-2 py-0.5 rounded-lg shrink-0">
+                        #{idx + 1}
+                      </span>
+                      <div>
+                        <h3 className="font-extrabold text-base text-[#2C221E] flex items-center gap-1.5 flex-wrap">
+                          <span>{loan.clientName}</span>
+                          {loan.clientAlias && (
+                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] text-[#D96B27] px-2 py-0.5 rounded-full border border-[#D96B27]/30">
+                              ({loan.clientAlias})
+                            </span>
+                          )}
+                        </h3>
+                        <div className="flex items-center gap-2 text-xs text-[#6E615A] mt-1">
+                          <span className="flex items-center gap-1">
+                            <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
+                            <a
+                              href={`tel:${loan.clientPhone}`}
+                              className="hover:underline hover:text-[#D96B27]"
+                            >
+                              {loan.clientPhone}
+                            </a>
                           </span>
-                        )}
+                          {loan.clientAddress && (
+                            <span className="flex items-center gap-1 truncate max-w-[180px]">
+                              <MapPin className="w-3.5 h-3.5 text-[#E89D4F]" />
+                              <span className="truncate">{loan.clientAddress}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Status Badge */}
-                    <div>
+                    {/* Status Badge & Reorder Controls */}
+                    <div className="flex flex-col items-end gap-1">
                       {isPaidToday ? (
                         <span className="bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/30 text-[11px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -219,6 +257,27 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                         <span className="bg-[#FDF6EE] text-[#E89D4F] border border-[#E89D4F]/30 text-[11px] font-extrabold px-2.5 py-1 rounded-full">
                           Pendiente
                         </span>
+                      )}
+
+                      {onReorderClients && (
+                        <div className="flex items-center gap-0.5 bg-[#FAF8F5] p-0.5 rounded-lg border border-[#E6DCD2]">
+                          <button
+                            onClick={() => handleMoveOrder(idx, 'UP')}
+                            disabled={idx === 0}
+                            className="p-1 rounded-md hover:bg-white text-[#6E615A] hover:text-[#D96B27] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            title="Mover arriba en la ruta"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleMoveOrder(idx, 'DOWN')}
+                            disabled={idx === filteredCollections.length - 1}
+                            className="p-1 rounded-md hover:bg-white text-[#6E615A] hover:text-[#D96B27] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            title="Mover abajo en la ruta"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

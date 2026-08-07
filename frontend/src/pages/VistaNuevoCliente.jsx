@@ -8,6 +8,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   const navigate = useNavigate();
   const [selectedClientId, setSelectedClientId] = useState('');
   const [clientName, setClientName] = useState('');
+  const [clientAlias, setClientAlias] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientAddress, setClientAddress] = useState('');
   const [clientIdentification, setClientIdentification] = useState('');
@@ -27,11 +28,13 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
     const existing = clients.find((c) => c.id === clientId);
     if (existing) {
       setClientName(existing.name);
+      setClientAlias(existing.alias || '');
       setClientPhone(existing.phone);
       setClientAddress(existing.address);
       setClientIdentification(existing.identification || '');
     } else {
       setClientName('');
+      setClientAlias('');
       setClientPhone('');
       setClientAddress('');
       setClientIdentification('');
@@ -80,6 +83,8 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
       await onSubmitLoan({
         clientId: selectedClientId || undefined,
         clientName,
+        alias: clientAlias,
+        clientAlias,
         clientPhone,
         clientAddress,
         clientIdentification,
@@ -138,18 +143,33 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                Nombre Completo del Cliente:
-              </label>
-              <input
-                type="text"
-                required
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder=""
-                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[#6E615A] mb-1">
+                  Nombre Completo del Cliente:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  placeholder="Ej: Belinda Facundo"
+                  className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#6E615A] mb-1">
+                  Apodo / Alias (Opcional):
+                </label>
+                <input
+                  type="text"
+                  value={clientAlias}
+                  onChange={(e) => setClientAlias(e.target.value)}
+                  placeholder="Ej: Chino, Don Pepe, La Tía"
+                  className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -173,7 +193,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-[#6E615A]">
-                    DNI / Identificación (Opcional):
+                    DNI (Obligatorio):
                   </label>
                   {isSearchingDni && (
                     <span className="text-[10px] font-bold text-[#D96B27] animate-pulse flex items-center gap-1">

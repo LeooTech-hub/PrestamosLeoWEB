@@ -200,14 +200,23 @@ export default function App() {
     }
   };
 
-  const handleRegisterPayment = async (loanId, amount, notes) => {
+  const handleRegisterPayment = async (loanId, amount, notes, lateFee) => {
     try {
-      const res = await api.post('/payments', { loanId, amount, notes });
+      const res = await api.post('/payments', { loanId, amount, notes, lateFee });
       await loadData();
       return res.data;
     } catch (err) {
       console.error('Error registrando pago:', err);
       throw err;
+    }
+  };
+
+  const handleReorderClients = async (orders) => {
+    try {
+      await api.put('/clients/reorder', { orders });
+      await loadData();
+    } catch (err) {
+      console.error('Error reordenando clientes:', err);
     }
   };
 
@@ -411,6 +420,7 @@ export default function App() {
                   <VistaRutaDiaria
                     todayCollections={todayCollections}
                     onRegisterPayment={handleRegisterPayment}
+                    onReorderClients={handleReorderClients}
                   />
                 </PrivateRoute>
               }

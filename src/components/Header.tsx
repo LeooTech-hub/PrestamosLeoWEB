@@ -1,21 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Wallet, RefreshCw, Calendar, Sparkles, Bell, PlusCircle } from 'lucide-react';
+import { Wallet, RefreshCw, Calendar, Bell, PlusCircle } from 'lucide-react';
 import { AlertNotification } from '@/types';
 import { NotificationDropdown } from './Notifications/NotificationDropdown';
 
 interface HeaderProps {
   alerts: AlertNotification[];
   onRefresh: () => void;
-  onResetDemo: () => void;
+  onResetDemo?: () => void;
   onOpenQuickCreateLoan: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   alerts,
   onRefresh,
-  onResetDemo,
   onOpenQuickCreateLoan,
 }) => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);

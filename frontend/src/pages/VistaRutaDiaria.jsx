@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { formatCurrency, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
 import { PaymentModal } from '../components/PaymentModal';
-import { Route, Search, Phone, MapPin, CheckCircle2, DollarSign, MessageSquare } from 'lucide-react';
+import { Route, Search, Phone, MapPin, CheckCircle2, DollarSign, MessageSquare, ArrowUp, ArrowDown } from 'lucide-react';
 
-export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment }) {
+export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment, onReorderClients }) {
   const [filter, setFilter] = useState('PENDING');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLoan, setSelectedLoan] = useState(null);
@@ -19,15 +19,39 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment }) {
 
     const term = searchTerm.toLowerCase();
     const clientName = c.loan?.clientName || '';
+    const clientAlias = c.loan?.clientAlias || '';
     const clientPhone = c.loan?.clientPhone || '';
     const clientAddress = c.loan?.clientAddress || '';
 
     return (
       clientName.toLowerCase().includes(term) ||
+      clientAlias.toLowerCase().includes(term) ||
       clientPhone.includes(term) ||
       clientAddress.toLowerCase().includes(term)
     );
   });
+
+  const handleMoveOrder = async (index, direction) => {
+    if (!onReorderClients) return;
+    const newIndex = direction === 'UP' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= filteredCollections.length) return;
+
+    const currentList = [...todayCollections];
+    const itemA = filteredCollections[index];
+    const itemB = filteredCollections[newIndex];
+
+    const posA = currentList.findIndex((x) => x.loan?.clientId === itemA.loan?.clientId);
+    const posB = currentList.findIndex((x) => x.loan?.clientId === itemB.loan?.clientId);
+
+    if (posA !== -1 && posB !== -1) {
+      const temp = currentList[posA];
+      currentList[posA] = currentList[posB];
+      currentList[posB] = temp;
+
+      const orderedIds = currentList.map((x) => x.loan?.clientId).filter(Boolean);
+      await onReorderClients(orderedIds);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -128,7 +152,7 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCollections.map(({ loan, isPaidToday, amountPaidToday }) => {
+          {filteredCollections.map(({ loan, isPaidToday, amountPaidToday }, idx) => {
             const isOverdue = loan?.status === 'OVERDUE';
 
             return (
@@ -144,27 +168,60 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment }) {
               >
                 <div>
                   <div className="flex justify-between items-start gap-2 border-b border-[#E6DCD2]/60 pb-3 mb-3">
-                    <div>
-                      <h3 className="font-extrabold text-sm text-[#2C221E] line-clamp-1">
-                        {loan.clientName}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-xs text-[#6E615A] mt-0.5">
-                        <Phone className="w-3 h-3 text-[#E89D4F]" />
-                        <span>{loan.clientPhone}</span>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[11px] font-black text-white bg-[#2C221E] px-2 py-0.5 rounded-lg shrink-0">
+                        #{idx + 1}
+                      </span>
+                      <div>
+                        <h3 className="font-extrabold text-sm text-[#2C221E] flex items-center gap-1.5 flex-wrap">
+                          <span>{loan.clientName}</span>
+                          {loan.clientAlias && (
+                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] text-[#D96B27] px-2 py-0.5 rounded-full border border-[#D96B27]/30">
+                              ({loan.clientAlias})
+                            </span>
+                          )}
+                        </h3>
+                        <div className="flex items-center gap-1.5 text-xs text-[#6E615A] mt-0.5">
+                          <Phone className="w-3 h-3 text-[#E89D4F]" />
+                          <span>{loan.clientPhone}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        isPaidToday
-                          ? 'bg-[#2D7A5D] text-white border-transparent'
-                          : isOverdue
-                          ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
-                          : 'bg-[#FDF3ED] text-[#D96B27] border-[#D96B27]/30'
-                      }`}
-                    >
-                      {isPaidToday ? 'PAGADO HOY' : isOverdue ? 'EN MORA' : 'PENDIENTE'}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          isPaidToday
+                            ? 'bg-[#2D7A5D] text-white border-transparent'
+                            : isOverdue
+                            ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
+                            : 'bg-[#FDF3ED] text-[#D96B27] border-[#D96B27]/30'
+                        }`}
+                      >
+                        {isPaidToday ? 'PAGADO HOY' : isOverdue ? 'EN MORA' : 'PENDIENTE'}
+                      </span>
+
+                      {onReorderClients && (
+                        <div className="flex items-center gap-0.5 bg-[#FAF8F5] p-0.5 rounded-lg border border-[#E6DCD2]">
+                          <button
+                            onClick={() => handleMoveOrder(idx, 'UP')}
+                            disabled={idx === 0}
+                            className="p-1 rounded-md hover:bg-white text-[#6E615A] hover:text-[#D96B27] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            title="Mover arriba en la ruta"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleMoveOrder(idx, 'DOWN')}
+                            disabled={idx === filteredCollections.length - 1}
+                            className="p-1 rounded-md hover:bg-white text-[#6E615A] hover:text-[#D96B27] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            title="Mover abajo en la ruta"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 text-xs text-[#6E615A] mb-3">

@@ -34,14 +34,15 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
   const [date, setDate] = useState<string>(expense?.date || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (expense) {
-      setAmount(expense.amount);
-      setCategory(expense.category);
-      setDescription(expense.description);
-      setDate(expense.date);
-    }
-  }, [expense]);
+  const [prevId, setPrevId] = useState<string | null>(null);
+
+  if (expense && expense.id !== prevId) {
+    setPrevId(expense.id);
+    setAmount(expense.amount);
+    setCategory(expense.category);
+    setDescription(expense.description);
+    setDate(expense.date);
+  }
 
   if (!isOpen || !expense) return null;
 

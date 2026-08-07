@@ -7,7 +7,8 @@ function generateUUID() {
 
 export async function initDb() {
   try {
-    const createUsersTableQuery = `
+    // 1. Users table
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id VARCHAR(36) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -17,11 +18,99 @@ export async function initDb() {
         reset_token_expires DATETIME NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
-    `;
+    `);
 
-    await pool.query(createUsersTableQuery);
+    // 2. Clients table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        alias VARCHAR(100) NULL,
+        phone VARCHAR(50) NULL,
+        address TEXT NULL,
+        identification VARCHAR(50) NULL,
+        notes TEXT NULL,
+        status VARCHAR(20) DEFAULT 'ACTIVE',
+        is_archived TINYINT(1) DEFAULT 0,
+        route_order INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
-    // Check if any user exists
+    // Safe column additions for clients table if it already existed
+    const safeAddColumn = async (table, column, colDef) => {
+      try {
+        await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${colDef}`);
+      } catch (_) {}
+    };
+
+    await safeAddColumn('clients', 'alias', 'VARCHAR(100) NULL');
+    await safeAddColumn('clients', 'route_order', 'INT DEFAULT 0');
+
+    // 3. Loans table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS loans (
+        id VARCHAR(36) PRIMARY KEY,
+        client_id VARCHAR(36) NOT NULL,
+        client_name VARCHAR(255) NOT NULL,
+        client_phone VARCHAR(50) NULL,
+        client_address TEXT NULL,
+        capital DECIMAL(10,2) NOT NULL,
+        amount_borrowed DECIMAL(10,2) NULL,
+        interest_rate DECIMAL(5,2) DEFAULT 20.00,
+        interest_amount DECIMAL(10,2) NOT NULL,
+        total_to_pay DECIMAL(10,2) NOT NULL,
+        total_amount DECIMAL(10,2) NULL,
+        payment_days INT DEFAULT 20,
+        days_agreed INT NULL,
+        daily_payment_amount DECIMAL(10,2) NOT NULL,
+        daily_payment DECIMAL(10,2) NULL,
+        paid_amount DECIMAL(10,2) DEFAULT 0.00,
+        remaining_amount DECIMAL(10,2) NOT NULL,
+        paid_days_count INT DEFAULT 0,
+        start_date DATE NOT NULL,
+        due_date DATE NOT NULL,
+        status VARCHAR(20) DEFAULT 'ACTIVE',
+        notes TEXT NULL,
+        is_archived TINYINT(1) DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 4. Payments table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS payments (
+        id VARCHAR(36) PRIMARY KEY,
+        loan_id VARCHAR(36) NOT NULL,
+        client_id VARCHAR(36) NOT NULL,
+        client_name VARCHAR(255) NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        late_fee DECIMAL(10,2) DEFAULT 0.00,
+        payment_date DATE NULL,
+        date DATE NULL,
+        type VARCHAR(50) DEFAULT 'FULL_DAY',
+        day_number INT DEFAULT 1,
+        notes TEXT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await safeAddColumn('payments', 'late_fee', 'DECIMAL(10,2) DEFAULT 0.00');
+
+    // 5. Expenses table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS expenses (
+        id VARCHAR(36) PRIMARY KEY,
+        amount DECIMAL(10,2) NOT NULL,
+        category VARCHAR(50) DEFAULT 'OTROS',
+        description TEXT NULL,
+        expense_date DATE NULL,
+        date DATE NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Check default admin user
     const [rows] = await pool.query('SELECT COUNT(*) as count FROM users');
     if (rows[0].count === 0) {
       const defaultPassword = 'admin123';
@@ -36,8 +125,9 @@ export async function initDb() {
       console.log('✅ Usuario por defecto creado: admin@prestamosleo.com / admin123');
     }
 
-    console.log('✅ Tabla "users" inicializada correctamente en TiDB Cloud.');
+    console.log('✅ Tablas y columnas (alias, route_order, late_fee) inicializadas correctamente en TiDB Cloud.');
   } catch (error) {
-    console.error('❌ Error al inicializar la base de datos (users table):', error.message);
+    console.error('❌ Error al inicializar la base de datos:', error.message);
   }
 }
+
