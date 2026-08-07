@@ -441,6 +441,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
 
       {/* Edit Client Sub-modal */}
       <EditClientModal
+        key={client?.id}
         client={client}
         isOpen={isEditingClient}
         onClose={() => setIsEditingClient(false)}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Client } from '@/types';
 import { X, CheckCircle2, User, Phone, MapPin, FileText } from 'lucide-react';
 
@@ -27,17 +27,6 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
   const [identification, setIdentification] = useState<string>(client?.identification || '');
   const [notes, setNotes] = useState<string>(client?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (client) {
-      setName(client.name);
-      setAlias(client.alias || '');
-      setPhone(client.phone);
-      setAddress(client.address);
-      setIdentification(client.identification || '');
-      setNotes(client.notes || '');
-    }
-  }, [client]);
 
   if (!isOpen || !client) return null;
 

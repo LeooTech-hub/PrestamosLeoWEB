@@ -333,6 +333,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
       {/* Edit Client Modal */}
       <EditClientModal
+        key={clientToEdit?.id}
         client={clientToEdit}
         isOpen={!!clientToEdit}
         onClose={() => setClientToEdit(null)}

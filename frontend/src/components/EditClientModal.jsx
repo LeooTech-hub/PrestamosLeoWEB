@@ -1,28 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { fetchDniData } from '../utils/reniecHelper';
 import { X, User, Phone, MapPin, FileText, CheckCircle2, Search, Loader2 } from 'lucide-react';
 
 export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
-  const [name, setName] = useState('');
-  const [alias, setAlias] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [identification, setIdentification] = useState('');
-  const [notes, setNotes] = useState('');
+  const [name, setName] = useState(client?.name || '');
+  const [alias, setAlias] = useState(client?.alias || '');
+  const [phone, setPhone] = useState(client?.phone || '');
+  const [address, setAddress] = useState(client?.address || '');
+  const [identification, setIdentification] = useState(client?.identification || '');
+  const [notes, setNotes] = useState(client?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearchingDni, setIsSearchingDni] = useState(false);
   const [dniStatusText, setDniStatusText] = useState('');
-
-  useEffect(() => {
-    if (client) {
-      setName(client.name || '');
-      setAlias(client.alias || '');
-      setPhone(client.phone || '');
-      setAddress(client.address || '');
-      setIdentification(client.identification || '');
-      setNotes(client.notes || '');
-    }
-  }, [client]);
 
   if (!isOpen || !client) return null;
 

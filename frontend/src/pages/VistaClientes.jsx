@@ -604,6 +604,7 @@ export function VistaClientes({
       )}
 
       <EditClientModal
+        key={activeSelectedClient?.id}
         client={activeSelectedClient}
         isOpen={isEditClientOpen}
         onClose={() => setIsEditClientOpen(false)}
