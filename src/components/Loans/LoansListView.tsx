@@ -80,7 +80,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
   // Counters
   const countVigentes = activeLoans.filter((l) => l.status !== 'PAID' && getDaysDifferenceInfo(l.dueDate).diffDays >= 0).length;
   const countExpiring = activeLoans.filter((l) => l.status !== 'PAID' && [0, 1].includes(getDaysDifferenceInfo(l.dueDate).diffDays)).length;
-  const countOverdue = activeLoans.filter((l) => l.status === 'OVERDUE' || (l.status !== 'PAID' && getDaysDifferenceInfo(l.dueDate).diffDays < 0)).length;
+  const countOverdue  = activeLoans.filter((l) => l.status === 'OVERDUE' || (l.status !== 'PAID' && getDaysDifferenceInfo(l.dueDate).diffDays < 0)).length;
 
   const handleSendReminder = (loan: Loan) => {
     const diffInfo = getDaysDifferenceInfo(loan.dueDate);
@@ -96,85 +96,64 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-24 md:pb-12 max-w-5xl mx-auto">
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-5 pb-24 md:pb-12 max-w-5xl mx-auto">
+
+      {/* ── Título ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-[#D96B27] dark:text-[#E07A5F]" />
-            Consolidado de Préstamos ({activeLoans.length})
+          <h2 className="text-lg sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-2">
+            <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-[#D96B27] dark:text-[#E07A5F] shrink-0" />
+            <span>Consolidado de Préstamos ({activeLoans.length})</span>
           </h2>
-          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
+          <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-0.5 ml-7 sm:ml-0">
             Gestión organizada por vencimientos, cobros y borrado inteligente.
           </p>
         </div>
       </div>
 
-      {/* Search & Status Filter Tabs */}
-      <div className="bg-white dark:bg-[#26221F] rounded-3xl p-4 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300 space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por cliente, teléfono o dirección..."
-              className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] placeholder-[#A89B92] dark:placeholder-[#C2B29F] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
-            />
-          </div>
+      {/* ── Buscador + Filtros ── */}
+      <div className="bg-white dark:bg-[#26221F] rounded-3xl p-3 sm:p-4 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300 space-y-2.5">
+        {/* Search */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar cliente, teléfono o dirección..."
+            className="w-full pl-9 pr-4 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] placeholder-[#A89B92] dark:placeholder-[#C2B29F] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+          />
+        </div>
 
-          {/* Quick Filter Pills */}
-          <div className="flex items-center gap-1 bg-[#FAF8F5] dark:bg-[#1C1917] p-1 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] text-xs font-bold overflow-x-auto">
+        {/* Filter Pills — scrollable horizontalmente en móvil */}
+        <div className="flex items-center gap-1 bg-[#FAF8F5] dark:bg-[#1C1917] p-1 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] text-[11px] sm:text-xs font-bold overflow-x-auto scrollbar-none">
+          {(
+            [
+              { key: 'ALL',      label: `Todos (${activeLoans.length})` },
+              { key: 'ACTIVE',   label: `🟢 Vigentes (${countVigentes})` },
+              { key: 'EXPIRING', label: `🟡 Por Vencer (${countExpiring})` },
+              { key: 'OVERDUE',  label: `🔴 Vencidos (${countOverdue})` },
+            ] as const
+          ).map(({ key, label }) => (
             <button
-              onClick={() => setFilter('ALL')}
-              className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                filter === 'ALL'
-                  ? 'bg-[#2C221E] dark:bg-[#EAE0D5] text-white dark:text-[#1C1917] shadow-xs'
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
+                filter === key
+                  ? key === 'ALL'      ? 'bg-[#2C221E] dark:bg-[#EAE0D5] text-white dark:text-[#1C1917] shadow-xs'
+                  : key === 'ACTIVE'   ? 'bg-[#2D7A5D] dark:bg-[#3D9970] text-white shadow-xs'
+                  : key === 'EXPIRING' ? 'bg-[#E89D4F] text-white shadow-xs'
+                                       : 'bg-[#C84B31] text-white shadow-xs'
                   : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
               }`}
             >
-              Todos ({activeLoans.length})
+              {label}
             </button>
-
-            <button
-              onClick={() => setFilter('ACTIVE')}
-              className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                filter === 'ACTIVE'
-                  ? 'bg-[#2D7A5D] dark:bg-[#3D9970] text-white shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
-              }`}
-            >
-              🟢 Vigentes ({countVigentes})
-            </button>
-
-            <button
-              onClick={() => setFilter('EXPIRING')}
-              className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                filter === 'EXPIRING'
-                  ? 'bg-[#E89D4F] text-white shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
-              }`}
-            >
-              🟡 Por Vencer ({countExpiring})
-            </button>
-
-            <button
-              onClick={() => setFilter('OVERDUE')}
-              className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                filter === 'OVERDUE'
-                  ? 'bg-[#C84B31] text-white shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
-              }`}
-            >
-              🔴 Vencidos ({countOverdue})
-            </button>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Loans Grid List */}
+      {/* ── Grid de tarjetas ── */}
       {filteredLoans.length === 0 ? (
         <div className="bg-white dark:bg-[#26221F] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
           <CreditCard className="w-12 h-12 text-[#A89B92] dark:text-[#C2B29F] mx-auto mb-3 opacity-50" />
@@ -184,7 +163,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {filteredLoans.map((loan) => {
             const diffInfo = getDaysDifferenceInfo(loan.dueDate);
             const percent = Math.round((loan.paidAmount / loan.totalToPay) * 100);
@@ -192,26 +171,24 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
             return (
               <div
                 key={loan.id}
-                className="bg-white dark:bg-[#26221F] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#3D352E] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 warm-shadow transition-colors duration-300 flex flex-col justify-between space-y-4"
+                className="bg-white dark:bg-[#26221F] rounded-3xl p-3.5 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 warm-shadow transition-colors duration-300 flex flex-col justify-between space-y-3"
               >
-                {/* Header */}
+                {/* ── Cabecera: nombre + badge vencimiento ── */}
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#EAE0D5]">
+                    <div className="min-w-0">
+                      <h3 className="font-extrabold text-sm sm:text-base text-[#2C221E] dark:text-[#EAE0D5] truncate">
                         {loan.clientName}
                       </h3>
-                      <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
-                          {loan.clientPhone}
-                        </span>
+                      <div className="flex items-center gap-1.5 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
+                        <Phone className="w-3 h-3 text-[#E89D4F] shrink-0" />
+                        <span className="truncate">{loan.clientPhone}</span>
                       </div>
                     </div>
 
-                    {/* Expiration Days Badge */}
+                    {/* Badge de días — texto más compacto en móvil */}
                     <span
-                      className={`text-[11px] font-black px-2.5 py-1 rounded-full border ${
+                      className={`text-[10px] sm:text-[11px] font-black px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border shrink-0 max-w-[120px] sm:max-w-none text-center leading-tight ${
                         diffInfo.color === 'RED'
                           ? 'bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] border-[#C84B31]/30'
                           : diffInfo.color === 'YELLOW'
@@ -223,65 +200,84 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                     </span>
                   </div>
 
-                  {/* Dates Row */}
-                  <div className="flex items-center justify-between text-xs text-[#6E615A] dark:text-[#C2B29F] mt-3 bg-[#FAF8F5] dark:bg-[#1C1917] p-2.5 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E]">
+                  {/* ── Fechas ── */}
+                  <div className="flex items-center justify-between text-xs text-[#6E615A] dark:text-[#C2B29F] mt-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] px-3 py-2 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E]">
                     <div>
-                      <span className="block text-[10px]">Fecha Inicio:</span>
-                      <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatDatePE(loan.startDate)}</strong>
+                      <span className="block text-[9px] sm:text-[10px]">Fecha Inicio:</span>
+                      <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-[11px] sm:text-xs">{formatDatePE(loan.startDate)}</strong>
                     </div>
                     <div className="text-right">
-                      <span className="block text-[10px]">Vencimiento:</span>
-                      <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatDatePE(loan.dueDate)}</strong>
+                      <span className="block text-[9px] sm:text-[10px]">Vencimiento:</span>
+                      <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-[11px] sm:text-xs">{formatDatePE(loan.dueDate)}</strong>
                     </div>
                   </div>
 
-                  {/* Financials Row */}
-                  <div className="grid grid-cols-3 gap-2 mt-3 text-xs bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E]">
-                    <div>
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Capital:</span>
-                      <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loan.capital)}</strong>
+                  {/* ── Financials — 3 columnas adaptativas ──
+                      En móvil el texto es más pequeño para que "S/. 1,200" no se corte.
+                      Cada celda puede truncar el valor si es muy largo. */}
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E]">
+                    <div className="min-w-0">
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Capital:</span>
+                      <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-[11px] sm:text-xs block truncate">
+                        {formatCurrency(loan.capital)}
+                      </strong>
                     </div>
-                    <div>
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Total (20%):</span>
-                      <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(loan.totalToPay)}</strong>
+                    <div className="min-w-0">
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Total (20%):</span>
+                      <strong className="text-[#D96B27] dark:text-[#E07A5F] text-[11px] sm:text-xs block truncate">
+                        {formatCurrency(loan.totalToPay)}
+                      </strong>
                     </div>
-                    <div>
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Saldo:</span>
-                      <strong className="text-[#C84B31]">{formatCurrency(loan.remainingAmount)}</strong>
+                    <div className="min-w-0">
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Saldo:</span>
+                      <strong className="text-[#C84B31] text-[11px] sm:text-xs block truncate">
+                        {formatCurrency(loan.remainingAmount)}
+                      </strong>
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="mt-3">
-                    <div className="flex justify-between text-[11px] font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
+                  {/* ── Barra de progreso ── */}
+                  <div className="mt-2.5">
+                    <div className="flex justify-between text-[10px] sm:text-[11px] font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
                       <span>
-                        Día {loan.paidDaysCount}/{loan.paymentDays} ({formatCurrency(loan.dailyPaymentAmount)}/día)
+                        Día {loan.paidDaysCount}/{loan.paymentDays}
+                        <span className="hidden sm:inline"> ({formatCurrency(loan.dailyPaymentAmount)}/día)</span>
                       </span>
                       <span className="text-[#2D7A5D] dark:text-[#3D9970]">{percent}% Pagado</span>
                     </div>
-                    <div className="w-full bg-[#E6DCD2] dark:bg-[#3D352E] rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-[#E6DCD2] dark:bg-[#3D352E] rounded-full h-1.5 sm:h-2 overflow-hidden">
                       <div
-                        className="bg-[#2D7A5D] dark:bg-[#3D9970] h-2 rounded-full"
+                        className="bg-[#2D7A5D] dark:bg-[#3D9970] h-full rounded-full transition-all duration-500"
                         style={{ width: `${percent}%` }}
                       />
                     </div>
+                    {/* Cuota diaria — sólo visible en móvil debajo de la barra */}
+                    <p className="sm:hidden text-[10px] text-[#6E615A] dark:text-[#C2B29F] mt-0.5 text-right">
+                      {formatCurrency(loan.dailyPaymentAmount)}/día
+                    </p>
                   </div>
                 </div>
 
-                {/* Actions Row */}
-                <div className="pt-2 flex items-center justify-between gap-2 border-t border-[#E6DCD2]/60 dark:border-[#3D352E]">
-                  <div className="flex items-center gap-1.5 flex-1">
+                {/* ── Acciones ──────────────────────────────────────────
+                    Móvil: [Cobrar flex-1] [WA icono] | [✏] [🗑]
+                    El botón "Cobrar" absorbe el espacio disponible.
+                    WhatsApp muestra sólo icono en móvil, texto en sm+.
+                    Editar y Eliminar son iconos cuadrados compactos.
+                ─────────────────────────────────────────────────────── */}
+                <div className="pt-2 flex items-center justify-between gap-1.5 sm:gap-2 border-t border-[#E6DCD2]/60 dark:border-[#3D352E]">
+                  {/* Cobrar + WhatsApp */}
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     <button
                       onClick={() => setSelectedLoanForPayment(loan)}
-                      className="flex-1 py-2.5 px-2 rounded-2xl terracotta-gradient text-white font-extrabold text-xs shadow-xs hover:brightness-110 flex items-center justify-center gap-1"
+                      className="flex-1 py-2 sm:py-2.5 px-2 rounded-2xl terracotta-gradient text-white font-extrabold text-xs shadow-xs hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1 min-w-0"
                     >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>Cobrar</span>
+                      <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                      <span>S/. Cobrar</span>
                     </button>
 
                     <button
                       onClick={() => handleSendReminder(loan)}
-                      className="py-2.5 px-3 rounded-2xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30 font-bold text-xs hover:bg-[#25D366] hover:text-white transition-all flex items-center gap-1"
+                      className="p-2 sm:py-2.5 sm:px-3 rounded-2xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30 font-bold text-xs hover:bg-[#25D366] hover:text-white active:scale-95 transition-all flex items-center gap-1 shrink-0"
                       title="Enviar recordatorio WhatsApp"
                     >
                       <MessageCircle className="w-4 h-4" />
@@ -289,11 +285,11 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                     </button>
                   </div>
 
-                  {/* Edit & Delete Action Buttons */}
-                  <div className="flex items-center gap-1">
+                  {/* Editar & Eliminar */}
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => setSelectedLoanForEdit(loan)}
-                      className="p-2 rounded-xl bg-[#FAF8F5] dark:bg-[#1C1917] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E] transition-all"
+                      className="p-2 rounded-xl bg-[#FAF8F5] dark:bg-[#1C1917] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E] active:scale-95 transition-all"
                       title="Editar Préstamo"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -301,7 +297,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
 
                     <button
                       onClick={() => setSelectedLoanForDelete(loan)}
-                      className="p-2 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 hover:bg-[#C84B31] hover:text-white text-[#C84B31] border border-[#C84B31]/30 transition-all"
+                      className="p-2 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 hover:bg-[#C84B31] hover:text-white text-[#C84B31] border border-[#C84B31]/30 active:scale-95 transition-all"
                       title="Eliminar / Archivar Préstamo"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -314,7 +310,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
         </div>
       )}
 
-      {/* Payment Modal */}
+      {/* Modals */}
       <PaymentModal
         loan={selectedLoanForPayment}
         isOpen={!!selectedLoanForPayment}
@@ -322,7 +318,6 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
         onConfirmPayment={onRegisterPayment}
       />
 
-      {/* Edit Loan Modal */}
       <EditLoanModal
         loan={selectedLoanForEdit}
         isOpen={!!selectedLoanForEdit}
@@ -330,7 +325,6 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
         onConfirmEditLoan={onUpdateLoan}
       />
 
-      {/* Smart Delete Modal */}
       <SmartDeleteModal
         target={selectedLoanForDelete ? { type: 'LOAN', item: selectedLoanForDelete } : null}
         paymentsCount={selectedLoanForDelete ? (selectedLoanForDelete.paidDaysCount > 0 ? selectedLoanForDelete.paidDaysCount : 0) : 0}
