@@ -52,8 +52,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#FFFFFF]" />
               <span>Resumen de Cobranzas Hoy</span>
             </div>
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#FFFFFF]">
-              Panel de Préstamos
+            <h2 className="text-xl sm:text-2xl uppercase font-extrabold tracking-wide text-white">
+              PANEL DE PRÉSTAMOS
             </h2>
             <p className="hidden md:block text-xs sm:text-sm text-[#FFFFFF] opacity-95 mt-0.5 sm:mt-1 max-w-md">
               Control de préstamos del 20% en Soles (S/.) por días de pago.

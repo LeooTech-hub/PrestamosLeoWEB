@@ -32,14 +32,29 @@ export const Header: React.FC<HeaderProps> = ({
     applyTheme(nextTheme);
   };
 
-  const today = new Intl.DateTimeFormat('es-PE', {
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setCurrentTime(new Date());
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedDate = currentTime ? new Intl.DateTimeFormat('es-PE', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }).format(new Date());
+  }).format(currentTime) : '';
 
-  const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
+  const formattedTime = currentTime ? new Intl.DateTimeFormat('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(currentTime).toUpperCase() : '';
+
+  const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
   const alertsCount = alerts.length;
 
   return (
@@ -62,19 +77,22 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-8 h-8 object-contain rounded-full shadow-sm ring-2 ring-[#D96B27]/20 dark:ring-[#E07A5F]/30 shrink-0"
             />
             <div className="min-w-0 overflow-hidden">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <h1 className="text-base font-bold tracking-tight text-[#2C221E] dark:text-[#EAE0D5] truncate leading-none">
-                  Prestamos<span className="text-[#D96B27] dark:text-[#E07A5F]">Leo</span>
-                </h1>
-                <span className="hidden sm:inline-flex bg-[#FDF3ED] dark:bg-[#26221F] text-[#D96B27] dark:text-[#E07A5F] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D96B27]/20 dark:border-[#E07A5F]/30 uppercase shrink-0 whitespace-nowrap">
-                  Perú S/. 20%
-                </span>
-              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#2C221E] dark:text-[#EAE0D5] truncate leading-none">
+                    Prestamos<span className="text-[#D96B27] dark:text-[#E07A5F]">Leo</span>
+                  </h1>
+                </div>
 
-              {/* Fecha completa — sólo en md+ */}
-              <div className="hidden md:flex items-center gap-1 text-[12px] text-[#6E615A] dark:text-[#C2B29F] capitalize mt-0.5 truncate">
-                <Calendar className="w-3 h-3 text-[#E89D4F] shrink-0" />
-                <span className="truncate">{formattedDate}</span>
+                {/* Fecha y Hora en tiempo real */}
+                {currentTime && (
+                  <div className="flex items-center gap-1 text-[10px] sm:text-xs font-medium text-neutral-500 capitalize truncate">
+                    <Calendar className="w-3 h-3 text-[#E89D4F] shrink-0" />
+                    <span className="truncate">
+                      {capitalize(formattedDate)} | {formattedTime}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

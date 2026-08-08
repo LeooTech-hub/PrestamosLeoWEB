@@ -50,8 +50,8 @@ export function VistaDashboard({
           <span className="hidden sm:inline-block bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             PRESTAMOS LEITOTECH
           </span>
-          <h2 className="text-xl font-bold tracking-tight">
-            Panel de Préstamos
+          <h2 className="text-xl sm:text-2xl uppercase font-extrabold tracking-wide text-white">
+            PANEL DE PRÉSTAMOS
           </h2>
           <p className="hidden sm:block text-xs sm:text-sm text-white/90 max-w-xl">
             Resumen de prestamos, ingresos y gastos

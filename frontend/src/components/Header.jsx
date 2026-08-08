@@ -24,14 +24,27 @@ export function Header({
     applyTheme(nextTheme);
   };
 
-  const today = new Intl.DateTimeFormat('es-PE', {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedDate = new Intl.DateTimeFormat('es-PE', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }).format(new Date());
+  }).format(currentTime);
 
-  const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
+  const formattedTime = new Intl.DateTimeFormat('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(currentTime).toUpperCase();
+
+  const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
   const alertsCount = alerts.length;
 
   return (
@@ -48,10 +61,20 @@ export function Header({
               className="h-10 w-10 object-contain rounded-full shadow-sm ring-2 ring-[#D96B27]/20 shrink-0"
             />
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-lg sm:text-xl tracking-tight text-[#2C221E]">
-                  Prestamos<span className="text-[#D96B27]">Leo</span>
-                </h1>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <h1 className="font-extrabold text-base sm:text-lg tracking-tight text-[#2C221E]">
+                    Prestamos<span className="text-[#D96B27]">Leo</span>
+                  </h1>
+                </div>
+
+                {/* Fecha y Hora en tiempo real */}
+                <div className="flex items-center gap-1 text-[10px] sm:text-xs font-medium text-neutral-500 capitalize truncate">
+                  <Calendar className="w-3 h-3 text-[#E89D4F] shrink-0" />
+                  <span className="truncate">
+                    {capitalize(formattedDate)} | {formattedTime}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
