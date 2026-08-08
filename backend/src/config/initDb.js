@@ -46,6 +46,8 @@ export async function initDb() {
 
     await safeAddColumn('clients', 'alias', 'VARCHAR(100) NULL');
     await safeAddColumn('clients', 'route_order', 'INT DEFAULT 0');
+    await safeAddColumn('loans', 'penalty_amount', 'DECIMAL(10,2) DEFAULT 0.00');
+    await safeAddColumn('loans', 'mora', 'DECIMAL(10,2) DEFAULT 0.00');
 
     // 3. Loans table
     await pool.query(`
@@ -59,6 +61,8 @@ export async function initDb() {
         amount_borrowed DECIMAL(10,2) NULL,
         interest_rate DECIMAL(5,2) DEFAULT 20.00,
         interest_amount DECIMAL(10,2) NOT NULL,
+        penalty_amount DECIMAL(10,2) DEFAULT 0.00,
+        mora DECIMAL(10,2) DEFAULT 0.00,
         total_to_pay DECIMAL(10,2) NOT NULL,
         total_amount DECIMAL(10,2) NULL,
         payment_days INT DEFAULT 20,

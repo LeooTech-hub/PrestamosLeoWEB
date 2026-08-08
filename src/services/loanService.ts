@@ -18,7 +18,14 @@ async function fetchAPI(endpoint: string, options?: RequestInit) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const method = (options?.method || 'GET').toUpperCase();
+  let url = `${API_URL}${endpoint}`;
+  if (method === 'GET') {
+    const separator = url.includes('?') ? '&' : '?';
+    url = `${url}${separator}_t=${Date.now()}`;
+  }
+
+  const response = await fetch(url, {
     ...options,
     headers,
   });
@@ -239,6 +246,34 @@ export function generateWhatsAppMessage(params: {
 ¡Muchas gracias por su puntualidad! 🙏✨`;
 
   return `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(text)}`;
+}
+
+export function generateLoanConstanciaMessage(loan: any) {
+  if (!loan) return '';
+  const clientName = loan.clientName || 'Cliente';
+  const startDate = formatDatePE(loan.startDate);
+  const capital = formatCurrency(loan.capital);
+  const interestVal = loan.interestAmount != null
+    ? loan.interestAmount
+    : Number(((loan.capital || 0) * 0.20).toFixed(2));
+  const interest = formatCurrency(interestVal);
+  const penalty = loan.penaltyAmount && loan.penaltyAmount > 0 ? `\n⚠️ *Mora / Cargo Adicional:* ${formatCurrency(loan.penaltyAmount)}` : '';
+  const totalToPay = formatCurrency(loan.totalToPay);
+  const dueDate = formatDatePE(loan.dueDate);
+  const dailyPayment = formatCurrency(loan.dailyPaymentAmount);
+  const days = loan.paymentDays || 20;
+
+  return `📄 *CONSTANCIA DE PRÉSTAMO - PRESTAMOSLEO*
+
+👤 *Cliente:* ${clientName}
+📅 *Fecha de Emisión:* ${startDate}
+💰 *Monto Prestado:* ${capital}
+📈 *Interés / Comisión:* ${interest}${penalty}
+💵 *Monto Total a Pagar:* ${totalToPay}
+📆 *Fecha de Vencimiento:* ${dueDate}
+📌 *Cuota Diaria:* ${dailyPayment} (${days} días)
+
+_Gracias por su confianza. Ante cualquier consulta estamos para atenderle._`;
 }
 
 export default loanService;

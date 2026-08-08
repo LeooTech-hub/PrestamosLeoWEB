@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { Loan } from '@/types';
 import { formatCurrency, formatDatePE } from '@/services/loanService';
-import { X, CheckCircle2, CalendarDays, Percent } from 'lucide-react';
+import { X, CheckCircle2, CalendarDays, Percent, AlertCircle } from 'lucide-react';
 
 /* ─────────────────────────────────────────────── types ── */
 interface EditLoanModalProps {
@@ -14,10 +14,21 @@ interface EditLoanModalProps {
     id: string,
     data: {
       capital: number;
+      amount?: number;
       paymentDays: number;
+      duration_days?: number;
       startDate: string;
       dueDate?: string;
+      due_date?: string;
       commission?: number;
+      interest?: number;
+      penaltyAmount?: number;
+      penalty_amount?: number;
+      mora?: number;
+      total_amount?: number;
+      totalToPay?: number;
+      remaining_amount?: number;
+      daily_amount?: number;
       notes?: string;
     }
   ) => Promise<void>;
@@ -39,7 +50,7 @@ function addDays(startISO: string, days: number): string {
 
 /** dueDate − startDate → days (integer) */
 function diffDays(startISO: string, dueISO: string): number {
-  if (!startISO || !dueISO) return 0;
+  if (!startISO || !dueISO) return 20;
   const start = new Date(startISO).getTime();
   const due = new Date(dueISO).getTime();
   return Math.max(1, Math.round((due - start) / 86_400_000));
@@ -61,6 +72,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
   const [dueDateInput, setDueDateInput] = useState<string>(loan?.dueDate || '');
   const [commissionInput, setCommissionInput] = useState<string>('');
   const [useCustomCommission, setUseCustomCommission] = useState<boolean>(false);
+  const [penaltyInput, setPenaltyInput] = useState<string>(String(loan?.penaltyAmount || 0));
   const [notes, setNotes] = useState<string>(loan?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [prevId, setPrevId] = useState<string | null>(null);
@@ -69,60 +81,59 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
   if (loan && loan.id !== prevId) {
     setPrevId(loan.id);
     setCapital(loan.capital);
-    setPaymentDaysInput(String(loan.paymentDays));
+    setPaymentDaysInput(String(loan.paymentDays || 20));
     setStartDate(loan.startDate);
-    setDueDateInput(loan.dueDate);
+    setDueDateInput(loan.dueDate || addDays(loan.startDate, loan.paymentDays || 20));
+    setPenaltyInput(String(loan.penaltyAmount || 0));
     setNotes(loan.notes || '');
-    setCommissionInput('');
-    setUseCustomCommission(false);
+
+    if (loan.interestAmount != null && loan.interestAmount !== Math.round((loan.capital || 0) * 0.20)) {
+      setUseCustomCommission(true);
+      setCommissionInput(String(loan.interestAmount));
+    } else {
+      setUseCustomCommission(false);
+      setCommissionInput('');
+    }
   }
 
   if (!isOpen || !loan) return null;
 
   const parsedPaymentDays = Math.max(1, parseInt(paymentDaysInput, 10) || 1);
 
-  /* ── Handlers for bidirectional sync ── */
-  const handleDaysChange = useCallback(
-    (val: string) => {
-      setPaymentDaysInput(val);
-      const days = Math.max(1, parseInt(val, 10) || 1);
-      if (startDate) {
-        setDueDateInput(addDays(startDate, days));
-      }
-    },
-    [startDate]
-  );
+  /* ── Handlers for bidirectional date & days sync ── */
+  const handleDaysChange = (val: string) => {
+    setPaymentDaysInput(val);
+    const days = Math.max(1, parseInt(val, 10) || 1);
+    if (startDate) {
+      setDueDateInput(addDays(startDate, days));
+    }
+  };
 
-  const handleDueDateChange = useCallback(
-    (val: string) => {
-      setDueDateInput(val);
-      if (startDate && val) {
-        const days = diffDays(startDate, val);
-        setPaymentDaysInput(String(days));
-      }
-    },
-    [startDate]
-  );
+  const handleDueDateChange = (val: string) => {
+    setDueDateInput(val);
+    if (startDate && val) {
+      const days = diffDays(startDate, val);
+      setPaymentDaysInput(String(days));
+    }
+  };
 
-  const handleStartDateChange = useCallback(
-    (val: string) => {
-      setStartDate(val);
-      // Recalculate dueDate keeping days fixed
-      if (val && parsedPaymentDays) {
-        setDueDateInput(addDays(val, parsedPaymentDays));
-      }
-    },
-    [parsedPaymentDays]
-  );
+  const handleStartDateChange = (val: string) => {
+    setStartDate(val);
+    if (val && parsedPaymentDays) {
+      setDueDateInput(addDays(val, parsedPaymentDays));
+    }
+  };
 
   /* ── Live summary calculations ── */
-  const defaultInterest = Math.round(capital * 0.2);
+  const defaultInterest = Math.round(capital * 0.20);
   const customCommission = parseFloat(commissionInput) || 0;
   const effectiveInterest = useCustomCommission ? customCommission : defaultInterest;
-  const totalToPay = capital + effectiveInterest;
-  const dailyPayment = parsedPaymentDays > 0 ? totalToPay / parsedPaymentDays : 0;
+  const moraNum = Math.max(0, parseFloat(penaltyInput) || 0);
 
-  /* ── Computed dueDate for display (fallback to derived if blank) ── */
+  const totalToPay = capital + effectiveInterest + moraNum;
+  const dailyPayment = parsedPaymentDays > 0 ? Math.ceil(totalToPay / parsedPaymentDays) : 0;
+
+  /* ── Computed dueDate for display ── */
   const computedDueDate = dueDateInput || addDays(startDate, parsedPaymentDays);
 
   /* ── Submit ── */
@@ -142,10 +153,21 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
       setIsSubmitting(true);
       await onConfirmEditLoan(loan.id, {
         capital,
+        amount: capital,
         paymentDays: parsedPaymentDays,
+        duration_days: parsedPaymentDays,
         startDate,
         dueDate: computedDueDate || undefined,
+        due_date: computedDueDate || undefined,
         commission: useCustomCommission ? customCommission : undefined,
+        interest: effectiveInterest,
+        penaltyAmount: moraNum,
+        penalty_amount: moraNum,
+        mora: moraNum,
+        total_amount: totalToPay,
+        totalToPay,
+        remaining_amount: Math.max(0, totalToPay - (loan.paidAmount || 0)),
+        daily_amount: dailyPayment,
         notes: notes.trim(),
       });
       onClose();
@@ -177,8 +199,9 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] transition-colors"
+            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -243,10 +266,10 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
                 />
               </div>
 
-              {/* Fecha de Vencimiento / Fin — EDITABLE */}
+              {/* Fecha de Vencimiento — EDITABLE DIRECTAMENTE */}
               <div>
                 <label className={labelCls}>
-                  Fecha de Vencimiento / Fin:
+                  Fecha de Vencimiento:
                 </label>
                 <input
                   type="date"
@@ -254,10 +277,11 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
                   onChange={(e) => handleDueDateChange(e.target.value)}
                   min={startDate || undefined}
                   className={inputCls}
+                  required
                 />
                 {computedDueDate && (
                   <p className="text-[10px] text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
-                    {formatDatePE(computedDueDate)} · {parsedPaymentDays} días
+                    Vence: {formatDatePE(computedDueDate)} · {parsedPaymentDays} días
                   </p>
                 )}
               </div>
@@ -270,7 +294,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
               <div className="flex items-center gap-1.5">
                 <Percent className="w-3.5 h-3.5 text-[#E89D4F]" />
                 <span className="text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] uppercase tracking-wider">
-                  Comisión / Interés
+                  Comisión / Interés (S/.)
                 </span>
               </div>
               <button
@@ -281,7 +305,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
                     setCommissionInput(String(defaultInterest));
                   }
                 }}
-                className={`text-[10px] font-black px-2.5 py-1 rounded-full border transition-all ${
+                className={`text-[10px] font-black px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
                   useCustomCommission
                     ? 'bg-[#E89D4F] text-white border-[#E89D4F]'
                     : 'bg-white dark:bg-[#26221F] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E] hover:border-[#E89D4F] hover:text-[#E89D4F]'
@@ -308,20 +332,37 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
               </div>
             ) : (
               <p className="text-xs text-[#6E615A] dark:text-[#C2B29F]">
-                Se aplicará el interés estándar del{' '}
-                <strong className="text-[#E89D4F]">20%</strong> sobre el capital
-                prestado:{' '}
-                <strong className="text-[#2C221E] dark:text-[#EAE0D5]">
+                Calculado (20% del capital):{' '}
+                <strong className="text-[#E89D4F]">
                   {formatCurrency(defaultInterest)}
                 </strong>
               </p>
             )}
           </div>
 
-          {/* ── Resumen en vivo ── */}
+          {/* ── Mora / Cargo Adicional ── */}
+          <div>
+            <label className={labelCls}>Mora / Cargo Adicional (S/.):</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-[#C84B31]">
+                S/.
+              </span>
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={penaltyInput}
+                onChange={(e) => setPenaltyInput(e.target.value)}
+                placeholder="0.00 (opcional)"
+                className="w-full pl-11 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-sm font-bold text-[#C84B31] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40 focus:border-[#C84B31]"
+              />
+            </div>
+          </div>
+
+          {/* ── Resumen en vivo en tiempo real ── */}
           <div className="bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl p-4 text-xs space-y-2.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#A89B92] dark:text-[#6E615A] mb-1">
-              Resumen del Préstamo
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#A89B92] dark:text-[#6E615A] mb-1 border-b border-[#E6DCD2] dark:border-[#3D352E] pb-1">
+              Resumen en Tiempo Real
             </p>
 
             <div className="flex justify-between items-center">
@@ -333,10 +374,17 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
 
             <div className="flex justify-between items-center">
               <span className="text-[#6E615A] dark:text-[#C2B29F]">
-                {useCustomCommission ? 'Comisión Personalizada:' : 'Interés (20%):'}
+                {useCustomCommission ? 'Comisión Personalizada:' : 'Interés / Comisión (20%):'}
               </span>
               <strong className="text-[#E89D4F]">+{formatCurrency(effectiveInterest)}</strong>
             </div>
+
+            {moraNum > 0 && (
+              <div className="flex justify-between items-center text-[#C84B31]">
+                <span>Mora / Cargo Adicional:</span>
+                <strong className="font-extrabold">+{formatCurrency(moraNum)}</strong>
+              </div>
+            )}
 
             <div className="flex justify-between items-center border-t border-[#E6DCD2] dark:border-[#3D352E] pt-2">
               <span className="text-[#6E615A] dark:text-[#C2B29F] font-semibold">
@@ -351,8 +399,8 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
               <span className="text-[#6E615A] dark:text-[#C2B29F] font-semibold">
                 Cuota Diaria Estimada:
               </span>
-              <strong className="text-[#D96B27] dark:text-[#E07A5F] font-black text-sm">
-                {formatCurrency(Math.ceil(dailyPayment))} / día
+              <strong className="text-[#2D7A5D] dark:text-[#3D9970] font-black text-sm">
+                {formatCurrency(dailyPayment)} / día
               </strong>
             </div>
           </div>
@@ -374,14 +422,14 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] font-bold text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917] transition-colors"
+              className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] font-bold text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917] transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-3 rounded-2xl terracotta-gradient text-white font-extrabold text-xs shadow-md hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
+              className="flex-1 py-3 rounded-2xl terracotta-gradient text-white font-extrabold text-xs shadow-md hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{isSubmitting ? 'Guardando...' : 'Guardar Préstamo'}</span>

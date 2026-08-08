@@ -167,10 +167,11 @@ export default function Home() {
   // Edit loan handler
   const handleUpdateLoan = async (
     id: string,
-    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; notes?: string }
+    data: any
   ) => {
-    await loanService.updateLoan(id, data);
+    const result = await loanService.updateLoan(id, data);
     await loadData();
+    return result;
   };
 
   // Smart delete loan handler

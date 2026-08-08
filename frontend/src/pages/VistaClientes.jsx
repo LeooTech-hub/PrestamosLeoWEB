@@ -447,61 +447,71 @@ export function VistaClientes({
                         <span className="text-xs font-bold text-[#D96B27] uppercase tracking-wider block">
                           Préstamos Vigentes ({activeLoans.length})
                         </span>
-                        {activeLoans.map((loan) => (
-                          <div
-                            key={loan.id}
-                            className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-4 space-y-2"
-                          >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <strong className="text-sm font-extrabold text-[#2C221E] block">
-                                  Capital: {formatCurrency(loan.capital)} + 20% = {formatCurrency(loan.totalToPay)}
-                                </strong>
-                                <span className="text-xs text-[#6E615A]">
-                                  Modalidad: {loan.paymentDays} Días de Pago ({formatCurrency(loan.dailyPaymentAmount)}/día)
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                                    loan.status === 'OVERDUE'
-                                      ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
-                                      : 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30'
-                                  }`}
-                                >
-                                  {loan.status === 'OVERDUE' ? 'En Mora' : 'Vigente'}
-                                </span>
+                        {activeLoans.map((loan) => {
+                          const mora = Number(loan.mora ?? loan.penaltyAmount ?? loan.penalty_amount ?? 0);
+                          const total = Number(loan.totalToPay ?? loan.total_amount ?? 0);
+                          const amount = Number(loan.capital ?? loan.amount ?? 0);
+                          const interest = Number(loan.interestAmount ?? loan.interest ?? 0);
+                          const remaining = Number(loan.remainingAmount ?? loan.remaining_amount ?? Math.max(0, total - Number(loan.paidAmount || 0)));
 
-                                <button
-                                  onClick={() => setEditingLoan(loan)}
-                                  className="p-1 rounded-lg hover:bg-white text-[#D96B27] border border-[#E6DCD2]"
-                                  title="Editar Préstamo"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
+                          return (
+                            <div
+                              key={loan.id}
+                              className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-4 space-y-2"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <strong className="text-sm font-extrabold text-[#2C221E] block">
+                                    {mora > 0
+                                      ? `Capital: ${formatCurrency(amount)} + Int: ${formatCurrency(interest)} + Mora: ${formatCurrency(mora)} = ${formatCurrency(total)}`
+                                      : `Capital: ${formatCurrency(amount)} + 20% = ${formatCurrency(total)}`}
+                                  </strong>
+                                  <span className="text-xs text-[#6E615A]">
+                                    Modalidad: {loan.paymentDays} Días de Pago ({formatCurrency(loan.dailyPaymentAmount)}/día)
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                      loan.status === 'OVERDUE'
+                                        ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
+                                        : 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30'
+                                    }`}
+                                  >
+                                    {loan.status === 'OVERDUE' ? 'En Mora' : 'Vigente'}
+                                  </span>
+
+                                  <button
+                                    onClick={() => setEditingLoan(loan)}
+                                    className="p-1 rounded-lg hover:bg-white text-[#D96B27] border border-[#E6DCD2]"
+                                    title="Editar Préstamo"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white p-2.5 rounded-xl border border-[#E6DCD2]/60">
+                                <div>
+                                  <span className="text-[#6E615A] block text-[10px]">Fecha Inicio:</span>
+                                  <strong>{formatDatePE(loan.startDate)}</strong>
+                                </div>
+                                <div>
+                                  <span className="text-[#6E615A] block text-[10px]">Vencimiento:</span>
+                                  <strong>{formatDatePE(loan.dueDate)}</strong>
+                                </div>
+                                <div>
+                                  <span className="text-[#6E615A] block text-[10px]">Cobrado:</span>
+                                  <strong className="text-[#2D7A5D]">{formatCurrency(loan.paidAmount)}</strong>
+                                </div>
+                                <div>
+                                  <span className="text-[#6E615A] block text-[10px]">Saldo:</span>
+                                  <strong className="text-[#C84B31]">{formatCurrency(remaining)}</strong>
+                                </div>
                               </div>
                             </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white p-2.5 rounded-xl border border-[#E6DCD2]/60">
-                              <div>
-                                <span className="text-[#6E615A] block text-[10px]">Fecha Inicio:</span>
-                                <strong>{formatDatePE(loan.startDate)}</strong>
-                              </div>
-                              <div>
-                                <span className="text-[#6E615A] block text-[10px]">Vencimiento:</span>
-                                <strong>{formatDatePE(loan.dueDate)}</strong>
-                              </div>
-                              <div>
-                                <span className="text-[#6E615A] block text-[10px]">Cobrado:</span>
-                                <strong className="text-[#2D7A5D]">{formatCurrency(loan.paidAmount)}</strong>
-                              </div>
-                              <div>
-                                <span className="text-[#6E615A] block text-[10px]">Saldo:</span>
-                                <strong className="text-[#C84B31]">{formatCurrency(loan.remainingAmount)}</strong>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 

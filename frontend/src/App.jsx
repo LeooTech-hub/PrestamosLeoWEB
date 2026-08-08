@@ -278,10 +278,12 @@ export default function App() {
 
   const handleUpdateLoan = async (id, data) => {
     try {
-      await api.put(`/loans/${id}`, data);
+      const res = await api.put(`/loans/${id}`, data);
       await loadData();
+      return res.data;
     } catch (err) {
       console.error('Error actualizando préstamo:', err);
+      throw err;
     }
   };
 

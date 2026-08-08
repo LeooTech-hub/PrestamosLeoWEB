@@ -32,7 +32,7 @@ interface ClientDetailModalProps {
   ) => Promise<void>;
   onUpdateLoan: (
     id: string,
-    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; notes?: string }
+    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; penaltyAmount?: number; notes?: string }
   ) => Promise<void>;
   onDeletePayment?: (paymentId: string) => Promise<void>;
   onUpdatePayment?: (
@@ -199,7 +199,12 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                 ) : (
                   loans.map((loan) => {
                     const loanPayments = payments.filter((p) => p.loanId === loan.id);
-                    const percent = Math.round((loan.paidAmount / loan.totalToPay) * 100);
+                    const mora = Number(loan.mora ?? loan.penaltyAmount ?? loan.penalty_amount ?? 0);
+                    const total = Number(loan.totalToPay ?? loan.total_amount ?? 0);
+                    const amount = Number(loan.capital ?? loan.amount ?? 0);
+                    const interest = Number(loan.interestAmount ?? loan.interest ?? 0);
+                    const remaining = Number(loan.remainingAmount ?? loan.remaining_amount ?? Math.max(0, total - Number(loan.paidAmount || 0)));
+                    const percent = total > 0 ? Math.round((loan.paidAmount / total) * 100) : 0;
 
                     return (
                       <div
@@ -239,18 +244,25 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 text-xs bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-xl border border-[#E6DCD2]/60 dark:border-[#3D352E]">
-                          <div>
-                            <span className="text-[#6E615A] dark:text-[#C2B29F] block">Capital:</span>
-                            <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loan.capital)}</strong>
+                        <div className="bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-xl border border-[#E6DCD2]/60 dark:border-[#3D352E] space-y-2">
+                          <div className="text-xs font-bold text-[#2C221E] dark:text-[#EAE0D5]">
+                            {mora > 0
+                              ? `Capital: ${formatCurrency(amount)} + Int: ${formatCurrency(interest)} + Mora: ${formatCurrency(mora)} = ${formatCurrency(total)}`
+                              : `Capital: ${formatCurrency(amount)} + 20% = ${formatCurrency(total)}`}
                           </div>
-                          <div>
-                            <span className="text-[#6E615A] dark:text-[#C2B29F] block">Total (20%):</span>
-                            <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(loan.totalToPay)}</strong>
-                          </div>
-                          <div>
-                            <span className="text-[#6E615A] dark:text-[#C2B29F] block">Saldo Restante:</span>
-                            <strong className="text-[#C84B31]">{formatCurrency(loan.remainingAmount)}</strong>
+                          <div className="grid grid-cols-3 gap-2 text-xs pt-1 border-t border-[#E6DCD2]/40 dark:border-[#3D352E]">
+                            <div>
+                              <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Capital:</span>
+                              <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(amount)}</strong>
+                            </div>
+                            <div>
+                              <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Total a Cobrar:</span>
+                              <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(total)}</strong>
+                            </div>
+                            <div>
+                              <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Saldo Restante:</span>
+                              <strong className="text-[#C84B31]">{formatCurrency(remaining)}</strong>
+                            </div>
                           </div>
                         </div>
 

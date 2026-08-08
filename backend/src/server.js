@@ -15,23 +15,46 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   'https://prestamos-leo-web.vercel.app',
   'http://localhost:5173',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000'
 ];
 
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
-      callback(new Error('Acceso no permitido por CORS'));
+      callback(null, true);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Cache-Control',
+    'Pragma',
+    'X-Requested-With',
+    'Expires',
+    'cache-control',
+    'pragma'
+  ],
+  optionsSuccessStatus: 200,
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
+
+// Anti-cache middleware for all API requests
+app.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
 
 // API Routes
 app.use('/api', apiRoutes);

@@ -3,7 +3,8 @@ import { formatCurrency, formatDatePE, getDaysDifferenceInfo, generateWhatsAppRe
 import { PaymentModal } from '../components/PaymentModal';
 import { EditLoanModal } from '../components/EditLoanModal';
 import { SmartDeleteModal } from '../components/SmartDeleteModal';
-import { CreditCard, Search, Phone, Pencil, Trash2, MessageSquare, RotateCcw } from 'lucide-react';
+import { LoanConstanciaModal } from '../components/LoanConstanciaModal';
+import { CreditCard, Search, Phone, Pencil, Trash2, MessageSquare, RotateCcw, FileText } from 'lucide-react';
 
 export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, onDeleteLoan, onRevertPayment }) {
   const [filter, setFilter] = useState('ALL');
@@ -11,6 +12,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
   const [paymentLoan, setPaymentLoan] = useState(null);
   const [editingLoan, setEditingLoan] = useState(null);
   const [deletingLoan, setDeletingLoan] = useState(null);
+  const [constanciaLoan, setConstanciaLoan] = useState(null);
   const [revertingLoanId, setRevertingLoanId] = useState(null);
 
   const handleRevert = async (loan) => {
@@ -161,6 +163,14 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
 
                     <div className="flex items-center gap-1">
                       <button
+                        onClick={() => setConstanciaLoan(loan)}
+                        className="p-1 rounded-lg hover:bg-[#EEF6F2] text-[#6E615A] hover:text-[#2D7A5D] transition-colors cursor-pointer"
+                        title="Enviar Constancia de Préstamo"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#2D7A5D]" />
+                      </button>
+
+                      <button
                         onClick={() => setEditingLoan(loan)}
                         className="p-1 rounded-lg hover:bg-[#FAF8F5] text-[#6E615A] hover:text-[#D96B27]"
                         title="Editar Préstamo"
@@ -197,10 +207,14 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                   </div>
 
                   <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]/60 space-y-1 text-xs mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-[#6E615A]">Prestamo + 20%:</span>
-                      <strong className="text-[#2C221E]">
-                        {formatCurrency(loan.capital)} + {formatCurrency(loan.interestAmount)} = {formatCurrency(loan.totalToPay)}
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[#6E615A]">
+                        {loan.penaltyAmount > 0 ? 'Desglose del Préstamo:' : 'Préstamo + 20%:'}
+                      </span>
+                      <strong className="text-[#2C221E] text-right">
+                        {loan.penaltyAmount > 0
+                          ? `Capital: ${formatCurrency(loan.capital)} + Int: ${formatCurrency(loan.interestAmount)} + Mora: ${formatCurrency(loan.penaltyAmount)} = ${formatCurrency(loan.totalToPay)}`
+                          : `${formatCurrency(loan.capital)} + ${formatCurrency(loan.interestAmount)} = ${formatCurrency(loan.totalToPay)}`}
                       </strong>
                     </div>
 
@@ -248,6 +262,14 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                     </div>
                   )}
 
+                  <button
+                    onClick={() => setConstanciaLoan(loan)}
+                    className="p-2 rounded-xl bg-white border border-[#E6DCD2] text-[#2D7A5D] hover:bg-[#EEF6F2] hover:border-[#2D7A5D]/30 transition-all cursor-pointer"
+                    title="Enviar Constancia de Préstamo"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+
                   <a
                     href={generateWhatsAppReminderMessage({
                       clientName: loan.clientName,
@@ -260,7 +282,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-2 rounded-xl bg-white border border-[#E6DCD2] text-[#25D366] hover:bg-[#EEF6F2]"
-                    title="WhatsApp"
+                    title="Recordatorio WhatsApp"
                   >
                     <MessageSquare className="w-4 h-4" />
                   </a>
@@ -283,6 +305,12 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
         isOpen={!!editingLoan}
         onClose={() => setEditingLoan(null)}
         onConfirmEditLoan={onUpdateLoan}
+      />
+
+      <LoanConstanciaModal
+        loan={constanciaLoan}
+        isOpen={!!constanciaLoan}
+        onClose={() => setConstanciaLoan(null)}
       />
 
       <SmartDeleteModal

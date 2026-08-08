@@ -11,6 +11,7 @@ import {
 import { PaymentModal } from '../DailyRoute/PaymentModal';
 import { SmartDeleteModal } from '../Modals/SmartDeleteModal';
 import { EditLoanModal } from '../Clients/EditLoanModal';
+import { LoanConstanciaModal } from '../Modals/LoanConstanciaModal';
 import {
   CreditCard,
   Search,
@@ -18,6 +19,7 @@ import {
   Pencil,
   Trash2,
   Phone,
+  FileText,
 } from 'lucide-react';
 
 interface LoansListViewProps {
@@ -29,7 +31,7 @@ interface LoansListViewProps {
   ) => Promise<{ updatedLoan: Loan }>;
   onUpdateLoan: (
     id: string,
-    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; notes?: string }
+    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; penaltyAmount?: number; notes?: string }
   ) => Promise<void>;
   onDeleteLoan: (loanId: string, mode: 'ARCHIVE' | 'PERMANENT') => Promise<void>;
 }
@@ -46,6 +48,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
   // Modals state
   const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<Loan | null>(null);
   const [selectedLoanForEdit, setSelectedLoanForEdit] = useState<Loan | null>(null);
+  const [selectedLoanForConstancia, setSelectedLoanForConstancia] = useState<Loan | null>(null);
   const [selectedLoanForDelete, setSelectedLoanForDelete] = useState<Loan | null>(null);
 
   // Active unarchived loans
@@ -215,24 +218,33 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                   {/* ── Financials — 3 columnas adaptativas ──
                       En móvil el texto es más pequeño para que "S/. 1,200" no se corte.
                       Cada celda puede truncar el valor si es muy largo. */}
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E]">
-                    <div className="min-w-0">
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Capital:</span>
-                      <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-[11px] sm:text-xs block truncate">
-                        {formatCurrency(loan.capital)}
-                      </strong>
+                  <div className="mt-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] p-2.5 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E] space-y-1.5">
+                    <div className="text-[11px] font-bold text-[#2C221E] dark:text-[#EAE0D5] truncate">
+                      {loan.penaltyAmount && loan.penaltyAmount > 0
+                        ? `Capital: ${formatCurrency(loan.capital)} + Int: ${formatCurrency(loan.interestAmount)} + Mora: ${formatCurrency(loan.penaltyAmount)} = ${formatCurrency(loan.totalToPay)}`
+                        : `Capital: ${formatCurrency(loan.capital)} + 20% = ${formatCurrency(loan.totalToPay)}`}
                     </div>
-                    <div className="min-w-0">
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Total (20%):</span>
-                      <strong className="text-[#D96B27] dark:text-[#E07A5F] text-[11px] sm:text-xs block truncate">
-                        {formatCurrency(loan.totalToPay)}
-                      </strong>
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Saldo:</span>
-                      <strong className="text-[#C84B31] text-[11px] sm:text-xs block truncate">
-                        {formatCurrency(loan.remainingAmount)}
-                      </strong>
+                    <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-[#E6DCD2]/40 dark:border-[#3D352E]">
+                      <div className="min-w-0">
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Capital:</span>
+                        <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-[11px] sm:text-xs block truncate">
+                          {formatCurrency(loan.capital)}
+                        </strong>
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">
+                          {loan.penaltyAmount && loan.penaltyAmount > 0 ? 'Total (+Mora):' : 'Total a Cobrar:'}
+                        </span>
+                        <strong className="text-[#D96B27] dark:text-[#E07A5F] text-[11px] sm:text-xs block truncate">
+                          {formatCurrency(loan.totalToPay)}
+                        </strong>
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Saldo:</span>
+                        <strong className="text-[#C84B31] text-[11px] sm:text-xs block truncate">
+                          {formatCurrency(loan.remainingAmount)}
+                        </strong>
+                      </div>
                     </div>
                   </div>
 
@@ -285,8 +297,16 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                     </button>
                   </div>
 
-                  {/* Editar & Eliminar */}
+                  {/* Constancia, Editar & Eliminar */}
                   <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => setSelectedLoanForConstancia(loan)}
+                      className="p-2 rounded-xl bg-[#EEF6F2] dark:bg-[#3D9970]/15 hover:bg-[#2D7A5D] hover:text-white text-[#2D7A5D] dark:text-[#3D9970] border border-[#2D7A5D]/30 active:scale-95 transition-all cursor-pointer"
+                      title="Enviar Constancia de Préstamo"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                    </button>
+
                     <button
                       onClick={() => setSelectedLoanForEdit(loan)}
                       className="p-2 rounded-xl bg-[#FAF8F5] dark:bg-[#1C1917] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E] active:scale-95 transition-all"
@@ -323,6 +343,12 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
         isOpen={!!selectedLoanForEdit}
         onClose={() => setSelectedLoanForEdit(null)}
         onConfirmEditLoan={onUpdateLoan}
+      />
+
+      <LoanConstanciaModal
+        loan={selectedLoanForConstancia}
+        isOpen={!!selectedLoanForConstancia}
+        onClose={() => setSelectedLoanForConstancia(null)}
       />
 
       <SmartDeleteModal

@@ -45,7 +45,8 @@ function mapRowToLoan(row) {
   const capital = Number(row.capital ?? row.amount_borrowed ?? 0);
   const interestRate = Number(row.interest_rate ?? 20);
   const interestAmount = Number(row.interest_amount ?? Math.round(capital * 0.20));
-  const totalToPay = Number(row.total_to_pay ?? row.total_amount ?? (capital + interestAmount));
+  const penaltyAmount = Number(row.penalty_amount ?? row.penaltyAmount ?? row.mora ?? 0);
+  const totalToPay = Number(row.total_to_pay ?? row.total_amount ?? (capital + interestAmount + penaltyAmount));
   const paymentDays = Number(row.payment_days ?? row.days_agreed ?? 20);
   const dailyPaymentAmount = Number(row.daily_payment_amount ?? row.daily_payment ?? Math.round(totalToPay / (paymentDays || 1)));
 
@@ -66,6 +67,7 @@ function mapRowToLoan(row) {
     capital,
     interestRate,
     interestAmount,
+    penaltyAmount,
     totalToPay,
     paymentDays,
     dailyPaymentAmount,
@@ -341,146 +343,92 @@ const loanController = {
   // GET /api/loans
   async getLoans(req, res) {
     try {
-      const [rows] = await pool.query(`
-        SELECT 
-          l.*,
-          c.name AS joined_client_name,
-          c.alias AS joined_client_alias,
-          c.phone AS joined_client_phone,
-          c.address AS joined_client_address,
-          c.route_order AS joined_client_route_order
+      const [rows] = await pool.execute(`
+        SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
         FROM loans l
         LEFT JOIN clients c ON l.client_id = c.id
-        WHERE l.is_archived = 0 OR l.is_archived IS NULL
-        ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC
+        ORDER BY l.created_at DESC
       `);
       return res.json(rows.map(mapRowToLoan));
     } catch (error) {
       console.error('Error in getLoans:', error);
-      return res.json([]);
+      return res.status(500).json({ error: error.message });
     }
   },
 
-  // POST /api/loans
+  // POST /api/loans (or create client and loan)
   async createClientAndLoan(req, res) {
-    const connection = await pool.getConnection();
     try {
-      await connection.beginTransaction();
-      const formData = req.body;
+      const {
+        clientId, clientName, clientAlias, alias, clientPhone, clientAddress, clientIdentification,
+        capital, paymentDays, startDate, notes
+      } = req.body;
 
-      let clientId = formData.clientId;
-      let clientName = formData.clientName?.trim() || 'Sin Nombre';
-      let clientPhone = formData.clientPhone?.trim() || '';
-      let clientAddress = formData.clientAddress?.trim() || '';
+      const finalName = clientName?.trim() || 'Cliente Sin Nombre';
+      const finalAlias = (clientAlias || alias)?.trim() || null;
+      const finalPhone = clientPhone?.trim() || '';
+      const finalAddress = clientAddress?.trim() || '';
+      const finalIdent = clientIdentification?.trim() || null;
 
-      if (!clientId) {
-        clientId = generateUUID();
-        const createdAt = new Date().toISOString();
-        const identification = formData.clientIdentification?.trim() || null;
-        const notes = formData.notes?.trim() || null;
+      let targetClientId = clientId;
 
-        await connection.execute(
-          `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [clientId, clientName, clientPhone, clientAddress, identification, notes, createdAt, 'ACTIVE']
+      if (!targetClientId) {
+        targetClientId = `cli_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+        await pool.execute(
+          `INSERT INTO clients (id, name, alias, phone, address, identification, notes, status, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', NOW())`,
+          [targetClientId, finalName, finalAlias, finalPhone, finalAddress, finalIdent, notes || null]
         );
       } else {
-        const [rows] = await connection.execute(`SELECT * FROM clients WHERE id = ?`, [clientId]);
-        if (rows.length > 0) {
-          const c = mapRowToClient(rows[0]);
-          clientName = c.name || clientName;
-          clientPhone = c.phone || clientPhone;
-          clientAddress = c.address || clientAddress;
-        }
+        await pool.execute(
+          `UPDATE clients SET name = ?, alias = ?, phone = ?, address = ?, identification = ? WHERE id = ?`,
+          [finalName, finalAlias, finalPhone, finalAddress, finalIdent, targetClientId]
+        );
       }
 
-      const capital = Number(formData.capital) || 0;
-      const paymentDays = Number(formData.paymentDays) || 20;
-      const interestRate = 20;
-      const interestAmount = Math.round(capital * 0.20);
-      const totalToPay = capital + interestAmount;
-      const dailyPaymentAmount = Math.round(totalToPay / (paymentDays || 1));
+      const numCapital = Number(capital) || 0;
+      const numDays = Number(paymentDays) || 20;
+      const startDateStr = formatToMySQLDate(startDate);
 
-      const startDateStr = formatToMySQLDate(formData.startDate);
+      const interestAmount = Math.round(numCapital * 0.20);
+      const totalToPay = numCapital + interestAmount;
+      const dailyPaymentAmount = Math.ceil(totalToPay / numDays);
+
       const start = new Date(startDateStr);
-      let dueDateStr;
-      if (formData.dueDate) {
-        dueDateStr = formatToMySQLDate(formData.dueDate);
-      } else {
-        const due = new Date(start);
-        due.setDate(due.getDate() + paymentDays);
-        dueDateStr = due.toISOString().split('T')[0];
-      }
+      const due = new Date(start);
+      due.setDate(due.getDate() + numDays);
+      const dueDateStr = due.toISOString().split('T')[0];
 
-      const loanId = generateUUID();
-      const createdAt = new Date().toISOString();
+      const loanId = `loan_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO loans (
           id, client_id, client_name, client_phone, client_address,
-          capital, amount_borrowed,
-          interest_rate, interest_amount,
-          total_to_pay, total_amount,
-          payment_days, days_agreed,
-          daily_payment_amount, daily_payment,
-          start_date, due_date, status, paid_amount, remaining_amount, paid_days_count, notes, created_at, is_archived
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+          capital, amount_borrowed, interest_rate, interest_amount, penalty_amount, mora, total_to_pay, total_amount,
+          payment_days, days_agreed, daily_payment_amount, daily_payment,
+          paid_amount, remaining_amount, paid_days_count,
+          start_date, due_date, status, notes, is_archived, created_at
+        ) VALUES (
+          ?, ?, ?, ?, ?,
+          ?, ?, 20.00, ?, 0.00, 0.00, ?, ?,
+          ?, ?, ?, ?,
+          0.00, ?, 0,
+          ?, ?, 'ACTIVE', ?, 0, NOW()
+        )`,
         [
-          loanId,
-          clientId,
-          clientName,
-          clientPhone,
-          clientAddress,
-          capital,
-          capital,
-          interestRate,
-          interestAmount,
+          loanId, targetClientId, finalName, finalPhone, finalAddress,
+          numCapital, numCapital, interestAmount, totalToPay, totalToPay,
+          numDays, numDays, dailyPaymentAmount, dailyPaymentAmount,
           totalToPay,
-          totalToPay,
-          paymentDays,
-          paymentDays,
-          dailyPaymentAmount,
-          dailyPaymentAmount,
-          startDateStr,
-          dueDateStr,
-          'ACTIVE',
-          0,
-          totalToPay,
-          0,
-          formData.notes?.trim() || null,
-          createdAt,
+          startDateStr, dueDateStr, notes?.trim() || null
         ]
       );
 
-      await connection.commit();
-
-      return res.status(201).json({
-        id: loanId,
-        clientId,
-        clientName,
-        clientPhone,
-        clientAddress,
-        capital,
-        interestRate,
-        interestAmount,
-        totalToPay,
-        paymentDays,
-        dailyPaymentAmount,
-        startDate: startDateStr,
-        dueDate: dueDateStr,
-        status: 'ACTIVE',
-        paidAmount: 0,
-        remainingAmount: totalToPay,
-        paidDaysCount: 0,
-        notes: formData.notes?.trim(),
-        createdAt,
-        isArchived: false,
-      });
+      const [newLoanRows] = await pool.execute(`SELECT * FROM loans WHERE id = ?`, [loanId]);
+      return res.status(201).json(mapRowToLoan(newLoanRows[0]));
     } catch (error) {
-      await connection.rollback();
       console.error('Error in createClientAndLoan:', error);
       return res.status(500).json({ error: error.message });
-    } finally {
-      connection.release();
     }
   },
 
@@ -488,42 +436,49 @@ const loanController = {
   async updateLoan(req, res) {
     try {
       const { id } = req.params;
-      // Accept new optional fields: dueDate (explicit override) and commission (custom interest)
-      const { capital, paymentDays, startDate, dueDate, commission, notes } = req.body;
+      const {
+        capital, amount,
+        paymentDays, duration_days, days_agreed,
+        startDate, start_date,
+        dueDate, due_date,
+        commission, interest, interestAmount,
+        penaltyAmount, penalty_amount, mora,
+        notes
+      } = req.body;
 
       const [rows] = await pool.execute(`SELECT * FROM loans WHERE id = ?`, [id]);
       if (rows.length === 0) return res.status(404).json({ error: 'Préstamo no encontrado' });
 
       const loan = mapRowToLoan(rows[0]);
-      const newCapital = Number(capital) || 0;
-      const startDateStr = formatToMySQLDate(startDate);
+      const newCapital = Number(capital ?? amount ?? loan.capital ?? 0);
+      const startDateVal = startDate || start_date || loan.startDate;
+      const startDateStr = formatToMySQLDate(startDateVal);
+      const penaltyVal = Math.max(0, Number(mora ?? penaltyAmount ?? penalty_amount ?? loan.penaltyAmount ?? 0));
 
-      // Resolve due date:
-      // If the client sent an explicit dueDate, use it and derive paymentDays from it.
-      // Otherwise fall back to startDate + paymentDays (existing behaviour).
       let dueDateStr;
       let newDays;
-      if (dueDate) {
-        dueDateStr = formatToMySQLDate(dueDate);
+      const explicitDueDate = dueDate || due_date;
+      if (explicitDueDate) {
+        dueDateStr = formatToMySQLDate(explicitDueDate);
         const start = new Date(startDateStr);
         const due = new Date(dueDateStr);
         const diffMs = due.getTime() - start.getTime();
         newDays = Math.max(1, Math.round(diffMs / 86_400_000));
       } else {
-        newDays = Math.max(1, Number(paymentDays) || 20);
+        newDays = Math.max(1, Number(paymentDays ?? duration_days ?? days_agreed) || loan.paymentDays || 20);
         const start = new Date(startDateStr);
         const due = new Date(start);
         due.setDate(due.getDate() + newDays);
         dueDateStr = due.toISOString().split('T')[0];
       }
 
-      // Commission / Interest: use custom value if provided, else default 20 %
-      const interestRate = commission != null ? null : 20;
-      const interestAmount = commission != null
-        ? Math.round(Number(commission))
+      const customInterest = commission ?? interest ?? interestAmount;
+      const interestRate = customInterest != null ? null : 20;
+      const calculatedInterest = customInterest != null
+        ? Math.round(Number(customInterest))
         : Math.round(newCapital * 0.20);
 
-      const totalToPay = newCapital + interestAmount;
+      const totalToPay = newCapital + calculatedInterest + penaltyVal;
       const dailyPaymentAmount = Math.ceil(totalToPay / (newDays || 1));
 
       const todayStr = new Date().toISOString().split('T')[0];
@@ -540,10 +495,21 @@ const loanController = {
       }
 
       await pool.execute(
-        `UPDATE loans SET capital = ?, amount_borrowed = ?, interest_rate = ?, interest_amount = ?, total_to_pay = ?, total_amount = ?, payment_days = ?, days_agreed = ?, daily_payment_amount = ?, daily_payment = ?, start_date = ?, due_date = ?, remaining_amount = ?, paid_days_count = ?, status = ?, notes = ? WHERE id = ?`,
+        `UPDATE loans SET 
+          capital = ?, amount_borrowed = ?, 
+          interest_rate = ?, interest_amount = ?, 
+          penalty_amount = ?, mora = ?, 
+          total_to_pay = ?, total_amount = ?, 
+          payment_days = ?, days_agreed = ?, 
+          daily_payment_amount = ?, daily_payment = ?, 
+          start_date = ?, due_date = ?, 
+          remaining_amount = ?, paid_days_count = ?, 
+          status = ?, notes = ? 
+        WHERE id = ?`,
         [
           newCapital, newCapital,
-          interestRate ?? 0, interestAmount,
+          interestRate ?? 0, calculatedInterest,
+          penaltyVal, penaltyVal,
           totalToPay, totalToPay,
           newDays, newDays,
           dailyPaymentAmount, dailyPaymentAmount,
@@ -555,7 +521,22 @@ const loanController = {
         ]
       );
 
-      return res.json({ success: true, message: 'Préstamo actualizado' });
+      const [updatedRows] = await pool.execute(
+        `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
+         FROM loans l
+         LEFT JOIN clients c ON l.client_id = c.id
+         WHERE l.id = ?`,
+        [id]
+      );
+
+      const updatedLoan = mapRowToLoan(updatedRows[0] || rows[0]);
+
+      return res.json({
+        success: true,
+        message: 'Préstamo actualizado exitosamente',
+        loan: updatedLoan,
+        updatedLoan,
+      });
     } catch (error) {
       console.error('Error in updateLoan:', error);
       return res.status(500).json({ error: error.message });

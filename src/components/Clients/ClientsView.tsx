@@ -29,7 +29,7 @@ interface ClientsViewProps {
   ) => Promise<void>;
   onUpdateLoan: (
     id: string,
-    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; notes?: string }
+    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; penaltyAmount?: number; notes?: string }
   ) => Promise<void>;
   onDeleteClient: (clientId: string, mode: 'ARCHIVE' | 'PERMANENT') => Promise<void>;
   onDeletePayment?: (paymentId: string) => Promise<void>;

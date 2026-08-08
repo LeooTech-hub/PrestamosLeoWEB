@@ -8,12 +8,20 @@ const api = axios.create({
   },
 });
 
-// Interceptor de peticiones: lee 'token' o 'jwt' de localStorage en CADA petición
+// Interceptor de peticiones: lee 'token' o 'jwt' de localStorage y agrega query param anti-caché a GET
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token') || localStorage.getItem('jwt');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // Usar únicamente parámetro timestamp query string en peticiones GET para refresco de datos
+    if (config.method?.toLowerCase() === 'get') {
+      config.params = {
+        ...config.params,
+        _t: Date.now(),
+      };
     }
     return config;
   },
