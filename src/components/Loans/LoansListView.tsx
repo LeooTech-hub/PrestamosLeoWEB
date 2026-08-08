@@ -29,7 +29,7 @@ interface LoansListViewProps {
   ) => Promise<{ updatedLoan: Loan }>;
   onUpdateLoan: (
     id: string,
-    data: { capital: number; paymentDays: number; startDate: string; notes?: string }
+    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; notes?: string }
   ) => Promise<void>;
   onDeleteLoan: (loanId: string, mode: 'ARCHIVE' | 'PERMANENT') => Promise<void>;
 }

@@ -32,7 +32,7 @@ interface ClientDetailModalProps {
   ) => Promise<void>;
   onUpdateLoan: (
     id: string,
-    data: { capital: number; paymentDays: number; startDate: string; notes?: string }
+    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; notes?: string }
   ) => Promise<void>;
   onDeletePayment?: (paymentId: string) => Promise<void>;
   onUpdatePayment?: (
@@ -86,7 +86,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-        <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-[#E6DCD2] warm-shadow-lg overflow-hidden">
+        <div className="bg-white dark:bg-[#26221F] rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow-lg overflow-hidden transition-colors duration-300">
           {/* Modal Header */}
           <div className="bg-gradient-to-r from-[#2C221E] to-[#3D302A] text-white p-5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">

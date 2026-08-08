@@ -1,138 +1,178 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────
+   DESIGN TOKENS — Light (Warm Day) + Dark (Warm Night)
+   ───────────────────────────────────────────────────────── */
 @layer base {
   :root {
-    --bg-main: #FAF8F5;
-    --bg-surface: #FFFFFF;
-    --bg-card: #F5F0EB;
+    /* ── Light surfaces ── */
+    --bg-main:       #FAF8F5;
+    --bg-surface:    #FFFFFF;
+    --bg-card:       #F5F0EB;
     --bg-card-hover: #EFE8E0;
-    --border-warm: #E6DCD2;
-    
-    --terracotta: #D96B27;
+    --border-warm:   #E6DCD2;
+
+    /* ── Brand palette ── */
+    --terracotta:       #D96B27;
     --terracotta-hover: #C25A19;
     --terracotta-light: #FDF3ED;
-    
-    --amber-warm: #E89D4F;
+
+    --amber-warm:  #E89D4F;
     --amber-light: #FDF6EE;
-    
-    --sage: #2D7A5D;
+
+    --sage:       #2D7A5D;
     --sage-hover: #24634B;
     --sage-light: #EEF6F2;
-    
-    --rust: #C84B31;
+
+    --rust:       #C84B31;
     --rust-hover: #AA3D26;
     --rust-light: #FDF2F0;
-    
-    --espresso: #2C221E;
+
+    --espresso:       #2C221E;
     --espresso-muted: #6E615A;
     --espresso-light: #A89B92;
 
-    --dark-bg: #1C1917;
-    --dark-card-bg: #26221F;
-    --dark-border: #3D352E;
-    --dark-text-primary: #EAE0D5;
+    /* ── Warm Soft Dark tokens (shared reference) ── */
+    --dark-bg:             #1C1917;
+    --dark-bg-deep:        #181512;
+    --dark-card-bg:        #26221F;
+    --dark-card-secondary: #2D2824;
+    --dark-border:         #3D352E;
+    --dark-border-subtle:  #332C26;
+    --dark-text-primary:   #EAE0D5;
+    --dark-text-ivory:     #F5EBE6;
     --dark-text-secondary: #C2B29F;
-    --dark-terracotta: #E07A5F;
-    --dark-sage: #3D9970;
+    --dark-terracotta:     #E07A5F;
+    --dark-amber:          #E89D4F;
+    --dark-sage:           #3D9970;
+    --dark-terracotta-matte: #B85324;
   }
 }
 
+/* ─────────────────────────────────────────────────────────
+   WARM SOFT DARK — Override layer
+   All backgrounds use sepia-coffee tones.
+   Zero cold blacks, zero metallic grays.
+   ───────────────────────────────────────────────────────── */
 html.dark {
   color-scheme: dark;
-  --bg-main: #1C1917;
-  --bg-surface: #1C1917;
-  --bg-card: #26221F;
-  --bg-card-hover: #332D29;
-  --border-warm: #3D352E;
-  --espresso: #EAE0D5;
+
+  /* ── Base surfaces ── */
+  --bg-main:       #1C1917;
+  --bg-surface:    #26221F;
+  --bg-card:       #26221F;
+  --bg-card-hover: #2D2824;
+  --border-warm:   #3D352E;
+
+  /* ── Text → cream / ivory, never cold white ── */
+  --espresso:       #EAE0D5;
   --espresso-muted: #C2B29F;
   --espresso-light: #9E8E7C;
 
-  --dark-bg: #1C1917;
-  --dark-card-bg: #26221F;
-  --dark-border: #3D352E;
-  --dark-text-primary: #EAE0D5;
-  --dark-text-secondary: #C2B29F;
-  --dark-terracotta: #E07A5F;
-  --dark-sage: #3D9970;
+  /* ── Accent adjustments ── */
+  --terracotta:       #E07A5F;
+  --terracotta-hover: #CC6550;
+  --terracotta-light: #3D261A;
+
+  --sage:       #3D9970;
+  --sage-hover: #2D7A5D;
+  --sage-light: #1A3028;
+
+  --amber-warm: #D4893D;
+
+  --rust:       #C84B31;
+  --rust-light: #3D1A15;
 }
 
+/* ─────────────────────────────────────────────────────────
+   BODY
+   ───────────────────────────────────────────────────────── */
 body {
   background-color: var(--bg-main);
   color: var(--espresso);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* ─────────────────────────────────────────────────────────
+   CUSTOM SCROLLBARS — warm coffee tones only
+   ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
 
-::-webkit-scrollbar-track {
-  background: #FAF8F5;
-}
+::-webkit-scrollbar-track { background: #FAF8F5; }
+html.dark ::-webkit-scrollbar-track { background: #1C1917; }
 
-html.dark ::-webkit-scrollbar-track {
-  background: #1C1917;
-}
+::-webkit-scrollbar-thumb { background: #D5C8BC; border-radius: 9999px; }
+html.dark ::-webkit-scrollbar-thumb { background: #4A3F37; }
 
-::-webkit-scrollbar-thumb {
-  background: #D5C8BC;
-  border-radius: 9999px;
-}
+::-webkit-scrollbar-thumb:hover { background: #BFAEA0; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #5C4F46; }
 
-html.dark ::-webkit-scrollbar-thumb {
-  background: #3D352E;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #BFAEA0;
-}
-
-html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #544940;
-}
-
-/* Glassmorphism & custom utility shadows */
+/* ─────────────────────────────────────────────────────────
+   WARM SHADOWS — softer & amber-tinted in dark mode
+   ───────────────────────────────────────────────────────── */
 .warm-shadow {
-  box-shadow: 0 4px 20px -2px rgba(44, 34, 30, 0.06), 0 2px 6px -1px rgba(44, 34, 30, 0.04);
+  box-shadow:
+    0 4px 20px -2px rgba(44, 34, 30, 0.06),
+    0 2px 6px -1px rgba(44, 34, 30, 0.04);
 }
-
 html.dark .warm-shadow {
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 4px 20px -2px rgba(0, 0, 0, 0.35),
+    0 2px 6px -1px rgba(0, 0, 0, 0.20);
 }
 
 .warm-shadow-lg {
-  box-shadow: 0 10px 30px -4px rgba(44, 34, 30, 0.1), 0 4px 12px -2px rgba(44, 34, 30, 0.06);
+  box-shadow:
+    0 10px 30px -4px rgba(44, 34, 30, 0.10),
+    0 4px 12px -2px rgba(44, 34, 30, 0.06);
 }
-
 html.dark .warm-shadow-lg {
-  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.6), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 10px 35px -4px rgba(0, 0, 0, 0.50),
+    0 4px 14px -2px rgba(0, 0, 0, 0.30);
 }
 
+/* ─────────────────────────────────────────────────────────
+   GRADIENTS — attenuated to matte-warm in dark mode
+   ───────────────────────────────────────────────────────── */
 .terracotta-gradient {
   background: linear-gradient(135deg, #E27937 0%, #D96B27 50%, #C25A19 100%);
+}
+/* Dark-mode override: matte, less saturated terracotta */
+html.dark .terracotta-gradient {
+  background: linear-gradient(135deg, #C4612A 0%, #B85324 50%, #9C431B 100%);
 }
 
 .sage-gradient {
   background: linear-gradient(135deg, #368B6C 0%, #2D7A5D 100%);
+}
+html.dark .sage-gradient {
+  background: linear-gradient(135deg, #2D7A5D 0%, #24634B 100%);
 }
 
 .amber-gradient {
   background: linear-gradient(135deg, #F0AA5E 0%, #E89D4F 100%);
 }
 
-/* Animations */
+/* ─────────────────────────────────────────────────────────
+   ANIMATIONS
+   ───────────────────────────────────────────────────────── */
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.95; transform: scale(0.99); }
+  50%       { opacity: 0.95; transform: scale(0.99); }
 }
-
 .animate-pulse-subtle {
   animation: pulse-subtle 3s ease-in-out infinite;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.18s ease-out both;
+}

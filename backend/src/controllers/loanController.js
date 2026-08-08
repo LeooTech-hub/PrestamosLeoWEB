@@ -488,25 +488,43 @@ const loanController = {
   async updateLoan(req, res) {
     try {
       const { id } = req.params;
-      const { capital, paymentDays, startDate, notes } = req.body;
+      // Accept new optional fields: dueDate (explicit override) and commission (custom interest)
+      const { capital, paymentDays, startDate, dueDate, commission, notes } = req.body;
 
       const [rows] = await pool.execute(`SELECT * FROM loans WHERE id = ?`, [id]);
       if (rows.length === 0) return res.status(404).json({ error: 'Préstamo no encontrado' });
 
       const loan = mapRowToLoan(rows[0]);
       const newCapital = Number(capital) || 0;
-      const newDays = Number(paymentDays) || 20;
       const startDateStr = formatToMySQLDate(startDate);
 
-      const interestRate = 20;
-      const interestAmount = Math.round(newCapital * 0.20);
-      const totalToPay = newCapital + interestAmount;
-      const dailyPaymentAmount = Math.round(totalToPay / (newDays || 1));
+      // Resolve due date:
+      // If the client sent an explicit dueDate, use it and derive paymentDays from it.
+      // Otherwise fall back to startDate + paymentDays (existing behaviour).
+      let dueDateStr;
+      let newDays;
+      if (dueDate) {
+        dueDateStr = formatToMySQLDate(dueDate);
+        const start = new Date(startDateStr);
+        const due = new Date(dueDateStr);
+        const diffMs = due.getTime() - start.getTime();
+        newDays = Math.max(1, Math.round(diffMs / 86_400_000));
+      } else {
+        newDays = Math.max(1, Number(paymentDays) || 20);
+        const start = new Date(startDateStr);
+        const due = new Date(start);
+        due.setDate(due.getDate() + newDays);
+        dueDateStr = due.toISOString().split('T')[0];
+      }
 
-      const start = new Date(startDateStr);
-      const due = new Date(start);
-      due.setDate(due.getDate() + newDays);
-      const dueDateStr = due.toISOString().split('T')[0];
+      // Commission / Interest: use custom value if provided, else default 20 %
+      const interestRate = commission != null ? null : 20;
+      const interestAmount = commission != null
+        ? Math.round(Number(commission))
+        : Math.round(newCapital * 0.20);
+
+      const totalToPay = newCapital + interestAmount;
+      const dailyPaymentAmount = Math.ceil(totalToPay / (newDays || 1));
 
       const todayStr = new Date().toISOString().split('T')[0];
       const newRemainingAmount = Math.max(0, totalToPay - loan.paidAmount);
@@ -522,8 +540,19 @@ const loanController = {
       }
 
       await pool.execute(
-        `UPDATE loans SET capital = ?, amount_borrowed = ?, interest_amount = ?, total_to_pay = ?, total_amount = ?, payment_days = ?, days_agreed = ?, daily_payment_amount = ?, daily_payment = ?, start_date = ?, due_date = ?, remaining_amount = ?, paid_days_count = ?, status = ?, notes = ? WHERE id = ?`,
-        [newCapital, newCapital, interestAmount, totalToPay, totalToPay, newDays, newDays, dailyPaymentAmount, dailyPaymentAmount, startDateStr, dueDateStr, newRemainingAmount, newPaidDaysCount, newStatus, notes?.trim() || null, id]
+        `UPDATE loans SET capital = ?, amount_borrowed = ?, interest_rate = ?, interest_amount = ?, total_to_pay = ?, total_amount = ?, payment_days = ?, days_agreed = ?, daily_payment_amount = ?, daily_payment = ?, start_date = ?, due_date = ?, remaining_amount = ?, paid_days_count = ?, status = ?, notes = ? WHERE id = ?`,
+        [
+          newCapital, newCapital,
+          interestRate ?? 0, interestAmount,
+          totalToPay, totalToPay,
+          newDays, newDays,
+          dailyPaymentAmount, dailyPaymentAmount,
+          startDateStr, dueDateStr,
+          newRemainingAmount, newPaidDaysCount,
+          newStatus,
+          notes?.trim() || null,
+          id,
+        ]
       );
 
       return res.json({ success: true, message: 'Préstamo actualizado' });

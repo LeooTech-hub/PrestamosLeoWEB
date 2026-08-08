@@ -167,7 +167,7 @@ export default function Home() {
   // Edit loan handler
   const handleUpdateLoan = async (
     id: string,
-    data: { capital: number; paymentDays: number; startDate: string; notes?: string }
+    data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; notes?: string }
   ) => {
     await loanService.updateLoan(id, data);
     await loadData();

@@ -16,7 +16,11 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#FAF8F5",
+  // Warm sepia for day mode; warm coffee-dark for night mode
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAF8F5" },
+    { media: "(prefers-color-scheme: dark)",  color: "#1C1917" },
+  ],
 };
 
 export default function RootLayout({

@@ -67,8 +67,8 @@ export const Navigation: React.FC<NavigationProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition-all relative whitespace-nowrap ${
                   isActive
-                    ? 'border-[#D96B27] dark:border-[#E07A5F] text-[#D96B27] dark:text-[#E07A5F] bg-[#FDF3ED]/60 dark:bg-[#E07A5F]/15 font-semibold'
-                    : 'border-transparent text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5] hover:bg-[#F5F0EB]/50 dark:hover:bg-[#26221F]/50'
+                    ? 'border-[#D96B27] dark:border-[#E07A5F] text-[#D96B27] dark:text-[#E07A5F] bg-[#FDF3ED]/60 dark:bg-[#3D261A]/60 font-semibold'
+                    : 'border-transparent text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5] hover:bg-[#F5F0EB]/50 dark:hover:bg-[#2D2824]'
                 }`}
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-[#D96B27] dark:text-[#E07A5F]' : 'text-[#6E615A] dark:text-[#C2B29F]'}`} />
@@ -96,7 +96,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all relative ${
                   isActive
-                    ? 'text-[#D96B27] dark:text-[#E07A5F] bg-[#FDF3ED] dark:bg-[#E07A5F]/15 font-bold scale-105'
+                    ? 'text-[#D96B27] dark:text-[#E07A5F] bg-[#FDF3ED] dark:bg-[#3D261A]/70 font-bold scale-105'
                     : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
                 }`}
               >

@@ -108,13 +108,17 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              title={theme === 'dark' ? 'Cambiar a Modo Día' : 'Cambiar a Modo Noche'}
-              className="p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#26221F] border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
+              title={theme === 'dark' ? 'Cambiar a Modo Día' : 'Activar Modo Nocturno Cálido'}
+              className={`p-1.5 sm:p-2 rounded-xl border transition-all active:scale-95 warm-shadow ${
+                theme === 'dark'
+                  ? 'bg-[#2D2824] border-[#4A3F37] text-[#E89D4F] hover:bg-[#3D352E]'
+                  : 'bg-white dark:bg-[#26221F] border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FDF3ED]'
+              }`}
             >
               {theme === 'dark' ? (
                 <Sun className="w-4 h-4 text-[#E89D4F]" />
               ) : (
-                <Moon className="w-4 h-4 text-[#2C221E] dark:text-[#EAE0D5]" />
+                <Moon className="w-4 h-4 text-[#2C221E]" />
               )}
             </button>
           </div>
