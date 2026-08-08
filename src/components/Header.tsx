@@ -32,14 +32,34 @@ export const Header: React.FC<HeaderProps> = ({
     applyTheme(nextTheme);
   };
 
-  const today = new Intl.DateTimeFormat('es-PE', {
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setCurrentTime(new Date());
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const part1Date = currentTime ? new Intl.DateTimeFormat('es-PE', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
-  }).format(new Date());
+  }).format(currentTime) : '';
 
-  const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
+  const part2Year = currentTime ? new Intl.DateTimeFormat('es-PE', {
+    year: 'numeric'
+  }).format(currentTime) : '';
+
+  const formattedTime = currentTime ? new Intl.DateTimeFormat('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(currentTime).toUpperCase() : '';
+
+  const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  const dateLine1 = capitalize(part1Date);
+  const dateLine2 = currentTime ? `De ${part2Year} | ${formattedTime}` : '';
+
   const alertsCount = alerts.length;
 
   return (
@@ -64,59 +84,68 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="text-lg font-bold tracking-tight text-[#2C221E] dark:text-[#EAE0D5] truncate leading-none">
                 Prestamos<span className="text-[#D96B27] dark:text-[#E07A5F]">Leo</span>
               </h1>
-              <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-[#C2B29F] capitalize mt-0.5 truncate">
-                <Calendar className="w-3 h-3 text-[#E89D4F] shrink-0" />
-                <span className="truncate">{formattedDate}</span>
+              <div className="flex flex-col text-xs text-neutral-500 dark:text-[#C2B29F] capitalize truncate mt-0.5">
+                <div className="flex items-center gap-1 truncate">
+                  <Calendar className="w-3 h-3 text-[#E89D4F] shrink-0" />
+                  <span className="truncate">{dateLine1}</span>
+                </div>
+                {currentTime && (
+                  <div className="flex items-center gap-1 pl-4 truncate">
+                    <span className="truncate text-[10px] sm:text-xs text-neutral-400 dark:text-[#A89B92]">{dateLine2}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* ── Quick Actions (Right Side) ── */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Campana de Alertas */}
-            <button
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
-              title="Centro de Alertas"
-            >
-              <Bell className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
-              {alertsCount > 0 && (
-                <span className="absolute top-0 right-0 bg-[#C84B31] text-white text-[9px] font-extrabold w-3.5 h-3.5 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#1C1917] animate-pulse">
-                  {alertsCount > 9 ? '9+' : alertsCount}
-                </span>
-              )}
-            </button>
+          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+            {/* ROW 1: Notificaciones, Modo Oscuro */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className="relative w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
+                title="Centro de Alertas"
+              >
+                <Bell className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
+                {alertsCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-[#C84B31] text-white text-[9px] font-extrabold w-3.5 h-3.5 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#1C1917] animate-pulse">
+                    {alertsCount > 9 ? '9+' : alertsCount}
+                  </span>
+                )}
+              </button>
 
-            {/* Modo Día / Modo Nocturno Cálido */}
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Cambiar a Modo Día' : 'Activar Modo Nocturno Cálido'}
-              className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#E89D4F] dark:hover:text-[#E89D4F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-[18px] h-[18px] text-[#E89D4F]" />
-              ) : (
-                <Moon className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#E5E7EB]" />
-              )}
-            </button>
+              <button
+                onClick={toggleTheme}
+                title={theme === 'dark' ? 'Cambiar a Modo Día' : 'Activar Modo Nocturno Cálido'}
+                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#E89D4F] dark:hover:text-[#E89D4F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-[18px] h-[18px] text-[#E89D4F]" />
+                ) : (
+                  <Moon className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#E5E7EB]" />
+                )}
+              </button>
+            </div>
 
-            {/* Actualizar */}
-            <button
-              onClick={onRefresh}
-              title="Actualizar datos"
-              className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
-            >
-              <RefreshCw className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
-            </button>
+            {/* ROW 2: Recargar, Salir */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onRefresh}
+                title="Actualizar datos"
+                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
+              >
+                <RefreshCw className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
+              </button>
 
-            {/* Cerrar Sesión */}
-            <button
-              onClick={() => console.log('Logout clicked')}
-              title="Cerrar Sesión"
-              className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#C84B31] dark:hover:text-[#C84B31] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
-            >
-              <LogOut className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
-            </button>
+              <button
+                onClick={() => console.log('Logout clicked')}
+                title="Cerrar Sesión"
+                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#C84B31] dark:hover:text-[#C84B31] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
+              >
+                <LogOut className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
