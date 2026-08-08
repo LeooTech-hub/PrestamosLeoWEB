@@ -100,39 +100,39 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-2">
             <CreditCard className="w-6 h-6 text-[#D96B27] dark:text-[#E07A5F]" />
             Consolidado de Préstamos ({activeLoans.length})
           </h2>
-          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
             Gestión organizada por vencimientos, cobros y borrado inteligente.
           </p>
         </div>
       </div>
 
       {/* Search & Status Filter Tabs */}
-      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-4 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-3">
+      <div className="bg-white dark:bg-[#26221F] rounded-3xl p-4 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por cliente, teléfono o dirección..."
-              className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] placeholder-[#A89B92] dark:placeholder-[#A8A19B] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] placeholder-[#A89B92] dark:placeholder-[#C2B29F] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
             />
           </div>
 
           {/* Quick Filter Pills */}
-          <div className="flex items-center gap-1 bg-[#FAF8F5] dark:bg-[#121110] p-1 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] text-xs font-bold overflow-x-auto">
+          <div className="flex items-center gap-1 bg-[#FAF8F5] dark:bg-[#1C1917] p-1 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] text-xs font-bold overflow-x-auto">
             <button
               onClick={() => setFilter('ALL')}
               className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
                 filter === 'ALL'
-                  ? 'bg-[#2C221E] dark:bg-[#F3F1EF] text-white dark:text-[#121110] shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                  ? 'bg-[#2C221E] dark:bg-[#EAE0D5] text-white dark:text-[#1C1917] shadow-xs'
+                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
               }`}
             >
               Todos ({activeLoans.length})
@@ -143,7 +143,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
               className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
                 filter === 'ACTIVE'
                   ? 'bg-[#2D7A5D] dark:bg-[#3D9970] text-white shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
               }`}
             >
               🟢 Vigentes ({countVigentes})
@@ -154,7 +154,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
               className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
                 filter === 'EXPIRING'
                   ? 'bg-[#E89D4F] text-white shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
               }`}
             >
               🟡 Por Vencer ({countExpiring})
@@ -165,7 +165,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
               className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
                 filter === 'OVERDUE'
                   ? 'bg-[#C84B31] text-white shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
               }`}
             >
               🔴 Vencidos ({countOverdue})
@@ -176,10 +176,10 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
 
       {/* Loans Grid List */}
       {filteredLoans.length === 0 ? (
-        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
-          <CreditCard className="w-12 h-12 text-[#A89B92] dark:text-[#A8A19B] mx-auto mb-3 opacity-50" />
-          <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF]">No hay préstamos en este filtro</h3>
-          <p className="text-xs text-[#6E615A] dark:text-[#A8A19B] mt-1">
+        <div className="bg-white dark:bg-[#26221F] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
+          <CreditCard className="w-12 h-12 text-[#A89B92] dark:text-[#C2B29F] mx-auto mb-3 opacity-50" />
+          <h3 className="font-bold text-base text-[#2C221E] dark:text-[#EAE0D5]">No hay préstamos en este filtro</h3>
+          <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
             Intenta cambiar de pestaña de estado o modificar la búsqueda.
           </p>
         </div>
@@ -192,16 +192,16 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
             return (
               <div
                 key={loan.id}
-                className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 warm-shadow transition-colors duration-300 flex flex-col justify-between space-y-4"
+                className="bg-white dark:bg-[#26221F] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#3D352E] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 warm-shadow transition-colors duration-300 flex flex-col justify-between space-y-4"
               >
                 {/* Header */}
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F1EF]">
+                      <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#EAE0D5]">
                         {loan.clientName}
                       </h3>
-                      <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
+                      <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
                         <span className="flex items-center gap-1">
                           <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
                           {loan.clientPhone}
@@ -224,42 +224,42 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                   </div>
 
                   {/* Dates Row */}
-                  <div className="flex items-center justify-between text-xs text-[#6E615A] dark:text-[#A8A19B] mt-3 bg-[#FAF8F5] dark:bg-[#121110] p-2.5 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#332F2C]">
+                  <div className="flex items-center justify-between text-xs text-[#6E615A] dark:text-[#C2B29F] mt-3 bg-[#FAF8F5] dark:bg-[#1C1917] p-2.5 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E]">
                     <div>
                       <span className="block text-[10px]">Fecha Inicio:</span>
-                      <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatDatePE(loan.startDate)}</strong>
+                      <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatDatePE(loan.startDate)}</strong>
                     </div>
                     <div className="text-right">
                       <span className="block text-[10px]">Vencimiento:</span>
-                      <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatDatePE(loan.dueDate)}</strong>
+                      <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatDatePE(loan.dueDate)}</strong>
                     </div>
                   </div>
 
                   {/* Financials Row */}
-                  <div className="grid grid-cols-3 gap-2 mt-3 text-xs bg-[#FAF8F5] dark:bg-[#121110] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#332F2C]">
+                  <div className="grid grid-cols-3 gap-2 mt-3 text-xs bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E]">
                     <div>
-                      <span className="text-[#6E615A] dark:text-[#A8A19B] block text-[10px]">Capital:</span>
-                      <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatCurrency(loan.capital)}</strong>
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Capital:</span>
+                      <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loan.capital)}</strong>
                     </div>
                     <div>
-                      <span className="text-[#6E615A] dark:text-[#A8A19B] block text-[10px]">Total (20%):</span>
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Total (20%):</span>
                       <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(loan.totalToPay)}</strong>
                     </div>
                     <div>
-                      <span className="text-[#6E615A] dark:text-[#A8A19B] block text-[10px]">Saldo:</span>
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Saldo:</span>
                       <strong className="text-[#C84B31]">{formatCurrency(loan.remainingAmount)}</strong>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="mt-3">
-                    <div className="flex justify-between text-[11px] font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
                       <span>
                         Día {loan.paidDaysCount}/{loan.paymentDays} ({formatCurrency(loan.dailyPaymentAmount)}/día)
                       </span>
                       <span className="text-[#2D7A5D] dark:text-[#3D9970]">{percent}% Pagado</span>
                     </div>
-                    <div className="w-full bg-[#E6DCD2] dark:bg-[#332F2C] rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-[#E6DCD2] dark:bg-[#3D352E] rounded-full h-2 overflow-hidden">
                       <div
                         className="bg-[#2D7A5D] dark:bg-[#3D9970] h-2 rounded-full"
                         style={{ width: `${percent}%` }}
@@ -269,7 +269,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                 </div>
 
                 {/* Actions Row */}
-                <div className="pt-2 flex items-center justify-between gap-2 border-t border-[#E6DCD2]/60 dark:border-[#332F2C]">
+                <div className="pt-2 flex items-center justify-between gap-2 border-t border-[#E6DCD2]/60 dark:border-[#3D352E]">
                   <div className="flex items-center gap-1.5 flex-1">
                     <button
                       onClick={() => setSelectedLoanForPayment(loan)}
@@ -293,7 +293,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setSelectedLoanForEdit(loan)}
-                      className="p-2 rounded-xl bg-[#FAF8F5] dark:bg-[#121110] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#332F2C] transition-all"
+                      className="p-2 rounded-xl bg-[#FAF8F5] dark:bg-[#1C1917] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E] transition-all"
                       title="Editar Préstamo"
                     >
                       <Pencil className="w-3.5 h-3.5" />

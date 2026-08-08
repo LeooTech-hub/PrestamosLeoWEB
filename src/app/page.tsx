@@ -235,7 +235,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F5] dark:bg-[#121110] text-[#2C221E] dark:text-[#F3F1EF] transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5] dark:bg-[#1C1917] text-[#2C221E] dark:text-[#EAE0D5] transition-colors duration-300">
       {/* Top Header */}
       <Header
         alerts={alerts}
@@ -257,7 +257,7 @@ export default function Home() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
             <div className="w-10 h-10 border-4 border-[#D96B27] dark:border-[#E07A5F] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B]">Cargando PrestamosLeoWEB (Perú)...</p>
+            <p className="text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F]">Cargando PrestamosLeoWEB (Perú)...</p>
           </div>
         ) : (
           <>
@@ -333,7 +333,7 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer className="hidden md:block py-6 border-t border-[#E6DCD2] dark:border-[#332F2C] text-center text-xs text-[#6E615A] dark:text-[#A8A19B] bg-white dark:bg-[#121110] transition-colors duration-300">
+      <footer className="hidden md:block py-6 border-t border-[#E6DCD2] dark:border-[#3D352E] text-center text-xs text-[#6E615A] dark:text-[#C2B29F] bg-white dark:bg-[#1C1917] transition-colors duration-300">
         <p>PrestamosLeoWEB</p>
       </footer>
     </div>

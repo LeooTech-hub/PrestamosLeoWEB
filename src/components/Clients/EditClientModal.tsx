@@ -62,19 +62,19 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
-        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-4">
+      <div className="bg-white dark:bg-[#26221F] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#3D352E] pb-4">
           <div>
             <span className="text-xs font-bold text-[#D96B27] dark:text-[#E07A5F] uppercase tracking-wider">
               Edición de Cliente
             </span>
-            <h3 className="text-lg font-extrabold text-[#2C221E] dark:text-[#F3F1EF]">
+            <h3 className="text-lg font-extrabold text-[#2C221E] dark:text-[#EAE0D5]">
               {client.name} {client.alias ? `(${client.alias})` : ''}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B]"
+            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -83,24 +83,24 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
         <form onSubmit={handleSubmit} className="py-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
                 Nombre Completo*:
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nombre completo"
-                  className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
                 Apodo / Alias (Opcional):
               </label>
               <input
@@ -108,63 +108,63 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                 value={alias}
                 onChange={(e) => setAlias(e.target.value)}
                 placeholder=""
-                className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
               Teléfono / WhatsApp*:
             </label>
             <div className="relative">
-              <Phone className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Phone className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Número de teléfono"
-                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
               Dirección / Referencia de Cobro*:
             </label>
             <div className="relative">
-              <MapPin className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3 top-1/2 -translate-y-1/2" />
+              <MapPin className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Dirección o referencia"
-                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
               DNI / Documento:
             </label>
             <div className="relative">
-              <FileText className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3 top-1/2 -translate-y-1/2" />
+              <FileText className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={identification}
                 onChange={(e) => setIdentification(e.target.value)}
                 placeholder="Número de DNI"
-                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
               Notas / Observaciones de Cobro:
             </label>
             <input
@@ -172,7 +172,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Observaciones de cobro"
-              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
             />
           </div>
 
@@ -180,7 +180,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#A8A19B] font-bold text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#121110]"
+              className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] font-bold text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917]"
             >
               Cancelar
             </button>

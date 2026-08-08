@@ -43,7 +43,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-4 sm:space-y-6 pb-24 md:pb-12">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#D96B27] via-[#C25A19] to-[#2C221E] dark:from-[#D96B27] dark:via-[#C25A19] dark:to-[#1E1C1A] text-white rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden transition-colors duration-300">
+      <div className="bg-gradient-to-r from-[#D96B27] via-[#C25A19] to-[#2C221E] dark:from-[#B85324] dark:via-[#9C431B] dark:to-[#26221F] text-white rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden transition-colors duration-300">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-15 bg-[radial-gradient(#FFFFFF_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -71,7 +71,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('dailyRoute')}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white text-[#2C221E] dark:text-[#1E1C1A] hover:bg-[#FAF8F5] text-xs sm:text-sm font-semibold shadow-md active:scale-95 transition-all"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white text-[#2C221E] dark:text-[#1C1917] hover:bg-[#FAF8F5] text-xs sm:text-sm font-semibold shadow-md active:scale-95 transition-all"
             >
               <Zap className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#D96B27]" />
               <span>Cobro Rápido</span>
@@ -102,31 +102,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Main KPI Summary Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Card 1: Capital Prestado */}
-        <div className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 transition-colors duration-300">
+        <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 transition-colors duration-300">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] truncate">Capital Invertido</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] truncate">Capital Invertido</span>
             <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] flex items-center justify-center shrink-0">
               <Coins className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-base sm:text-2xl font-black text-[#2C221E] dark:text-[#F3F1EF] tracking-tight truncate">
+          <p className="text-base sm:text-2xl font-black text-[#2C221E] dark:text-[#EAE0D5] tracking-tight truncate">
             {formatCurrency(summary.totalCapitalLent)}
           </p>
-          <span className="text-[10px] sm:text-[11px] text-[#6E615A] dark:text-[#A8A19B] flex items-center gap-1 mt-1 truncate">
+          <span className="text-[10px] sm:text-[11px] text-[#6E615A] dark:text-[#C2B29F] flex items-center gap-1 mt-1 truncate">
             <Users className="w-3 h-3 text-[#E89D4F] shrink-0" />
             <span>{summary.totalActiveLoansCount} activos</span>
           </span>
         </div>
 
         {/* Card 2: Ganancia Estimada (20%) */}
-        <div className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow hover:border-[#E89D4F]/40 dark:hover:border-[#E89D4F]/40 transition-colors duration-300">
+        <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#E89D4F]/40 dark:hover:border-[#E89D4F]/40 transition-colors duration-300">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] truncate">Ganancia (20%)</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] truncate">Ganancia (20%)</span>
             <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#FDF6EE] dark:bg-[#E89D4F]/15 text-[#E89D4F] flex items-center justify-center shrink-0">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-base sm:text-2xl font-black text-[#2C221E] dark:text-[#F3F1EF] tracking-tight truncate">
+          <p className="text-base sm:text-2xl font-black text-[#2C221E] dark:text-[#EAE0D5] tracking-tight truncate">
             {formatCurrency(summary.totalEstimatedProfit)}
           </p>
           <span className="text-[10px] sm:text-[11px] text-[#2D7A5D] dark:text-[#3D9970] font-medium flex items-center gap-1 mt-1 truncate">
@@ -136,9 +136,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Card 3: Cobrado Hoy */}
-        <div className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow hover:border-[#2D7A5D]/40 dark:hover:border-[#3D9970]/40 transition-colors duration-300">
+        <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#2D7A5D]/40 dark:hover:border-[#3D9970]/40 transition-colors duration-300">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] truncate">Recaudado Hoy</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] truncate">Recaudado Hoy</span>
             <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#EEF6F2] dark:bg-[#3D9970]/15 text-[#2D7A5D] dark:text-[#3D9970] flex items-center justify-center shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
@@ -146,15 +146,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <p className="text-base sm:text-2xl font-black text-[#2D7A5D] dark:text-[#3D9970] tracking-tight truncate">
             {formatCurrency(summary.collectedToday)}
           </p>
-          <span className="text-[10px] sm:text-[11px] text-[#6E615A] dark:text-[#A8A19B] mt-1 block truncate">
+          <span className="text-[10px] sm:text-[11px] text-[#6E615A] dark:text-[#C2B29F] mt-1 block truncate">
             Ingresado hoy
           </span>
         </div>
 
         {/* Card 4: Clientes Pendientes Hoy */}
-        <div className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow hover:border-[#C84B31]/40 dark:hover:border-[#C84B31]/40 transition-colors duration-300">
+        <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#C84B31]/40 dark:hover:border-[#C84B31]/40 transition-colors duration-300">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] truncate">Pendientes Hoy</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] truncate">Pendientes Hoy</span>
             <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 text-[#C84B31] flex items-center justify-center shrink-0">
               <Clock className="w-4 h-4" />
             </div>
@@ -163,7 +163,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-base sm:text-2xl font-black text-[#C84B31] tracking-tight">
               {summary.pendingClientsTodayCount}
             </p>
-            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B]">clientes</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F]">clientes</span>
           </div>
           {summary.overdueCount > 0 ? (
             <span className="text-[10px] sm:text-[11px] text-[#C84B31] font-medium flex items-center gap-1 mt-1 truncate">
@@ -180,11 +180,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Middle Section: Active Loans Preview & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
+        <div className="lg:col-span-2 bg-white dark:bg-[#26221F] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF]">Préstamos Recientes</h3>
-              <p className="text-xs text-[#6E615A] dark:text-[#A8A19B]">Progreso de cancelación por días acordados</p>
+              <h3 className="font-bold text-base text-[#2C221E] dark:text-[#EAE0D5]">Préstamos Recientes</h3>
+              <p className="text-xs text-[#6E615A] dark:text-[#C2B29F]">Progreso de cancelación por días acordados</p>
             </div>
             <button
               onClick={() => setActiveTab('clients')}
@@ -196,7 +196,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {recentLoans.length === 0 ? (
-            <div className="text-center py-8 text-[#6E615A] dark:text-[#A8A19B] text-sm">
+            <div className="text-center py-8 text-[#6E615A] dark:text-[#C2B29F] text-sm">
               No hay préstamos registrados aún.
             </div>
           ) : (
@@ -206,11 +206,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div
                     key={loan.id}
-                    className="p-3.5 rounded-2xl bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2]/80 dark:border-[#332F2C] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 transition-colors duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                    className="p-3.5 rounded-2xl bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2]/80 dark:border-[#3D352E] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 transition-colors duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-[#2C221E] dark:text-[#F3F1EF] truncate">
+                        <span className="font-bold text-sm text-[#2C221E] dark:text-[#EAE0D5] truncate">
                           {loan.clientName}
                         </span>
                         <span
@@ -219,7 +219,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                               ? 'bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] border border-[#C84B31]/30'
                               : loan.status === 'PAID'
                               ? 'bg-[#EEF6F2] dark:bg-[#3D9970]/20 text-[#2D7A5D] dark:text-[#3D9970] border border-[#2D7A5D]/30 dark:border-[#3D9970]/30'
-                              : 'bg-[#FDF6EE] dark:bg-[#E89D4F]/20 text-[#E89D4F] border border-[#E89D4F]/30'
+                              : 'bg-[#FDF6EE] dark:bg-[#3D261A] text-[#E89D4F] dark:text-[#E07A5F] border border-[#E89D4F]/30 dark:border-[#E07A5F]/30'
                           }`}
                         >
                           {loan.status === 'OVERDUE'
@@ -229,20 +229,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             : `${loan.paymentDays} DÍAS`}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-[#6E615A] dark:text-[#A8A19B] mt-1">
-                        <span>Capital: <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatCurrency(loan.capital)}</strong></span>
+                      <div className="flex items-center gap-3 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
+                        <span>Capital: <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loan.capital)}</strong></span>
                         <span>Total (20%): <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(loan.totalToPay)}</strong></span>
                       </div>
                     </div>
 
                     <div className="w-full sm:w-44 text-right">
                       <div className="flex justify-between sm:justify-end gap-2 text-xs font-semibold mb-1">
-                        <span className="text-[#6E615A] dark:text-[#A8A19B]">
+                        <span className="text-[#6E615A] dark:text-[#C2B29F]">
                           Día {loan.paidDaysCount}/{loan.paymentDays}
                         </span>
                         <span className="text-[#2D7A5D] dark:text-[#3D9970]">{percent}%</span>
                       </div>
-                      <div className="w-full bg-[#E6DCD2] dark:bg-[#332F2C] rounded-full h-2 overflow-hidden">
+                      <div className="w-full bg-[#E6DCD2] dark:bg-[#3D352E] rounded-full h-2 overflow-hidden">
                         <div
                           className="bg-[#2D7A5D] dark:bg-[#3D9970] h-2 rounded-full"
                           style={{ width: `${percent}%` }}
@@ -257,19 +257,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Recent Payments Feed */}
-        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
+        <div className="bg-white dark:bg-[#26221F] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-1.5">
+              <h3 className="font-bold text-base text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-1.5">
                 <Receipt className="w-4 h-4 text-[#D96B27] dark:text-[#E07A5F]" />
                 Cobros Recientes
               </h3>
-              <p className="text-xs text-[#6E615A] dark:text-[#A8A19B]">Últimos pagos de la ruta</p>
+              <p className="text-xs text-[#6E615A] dark:text-[#C2B29F]">Últimos pagos de la ruta</p>
             </div>
           </div>
 
           {recentPayments.length === 0 ? (
-            <div className="text-center py-8 text-[#6E615A] dark:text-[#A8A19B] text-xs">
+            <div className="text-center py-8 text-[#6E615A] dark:text-[#C2B29F] text-xs">
               Aún no se registraron pagos hoy.
             </div>
           ) : (
@@ -280,19 +280,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   className="flex items-center justify-between p-3 rounded-2xl bg-[#EEF6F2]/60 dark:bg-[#3D9970]/10 border border-[#2D7A5D]/20 dark:border-[#3D9970]/20 text-xs transition-colors duration-300"
                 >
                   <div>
-                    <span className="font-semibold text-[#2C221E] dark:text-[#F3F1EF] block truncate max-w-[140px]">
+                    <span className="font-semibold text-[#2C221E] dark:text-[#EAE0D5] block truncate max-w-[140px]">
                       {pay.clientName}
                     </span>
-                    <span className="text-[#6E615A] dark:text-[#A8A19B] text-[11px]">
-                      {pay.notes || 'Pago del día'}
+                    <span className="text-[#6E615A] dark:text-[#C2B29F] text-[11px]">
+                      {formatDatePE(pay.date)}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <span className="font-bold text-[#2D7A5D] dark:text-[#3D9970] text-sm block">
-                      +{formatCurrency(pay.amount)}
-                    </span>
-                    <span className="text-[10px] text-[#6E615A] dark:text-[#A8A19B]">{formatDatePE(pay.date)}</span>
-                  </div>
+                  <strong className="text-[#2D7A5D] dark:text-[#3D9970] font-black text-sm">
+                    +{formatCurrency(pay.amount)}
+                  </strong>
                 </div>
               ))}
             </div>

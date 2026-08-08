@@ -86,20 +86,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
+      <div className="bg-white dark:bg-[#26221F] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-4">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#3D352E] pb-4">
           <div>
             <span className="text-xs font-bold text-[#D96B27] dark:text-[#E07A5F] uppercase tracking-wider">
               Cobro en Ruta (Perú S/.)
             </span>
-            <h3 className="text-lg font-extrabold text-[#2C221E] dark:text-[#F3F1EF]">
+            <h3 className="text-lg font-extrabold text-[#2C221E] dark:text-[#EAE0D5]">
               {loan.clientName}
             </h3>
           </div>
           <button
             onClick={handleCloseModal}
-            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B]"
+            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -112,19 +112,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div>
-              <h4 className="text-xl font-black text-[#2C221E] dark:text-[#F3F1EF]">¡Pago Registrado!</h4>
-              <p className="text-xs text-[#6E615A] dark:text-[#A8A19B] mt-1">
+              <h4 className="text-xl font-black text-[#2C221E] dark:text-[#EAE0D5]">¡Pago Registrado!</h4>
+              <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
                 Recaudados <strong className="text-[#2D7A5D] dark:text-[#3D9970] font-bold">{formatCurrency(targetAmount)}</strong> correctamente.
               </p>
             </div>
 
-            <div className="bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl p-4 text-left text-xs space-y-1">
+            <div className="bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl p-4 text-left text-xs space-y-1">
               <div className="flex justify-between">
-                <span className="text-[#6E615A] dark:text-[#A8A19B]">Saldo restante:</span>
-                <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatCurrency(Math.max(0, loan.remainingAmount - targetAmount))}</strong>
+                <span className="text-[#6E615A] dark:text-[#C2B29F]">Saldo restante:</span>
+                <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(Math.max(0, loan.remainingAmount - targetAmount))}</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#6E615A] dark:text-[#A8A19B]">Días pagados:</span>
+                <span className="text-[#6E615A] dark:text-[#C2B29F]">Días pagados:</span>
                 <strong className="text-[#2D7A5D] dark:text-[#3D9970]">
                   {Math.min(loan.paymentDays, loan.paidDaysCount + 1)} de {loan.paymentDays} días
                 </strong>
@@ -143,7 +143,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             <button
               onClick={handleCloseModal}
-              className="w-full py-2.5 text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]"
+              className="w-full py-2.5 text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]"
             >
               Cerrar y Continuar Ruta
             </button>
@@ -152,22 +152,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           /* Payment Form */
           <div className="py-5 space-y-4">
             {/* Loan info */}
-            <div className="bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl p-3.5 text-xs flex justify-between items-center">
+            <div className="bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl p-3.5 text-xs flex justify-between items-center">
               <div>
-                <span className="text-[#6E615A] dark:text-[#A8A19B] block">Plazo / Progreso:</span>
-                <strong className="text-[#2C221E] dark:text-[#F3F1EF]">
+                <span className="text-[#6E615A] dark:text-[#C2B29F] block">Plazo / Progreso:</span>
+                <strong className="text-[#2C221E] dark:text-[#EAE0D5]">
                   {loan.paymentDays} Días ({loan.paidDaysCount}/{loan.paymentDays} días)
                 </strong>
               </div>
               <div className="text-right">
-                <span className="text-[#6E615A] dark:text-[#A8A19B] block">Saldo pendiente:</span>
+                <span className="text-[#6E615A] dark:text-[#C2B29F] block">Saldo pendiente:</span>
                 <strong className="text-[#C84B31]">{formatCurrency(loan.remainingAmount)}</strong>
               </div>
             </div>
 
             {/* Select Payment Type */}
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-2">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-2">
                 Tipo de Pago:
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -177,7 +177,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   className={`py-3 px-3 rounded-2xl text-xs font-bold border transition-all ${
                     paymentType === 'FULL'
                       ? 'sage-gradient text-white border-transparent shadow-sm'
-                      : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#2C221E] dark:text-[#F3F1EF] border-[#E6DCD2] dark:border-[#332F2C]'
+                      : 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#2C221E] dark:text-[#EAE0D5] border-[#E6DCD2] dark:border-[#3D352E]'
                   }`}
                 >
                   <span>Monto Diario Completo</span>
@@ -192,7 +192,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   className={`py-3 px-3 rounded-2xl text-xs font-bold border transition-all ${
                     paymentType === 'CUSTOM'
                       ? 'amber-gradient text-white border-transparent shadow-sm'
-                      : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#2C221E] dark:text-[#F3F1EF] border-[#E6DCD2] dark:border-[#332F2C]'
+                      : 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#2C221E] dark:text-[#EAE0D5] border-[#E6DCD2] dark:border-[#3D352E]'
                   }`}
                 >
                   <span>Abono Parcial</span>
@@ -204,7 +204,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {/* Custom Amount */}
             {paymentType === 'CUSTOM' && (
               <div>
-                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
                   Ingrese Valor del Abono (S/.):
                 </label>
                 <div className="relative">
@@ -216,7 +216,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     max={loan.remainingAmount}
                     value={customAmount || ''}
                     onChange={(e) => setCustomAmount(e.target.value === '' ? 0 : Number(e.target.value))}
-                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-bold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-sm font-bold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                     required
                   />
                 </div>
@@ -225,8 +225,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             {/* Mora / Penalidad */}
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
-                Mora / Interés por Mora (S/.) <span className="text-[10px] text-[#6E615A] dark:text-[#A8A19B] font-normal">(Opcional)</span>:
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
+                Mora / Interés por Mora (S/.) <span className="text-[10px] text-[#6E615A] dark:text-[#C2B29F] font-normal">(Opcional)</span>:
               </label>
               <input
                 type="number"
@@ -235,13 +235,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 value={lateFee || ''}
                 onChange={(e) => setLateFee(e.target.value === '' ? 0 : Number(e.target.value))}
                 placeholder="0.00"
-                className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-bold text-[#C84B31] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
+                className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs font-bold text-[#C84B31] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
               />
             </div>
 
             {lateFee > 0 && (
-              <div className="p-3 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs space-y-1 font-semibold text-[#2C221E] dark:text-[#F3F1EF]">
-                <div className="flex justify-between text-[#6E615A] dark:text-[#A8A19B]">
+              <div className="p-3 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl text-xs space-y-1 font-semibold text-[#2C221E] dark:text-[#EAE0D5]">
+                <div className="flex justify-between text-[#6E615A] dark:text-[#C2B29F]">
                   <span>Cuota Principal:</span>
                   <span>{formatCurrency(targetAmount)}</span>
                 </div>
@@ -249,7 +249,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <span>Mora / Penalidad:</span>
                   <span>+{formatCurrency(lateFee)}</span>
                 </div>
-                <div className="flex justify-between font-extrabold border-t border-[#E6DCD2] dark:border-[#332F2C] pt-1 text-[#2D7A5D] dark:text-[#3D9970]">
+                <div className="flex justify-between font-extrabold border-t border-[#E6DCD2] dark:border-[#3D352E] pt-1 text-[#2D7A5D] dark:text-[#3D9970]">
                   <span>Total Cobrado:</span>
                   <span>{formatCurrency(targetAmount + lateFee)}</span>
                 </div>
@@ -258,7 +258,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             {/* Optional Note */}
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
                 Nota o Comentario (Opcional):
               </label>
               <input
@@ -266,7 +266,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Notas del cobro"
-                className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
               />
             </div>
 
@@ -275,7 +275,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <button
                 type="button"
                 onClick={handleCloseModal}
-                className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#A8A19B] font-bold text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#121110]"
+                className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] font-bold text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917]"
               >
                 Cancelar
               </button>

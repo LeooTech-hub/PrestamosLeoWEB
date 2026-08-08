@@ -44,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-[#FAF8F5]/95 dark:bg-[#121110]/95 backdrop-blur-md border-b border-[#E6DCD2] dark:border-[#332F2C] px-3 sm:px-6 py-2 sm:py-3 transition-colors duration-300 overflow-hidden">
+      <header className="sticky top-0 z-30 bg-[#FAF8F5]/95 dark:bg-[#1C1917]/95 backdrop-blur-md border-b border-[#E6DCD2] dark:border-[#3D352E] px-3 sm:px-6 py-2 sm:py-3 transition-colors duration-300 overflow-hidden">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           {/* Brand & Logo */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
@@ -57,14 +57,14 @@ export const Header: React.FC<HeaderProps> = ({
             />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <h1 className="font-extrabold text-base sm:text-xl tracking-tight text-[#2C221E] dark:text-[#F3F1EF] truncate">
+                <h1 className="font-extrabold text-base sm:text-xl tracking-tight text-[#2C221E] dark:text-[#EAE0D5] truncate">
                   Prestamos<span className="text-[#D96B27] dark:text-[#E07A5F]">Leo</span>
                 </h1>
-                <span className="bg-[#FDF3ED] dark:bg-[#1E1C1A] text-[#D96B27] dark:text-[#E07A5F] text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border border-[#D96B27]/20 dark:border-[#E07A5F]/30 uppercase shrink-0">
+                <span className="bg-[#FDF3ED] dark:bg-[#26221F] text-[#D96B27] dark:text-[#E07A5F] text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border border-[#D96B27]/20 dark:border-[#E07A5F]/30 uppercase shrink-0">
                   Perú S/. 20%
                 </span>
               </div>
-              <div className="hidden sm:flex items-center gap-1 text-[12px] text-[#6E615A] dark:text-[#A8A19B] capitalize">
+              <div className="hidden sm:flex items-center gap-1 text-[12px] text-[#6E615A] dark:text-[#C2B29F] capitalize">
                 <Calendar className="w-3 h-3 text-[#E89D4F]" />
                 <span>{formattedDate}</span>
               </div>
@@ -85,12 +85,12 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Notification Bell */}
             <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#1E1C1A] border border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#A8A19B] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
+              className="relative p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#26221F] border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
               title="Centro de Alertas"
             >
-              <Bell className="w-4 h-4 text-[#2C221E] dark:text-[#F3F1EF]" />
+              <Bell className="w-4 h-4 text-[#2C221E] dark:text-[#EAE0D5]" />
               {alertsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#C84B31] text-white text-[9px] sm:text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#121110] animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-[#C84B31] text-white text-[9px] sm:text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#1C1917] animate-pulse">
                   {alertsCount}
                 </span>
               )}
@@ -100,21 +100,21 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onRefresh}
               title="Actualizar datos"
-              className="p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#1E1C1A] border border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#A8A19B] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
+              className="p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#26221F] border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
             >
-              <RefreshCw className="w-4 h-4 text-[#2C221E] dark:text-[#F3F1EF]" />
+              <RefreshCw className="w-4 h-4 text-[#2C221E] dark:text-[#EAE0D5]" />
             </button>
 
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Cambiar a Modo Día' : 'Cambiar a Modo Noche'}
-              className="p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#1E1C1A] border border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#A8A19B] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
+              className="p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#26221F] border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
             >
               {theme === 'dark' ? (
                 <Sun className="w-4 h-4 text-[#E89D4F]" />
               ) : (
-                <Moon className="w-4 h-4 text-[#2C221E] dark:text-[#F3F1EF]" />
+                <Moon className="w-4 h-4 text-[#2C221E] dark:text-[#EAE0D5]" />
               )}
             </button>
           </div>

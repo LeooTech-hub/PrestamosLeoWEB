@@ -75,18 +75,18 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
+      <div className="bg-white dark:bg-[#26221F] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-4 mb-4">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#3D352E] pb-4 mb-4">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] flex items-center justify-center font-bold">
               <Tag className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-[#2C221E] dark:text-[#F3F1EF]">
+              <h3 className="text-base font-extrabold text-[#2C221E] dark:text-[#EAE0D5]">
                 Editar Gasto Operativo
               </h3>
-              <p className="text-xs text-[#6E615A] dark:text-[#A8A19B] font-semibold">
+              <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] font-semibold">
                 Actualiza el concepto o monto del gasto
               </p>
             </div>
@@ -94,7 +94,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B]"
+            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -103,7 +103,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#A8A19B] mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] mb-1 flex items-center gap-1">
               <FileText className="w-3.5 h-3.5 text-[#E89D4F]" />
               Concepto / Descripción:
             </label>
@@ -113,19 +113,19 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder=""
-              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-semibold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs font-semibold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#A8A19B] mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] mb-1 flex items-center gap-1">
               <Tag className="w-3.5 h-3.5 text-[#E89D4F]" />
               Categoría:
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-bold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs font-bold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -136,7 +136,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#A8A19B] mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] mb-1 flex items-center gap-1">
               <DollarSign className="w-3.5 h-3.5 text-[#E89D4F]" />
               Monto del Gasto (S/.):
             </label>
@@ -151,13 +151,13 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
                 step="any"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-extrabold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
+                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-sm font-extrabold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#A8A19B] mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] mb-1 flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-[#E89D4F]" />
               Fecha del Gasto:
             </label>
@@ -166,16 +166,16 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-semibold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs font-semibold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
             />
           </div>
 
           {/* Action Buttons */}
-          <div className="border-t border-[#E6DCD2] dark:border-[#332F2C] pt-4 flex items-center justify-end gap-2">
+          <div className="border-t border-[#E6DCD2] dark:border-[#3D352E] pt-4 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] text-xs font-bold text-[#6E615A] dark:text-[#A8A19B] hover:bg-[#F5F0EB] dark:hover:bg-[#332F2C]/50"
+              className="px-4 py-2.5 rounded-xl bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] hover:bg-[#F5F0EB] dark:hover:bg-[#3D352E]/50"
             >
               Cancelar
             </button>

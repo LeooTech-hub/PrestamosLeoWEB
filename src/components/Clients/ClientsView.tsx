@@ -112,11 +112,11 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-2">
             <Users className="w-6 h-6 text-[#D96B27] dark:text-[#E07A5F]" />
             Gestión de Clientes & Historial
           </h2>
-          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
             Directorio de clientes, apodos/alias, edición, filtro por estado y créditos en Soles (S/.).
           </p>
         </div>
@@ -131,15 +131,15 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       </div>
 
       {/* Search & Filter Chips */}
-      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-4 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-3">
+      <div className="bg-white dark:bg-[#26221F] rounded-3xl p-4 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300 space-y-3">
         <div className="relative">
-          <Search className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por nombre, apodo/alias, teléfono, dirección o DNI..."
-            className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] placeholder-[#A89B92] dark:placeholder-[#A8A19B] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+            className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] placeholder-[#A89B92] dark:placeholder-[#C2B29F] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
           />
         </div>
 
@@ -150,7 +150,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
               statusFilter === 'ALL'
                 ? 'terracotta-gradient text-white border-[#D96B27] dark:border-[#E07A5F]'
-                : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#332F2C]/40'
+                : 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#3D352E]/40'
             }`}
           >
             Todos ({counts.all})
@@ -160,7 +160,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
               statusFilter === 'UP_TO_DATE'
                 ? 'bg-[#2D7A5D] dark:bg-[#3D9970] text-white border-[#2D7A5D] dark:border-[#3D9970]'
-                : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#332F2C]/40'
+                : 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#3D352E]/40'
             }`}
           >
             Al Día ({counts.upToDate})
@@ -170,7 +170,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
               statusFilter === 'OVERDUE'
                 ? 'bg-[#C84B31] text-white border-[#C84B31]'
-                : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#332F2C]/40'
+                : 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#3D352E]/40'
             }`}
           >
             Mora ({counts.overdue})
@@ -179,8 +179,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             onClick={() => setStatusFilter('PAID')}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
               statusFilter === 'PAID'
-                ? 'bg-[#2C221E] dark:bg-[#F3F1EF] text-white dark:text-[#121110] border-[#2C221E] dark:border-[#F3F1EF]'
-                : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#332F2C]/40'
+                ? 'bg-[#2C221E] dark:bg-[#EAE0D5] text-white dark:text-[#1C1917] border-[#2C221E] dark:border-[#EAE0D5]'
+                : 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#3D352E]/40'
             }`}
           >
             Finalizados ({counts.paid})
@@ -190,10 +190,10 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
       {/* Client List */}
       {filteredClients.length === 0 ? (
-        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
-          <Users className="w-12 h-12 text-[#A89B92] dark:text-[#A8A19B] mx-auto mb-3 opacity-50" />
-          <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF]">No se encontraron clientes</h3>
-          <p className="text-xs text-[#6E615A] dark:text-[#A8A19B] mt-1">
+        <div className="bg-white dark:bg-[#26221F] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
+          <Users className="w-12 h-12 text-[#A89B92] dark:text-[#C2B29F] mx-auto mb-3 opacity-50" />
+          <h3 className="font-bold text-base text-[#2C221E] dark:text-[#EAE0D5]">No se encontraron clientes</h3>
+          <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
             Intenta con otro término de búsqueda o registra un nuevo cliente.
           </p>
         </div>
@@ -208,7 +208,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             const totalRemaining = activeLoans.reduce((acc, l) => acc + l.remainingAmount, 0);
 
             let statusLabel = 'Sin Préstamos Activos';
-            let statusStyle = 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C]';
+            let statusStyle = 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E]';
 
             if (hasOverdue) {
               statusLabel = 'En Mora';
@@ -221,7 +221,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             return (
               <div
                 key={client.id}
-                className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] hover:border-[#D96B27]/50 dark:hover:border-[#E07A5F]/50 warm-shadow transition-colors duration-300 flex flex-col justify-between space-y-4"
+                className="bg-white dark:bg-[#26221F] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#3D352E] hover:border-[#D96B27]/50 dark:hover:border-[#E07A5F]/50 warm-shadow transition-colors duration-300 flex flex-col justify-between space-y-4"
               >
                 <div>
                   <div className="flex items-start justify-between">
@@ -230,15 +230,15 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                         {client.name.charAt(0)}
                       </div>
                       <div>
-                        <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-1.5 flex-wrap">
                           <span>{client.name}</span>
                           {client.alias && (
-                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] px-2 py-0.5 rounded-full border border-[#D96B27]/30 dark:border-[#E07A5F]/30">
+                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#3D261A] text-[#D96B27] dark:text-[#E07A5F] px-2 py-0.5 rounded-full border border-[#D96B27]/30 dark:border-[#E07A5F]/30">
                               ({client.alias})
                             </span>
                           )}
                         </h3>
-                        <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
                           <span className="flex items-center gap-1">
                             <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
                             {client.phone}
@@ -253,7 +253,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                           e.stopPropagation();
                           setClientToEdit(client);
                         }}
-                        className="p-1.5 rounded-xl bg-[#FAF8F5] dark:bg-[#121110] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#332F2C] transition-all flex items-center gap-1 text-xs font-semibold px-2"
+                        className="p-1.5 rounded-xl bg-[#FAF8F5] dark:bg-[#1C1917] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E] transition-all flex items-center gap-1 text-xs font-semibold px-2"
                         title="Editar datos del cliente"
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -281,20 +281,20 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
                   {/* Client Address */}
                   {client.address && (
-                    <div className="flex items-center gap-1.5 text-xs text-[#6E615A] dark:text-[#A8A19B] mt-2">
+                    <div className="flex items-center gap-1.5 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-2">
                       <MapPin className="w-3.5 h-3.5 text-[#E89D4F] shrink-0" />
                       <span className="truncate">{client.address}</span>
                     </div>
                   )}
 
                   {/* Loans Summary Row */}
-                  <div className="grid grid-cols-2 gap-2 mt-3 bg-[#FAF8F5] dark:bg-[#121110] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#332F2C] text-xs">
+                  <div className="grid grid-cols-2 gap-2 mt-3 bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E] text-xs">
                     <div>
-                      <span className="text-[#6E615A] dark:text-[#A8A19B] block">Total Prestaron:</span>
-                      <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatCurrency(totalBorrowed)}</strong>
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block">Total Prestaron:</span>
+                      <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(totalBorrowed)}</strong>
                     </div>
                     <div>
-                      <span className="text-[#6E615A] dark:text-[#A8A19B] block">Saldo Restante:</span>
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block">Saldo Restante:</span>
                       <strong className={totalRemaining > 0 ? 'text-[#C84B31]' : 'text-[#2D7A5D] dark:text-[#3D9970]'}>
                         {formatCurrency(totalRemaining)}
                       </strong>

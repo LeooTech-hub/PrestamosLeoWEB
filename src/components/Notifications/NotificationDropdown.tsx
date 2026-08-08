@@ -43,36 +43,36 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end p-3 sm:p-6 bg-black/40 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl max-w-md w-full p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow-lg space-y-4 max-h-[85vh] flex flex-col mt-12 sm:mt-14 overflow-hidden transition-colors duration-300">
+      <div className="bg-white dark:bg-[#26221F] rounded-3xl max-w-md w-full p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow-lg space-y-4 max-h-[85vh] flex flex-col mt-12 sm:mt-14 overflow-hidden transition-colors duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-3 shrink-0">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#3D352E] pb-3 shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] flex items-center justify-center font-bold">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F1EF]">
+              <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#EAE0D5]">
                 Centro de Alertas ({alerts.length})
               </h3>
-              <p className="text-[11px] text-[#6E615A] dark:text-[#A8A19B]">Préstamos vencidos o a punto de vencer</p>
+              <p className="text-[11px] text-[#6E615A] dark:text-[#C2B29F]">Préstamos vencidos o a punto de vencer</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B]"
+            className="p-1.5 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F]"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1 bg-[#FAF8F5] dark:bg-[#121110] p-1 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] shrink-0 text-xs font-bold">
+        <div className="flex items-center gap-1 bg-[#FAF8F5] dark:bg-[#1C1917] p-1 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] shrink-0 text-xs font-bold">
           <button
             onClick={() => setFilter('ALL')}
             className={`flex-1 py-1.5 rounded-xl transition-all ${
               filter === 'ALL'
-                ? 'bg-[#2C221E] dark:bg-[#F3F1EF] text-white dark:text-[#121110] shadow-xs'
-                : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                ? 'bg-[#2C221E] dark:bg-[#EAE0D5] text-white dark:text-[#1C1917] shadow-xs'
+                : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
             }`}
           >
             Todas ({alerts.length})
@@ -82,7 +82,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             className={`flex-1 py-1.5 rounded-xl transition-all ${
               filter === 'OVERDUE'
                 ? 'bg-[#C84B31] text-white shadow-xs'
-                : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
             }`}
           >
             🔴 Vencidas ({overdueAlerts.length})
@@ -92,7 +92,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             className={`flex-1 py-1.5 rounded-xl transition-all ${
               filter === 'EXPIRING'
                 ? 'bg-[#E89D4F] text-white shadow-xs'
-                : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
             }`}
           >
             🟡 Próximas ({expiringAlerts.length})
@@ -102,9 +102,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         {/* Notifications List */}
         <div className="space-y-3 overflow-y-auto pr-1 flex-1">
           {filteredAlerts.length === 0 ? (
-            <div className="text-center py-10 text-xs text-[#6E615A] dark:text-[#A8A19B] space-y-2">
+            <div className="text-center py-10 text-xs text-[#6E615A] dark:text-[#C2B29F] space-y-2">
               <CheckCircle2 className="w-10 h-10 text-[#2D7A5D] dark:text-[#3D9970] mx-auto opacity-70" />
-              <p className="font-bold text-[#2C221E] dark:text-[#F3F1EF]">¡Sin alertas pendientes!</p>
+              <p className="font-bold text-[#2C221E] dark:text-[#EAE0D5]">¡Sin alertas pendientes!</p>
               <p className="text-[11px]">Todos los préstamos están al día en la fecha actual.</p>
             </div>
           ) : (
@@ -120,18 +120,18 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                       ? 'bg-[#FDF2F0]/80 dark:bg-[#C84B31]/15 border-[#C84B31]/40'
                       : isToday
                       ? 'bg-[#FDF6EE]/80 dark:bg-[#E89D4F]/15 border-[#E89D4F]/40'
-                      : 'bg-[#FAF8F5] dark:bg-[#121110] border-[#E6DCD2] dark:border-[#332F2C]'
+                      : 'bg-[#FAF8F5] dark:bg-[#1C1917] border-[#E6DCD2] dark:border-[#3D352E]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-extrabold text-sm text-[#2C221E] dark:text-[#F3F1EF]">
+                        <span className="font-extrabold text-sm text-[#2C221E] dark:text-[#EAE0D5]">
                           {item.clientName}
                         </span>
                       </div>
-                      <span className="text-[11px] text-[#6E615A] dark:text-[#A8A19B] block">
-                        Vencimiento: <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatDatePE(item.dueDate)}</strong>
+                      <span className="text-[11px] text-[#6E615A] dark:text-[#C2B29F] block">
+                        Vencimiento: <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatDatePE(item.dueDate)}</strong>
                       </span>
                     </div>
 
@@ -150,9 +150,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center bg-white/80 dark:bg-[#1E1C1A]/80 p-2.5 rounded-xl border border-[#E6DCD2]/60 dark:border-[#332F2C]">
+                  <div className="flex justify-between items-center bg-white/80 dark:bg-[#26221F]/80 p-2.5 rounded-xl border border-[#E6DCD2]/60 dark:border-[#3D352E]">
                     <div>
-                      <span className="text-[10px] text-[#6E615A] dark:text-[#A8A19B] block">Saldo Restante:</span>
+                      <span className="text-[10px] text-[#6E615A] dark:text-[#C2B29F] block">Saldo Restante:</span>
                       <strong className="text-sm text-[#C84B31] font-black">
                         {formatCurrency(item.remainingAmount)}
                       </strong>

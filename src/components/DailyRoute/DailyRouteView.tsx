@@ -102,11 +102,11 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-2">
             <Route className="w-6 h-6 text-[#D96B27] dark:text-[#E07A5F]" />
             Ruta Diaria de Cobranza (S/.)
           </h2>
-          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
             Recorrido interactivo de cobro periódico en Soles Peruanos.
           </p>
         </div>
@@ -125,28 +125,28 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-4 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-3">
+      <div className="bg-white dark:bg-[#26221F] rounded-3xl p-4 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search Box */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar cliente, teléfono o referencia de cobro..."
-              className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] placeholder-[#A89B92] dark:placeholder-[#A8A19B] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] placeholder-[#A89B92] dark:placeholder-[#C2B29F] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
             />
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1 bg-[#FAF8F5] dark:bg-[#121110] p-1 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C]">
+          <div className="flex items-center gap-1 bg-[#FAF8F5] dark:bg-[#1C1917] p-1 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E]">
             <button
               onClick={() => setFilter('PENDING')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 filter === 'PENDING'
                   ? 'bg-[#C84B31] text-white shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
               }`}
             >
               Pendientes ({pendingCount})
@@ -157,7 +157,7 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 filter === 'PAID'
                   ? 'bg-[#2D7A5D] dark:bg-[#3D9970] text-white shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
               }`}
             >
               Cobrados ({paidCount})
@@ -167,8 +167,8 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
               onClick={() => setFilter('ALL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 filter === 'ALL'
-                  ? 'bg-[#2C221E] dark:bg-[#F3F1EF] text-white dark:text-[#121110] shadow-xs'
-                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
+                  ? 'bg-[#2C221E] dark:bg-[#EAE0D5] text-white dark:text-[#1C1917] shadow-xs'
+                  : 'text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
               }`}
             >
               Todos ({todayCollections.length})
@@ -179,10 +179,10 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
 
       {/* Cards List */}
       {filteredCollections.length === 0 ? (
-        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
+        <div className="bg-white dark:bg-[#26221F] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
           <CheckCircle2 className="w-12 h-12 text-[#2D7A5D] dark:text-[#3D9970] mx-auto mb-3 opacity-60" />
-          <h3 className="font-bold text-lg text-[#2C221E] dark:text-[#F3F1EF]">No hay cobros en esta lista</h3>
-          <p className="text-xs text-[#6E615A] dark:text-[#A8A19B] mt-1">
+          <h3 className="font-bold text-lg text-[#2C221E] dark:text-[#EAE0D5]">No hay cobros en esta lista</h3>
+          <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
             {filter === 'PENDING'
               ? '¡Excelente trabajo! Has completado todos los cobros del día.'
               : 'No se encontraron clientes con el filtro actual.'}
@@ -202,26 +202,26 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                     ? 'border-[#2D7A5D]/40 dark:border-[#3D9970]/40 bg-[#FAFDFB] dark:bg-[#3D9970]/5'
                     : isOverdue
                     ? 'border-[#C84B31]/40 dark:border-[#C84B31]/40 bg-[#FFFDFD] dark:bg-[#C84B31]/5'
-                    : 'bg-white dark:bg-[#1E1C1A] border-[#E6DCD2] dark:border-[#332F2C] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40'
+                    : 'bg-white dark:bg-[#26221F] border-[#E6DCD2] dark:border-[#3D352E] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40'
                 }`}
               >
                 {/* Top Card Info */}
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2">
-                      <span className="text-[11px] font-black text-white dark:text-[#121110] bg-[#2C221E] dark:bg-[#F3F1EF] px-2 py-0.5 rounded-lg shrink-0">
+                      <span className="text-[11px] font-black text-white dark:text-[#1C1917] bg-[#2C221E] dark:bg-[#EAE0D5] px-2 py-0.5 rounded-lg shrink-0">
                         #{idx + 1}
                       </span>
                       <div>
-                        <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-1.5 flex-wrap">
                           <span>{loan.clientName}</span>
                           {loan.clientAlias && (
-                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] px-2 py-0.5 rounded-full border border-[#D96B27]/30 dark:border-[#E07A5F]/30">
+                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#3D261A] text-[#D96B27] dark:text-[#E07A5F] px-2 py-0.5 rounded-full border border-[#D96B27]/30 dark:border-[#E07A5F]/30">
                               ({loan.clientAlias})
                             </span>
                           )}
                         </h3>
-                        <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#A8A19B] mt-1">
+                        <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
                           <span className="flex items-center gap-1">
                             <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
                             <a
@@ -254,17 +254,17 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                           En Mora
                         </span>
                       ) : (
-                        <span className="bg-[#FDF6EE] dark:bg-[#E89D4F]/20 text-[#E89D4F] border border-[#E89D4F]/30 text-[11px] font-extrabold px-2.5 py-1 rounded-full">
+                        <span className="bg-[#FDF6EE] dark:bg-[#3D261A] text-[#E89D4F] dark:text-[#E07A5F] border border-[#E89D4F]/30 dark:border-[#E07A5F]/30 text-[11px] font-extrabold px-2.5 py-1 rounded-full">
                           Pendiente
                         </span>
                       )}
 
                       {onReorderClients && (
-                        <div className="flex items-center gap-0.5 bg-[#FAF8F5] dark:bg-[#121110] p-0.5 rounded-lg border border-[#E6DCD2] dark:border-[#332F2C]">
+                        <div className="flex items-center gap-0.5 bg-[#FAF8F5] dark:bg-[#1C1917] p-0.5 rounded-lg border border-[#E6DCD2] dark:border-[#3D352E]">
                           <button
                             onClick={() => handleMoveOrder(idx, 'UP')}
                             disabled={idx === 0}
-                            className="p-1 rounded-md hover:bg-white dark:hover:bg-[#1E1C1A] text-[#6E615A] dark:text-[#A8A19B] hover:text-[#D96B27] dark:hover:text-[#E07A5F] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            className="p-1 rounded-md hover:bg-white dark:hover:bg-[#26221F] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
                             title="Mover arriba en la ruta"
                           >
                             <ArrowUp className="w-3.5 h-3.5" />
@@ -272,7 +272,7 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                           <button
                             onClick={() => handleMoveOrder(idx, 'DOWN')}
                             disabled={idx === filteredCollections.length - 1}
-                            className="p-1 rounded-md hover:bg-white dark:hover:bg-[#1E1C1A] text-[#6E615A] dark:text-[#A8A19B] hover:text-[#D96B27] dark:hover:text-[#E07A5F] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            className="p-1 rounded-md hover:bg-white dark:hover:bg-[#26221F] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
                             title="Mover abajo en la ruta"
                           >
                             <ArrowDown className="w-3.5 h-3.5" />
@@ -283,9 +283,9 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                   </div>
 
                   {/* Loan Breakdown Card */}
-                  <div className="mt-4 bg-[#FAF8F5] dark:bg-[#121110] rounded-2xl p-3.5 border border-[#E6DCD2]/70 dark:border-[#332F2C] space-y-2">
+                  <div className="mt-4 bg-[#FAF8F5] dark:bg-[#1C1917] rounded-2xl p-3.5 border border-[#E6DCD2]/70 dark:border-[#3D352E] space-y-2">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-[#6E615A] dark:text-[#A8A19B]">Monto Diario a Cobrar:</span>
+                      <span className="text-[#6E615A] dark:text-[#C2B29F]">Monto Diario a Cobrar:</span>
                       <strong className="text-base text-[#D96B27] dark:text-[#E07A5F] font-black">
                         {formatCurrency(loan.dailyPaymentAmount)}
                       </strong>
@@ -293,17 +293,17 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
 
                     {amountPaidToday > 0 && (
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[#6E615A] dark:text-[#A8A19B]">Cobrado Hoy:</span>
+                        <span className="text-[#6E615A] dark:text-[#C2B29F]">Cobrado Hoy:</span>
                         <strong className="text-xs text-[#2D7A5D] dark:text-[#3D9970] font-extrabold">
                           {formatCurrency(amountPaidToday)}
                         </strong>
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center text-[11px] text-[#6E615A] dark:text-[#A8A19B]">
+                    <div className="flex justify-between items-center text-[11px] text-[#6E615A] dark:text-[#C2B29F]">
                       <span>
                         Días de pago:{' '}
-                        <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{loan.paymentDays} Días</strong>
+                        <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{loan.paymentDays} Días</strong>
                       </span>
                       <span>
                         Progreso:{' '}
@@ -315,13 +315,13 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
 
                     {/* Progress bar */}
                     <div>
-                      <div className="w-full bg-[#E6DCD2] dark:bg-[#332F2C] rounded-full h-2 overflow-hidden mt-1">
+                      <div className="w-full bg-[#E6DCD2] dark:bg-[#3D352E] rounded-full h-2 overflow-hidden mt-1">
                         <div
                           className="bg-[#2D7A5D] dark:bg-[#3D9970] h-2 rounded-full transition-all"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-[10px] text-[#6E615A] dark:text-[#A8A19B] mt-1">
+                      <div className="flex justify-between text-[10px] text-[#6E615A] dark:text-[#C2B29F] mt-1">
                         <span>Abonado: {formatCurrency(loan.paidAmount)}</span>
                         <span>Saldo: {formatCurrency(loan.remainingAmount)}</span>
                       </div>
