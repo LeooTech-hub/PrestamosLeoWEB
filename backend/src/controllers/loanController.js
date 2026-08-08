@@ -402,9 +402,14 @@ const loanController = {
 
       const startDateStr = formatToMySQLDate(formData.startDate);
       const start = new Date(startDateStr);
-      const due = new Date(start);
-      due.setDate(due.getDate() + paymentDays);
-      const dueDateStr = due.toISOString().split('T')[0];
+      let dueDateStr;
+      if (formData.dueDate) {
+        dueDateStr = formatToMySQLDate(formData.dueDate);
+      } else {
+        const due = new Date(start);
+        due.setDate(due.getDate() + paymentDays);
+        dueDateStr = due.toISOString().split('T')[0];
+      }
 
       const loanId = generateUUID();
       const createdAt = new Date().toISOString();

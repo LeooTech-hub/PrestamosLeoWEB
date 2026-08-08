@@ -9,14 +9,12 @@ interface NotificationDropdownProps {
   alerts: AlertNotification[];
   isOpen: boolean;
   onClose: () => void;
-  onSelectLoan?: (loanId: string) => void;
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   alerts,
   isOpen,
   onClose,
-  onSelectLoan,
 }) => {
   const [filter, setFilter] = useState<'ALL' | 'OVERDUE' | 'EXPIRING'>('ALL');
 

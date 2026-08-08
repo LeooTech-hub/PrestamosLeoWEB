@@ -11,10 +11,12 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
 
   useEffect(() => {
     if (loan) {
-      setCapital(loan.capital);
-      setPaymentDays(loan.paymentDays);
-      setStartDate(loan.startDate);
-      setNotes(loan.notes || '');
+      queueMicrotask(() => {
+        setCapital(loan.capital);
+        setPaymentDays(loan.paymentDays);
+        setStartDate(loan.startDate);
+        setNotes(loan.notes || '');
+      });
     }
   }, [loan]);
 

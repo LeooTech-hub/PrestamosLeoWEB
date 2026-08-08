@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ExpenseCategory } from '@/types';
 import { X, CheckCircle2, DollarSign, Tag, FileText, Calendar } from 'lucide-react';
 
@@ -112,7 +112,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ej: Combustible moto, Papelería..."
+              placeholder=""
               className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
             />
           </div>

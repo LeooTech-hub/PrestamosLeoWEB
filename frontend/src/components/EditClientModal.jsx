@@ -18,7 +18,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
   const handleDniSearch = async (dniToSearch) => {
     const clean = String(dniToSearch || '').replace(/\D/g, '').slice(0, 8);
     if (clean.length !== 8) return;
-
+ 
     setIsSearchingDni(true);
     setDniStatusText('Buscando en RENIEC...');
     try {
@@ -118,7 +118,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
                 type="text"
                 value={alias}
                 onChange={(e) => setAlias(e.target.value)}
-                placeholder="ej: Chino, Don Pepe, Vecina Mari"
+                placeholder=""
                 className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>

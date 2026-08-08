@@ -17,7 +17,6 @@ import {
   Pencil,
   Trash2,
   Receipt,
-  FileText,
 } from 'lucide-react';
 
 interface ClientDetailModalProps {

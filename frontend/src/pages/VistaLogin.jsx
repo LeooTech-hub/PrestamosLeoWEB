@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Wallet, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle, KeyRound, X } from 'lucide-react';
 import api from '../api';
 
 export function VistaLogin({ onLoginSuccess }) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('remembered_email') || '');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem('remembered_email')));
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -16,15 +16,6 @@ export function VistaLogin({ onLoginSuccess }) {
   const [isForgotLoading, setIsForgotLoading] = useState(false);
   const [forgotSuccessMessage, setForgotSuccessMessage] = useState('');
   const [forgotErrorMessage, setForgotErrorMessage] = useState('');
-
-  // Cargar correo recordado si existe
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('remembered_email');
-    if (savedEmail) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
-  }, []);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -72,33 +63,33 @@ export function VistaLogin({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] flex flex-col justify-center items-center p-4 sm:p-6 font-sans">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#181614] flex flex-col justify-center items-center p-4 sm:p-6 font-sans transition-colors duration-300">
       <div className="w-full max-w-md">
         {/* Header Logo Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl terracotta-gradient text-white shadow-lg ring-4 ring-[#D96B27]/15 mb-3 transform hover:scale-105 transition-transform duration-300">
             <Wallet className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2C221E] tracking-tight">
-            Prestamos<span className="text-[#D96B27]">Leo</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2C221E] dark:text-[#F3F4F6] tracking-tight">
+            Prestamos<span className="text-[#D96B27] dark:text-[#E07A5F]">Leo</span>
           </h1>
-          <p className="text-xs sm:text-sm font-medium text-[#6E615A] mt-1">
+          <p className="text-xs sm:text-sm font-medium text-[#6E615A] dark:text-[#E5E7EB] mt-1">
             Sistema de Gestión Integral de Préstamos (S/.)
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white border border-[#E6DCD2] rounded-3xl p-6 sm:p-8 warm-shadow relative overflow-hidden">
+        <div className="bg-white dark:bg-[#1E1E1E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-3xl p-6 sm:p-8 warm-shadow relative overflow-hidden transition-colors duration-300">
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-[#2C221E]">Iniciar Sesión</h2>
-            <p className="text-xs text-[#6E615A] mt-1">
+            <h2 className="text-xl font-bold text-[#2C221E] dark:text-[#F3F4F6]">Iniciar Sesión</h2>
+            <p className="text-xs text-[#6E615A] dark:text-[#E5E7EB] mt-1">
               Ingresa tus credenciales para acceder al panel de administración
             </p>
           </div>
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2.5 animate-fadeIn">
+            <div className="mb-5 p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-semibold flex items-center gap-2.5 animate-fadeIn">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
               <span>{errorMessage}</span>
             </div>
@@ -107,11 +98,11 @@ export function VistaLogin({ onLoginSuccess }) {
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
-              <label className="block text-xs font-bold text-[#2C221E] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#2C221E] dark:text-[#F3F4F6] uppercase tracking-wider mb-1.5">
                 Correo Electrónico
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6E615A]">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6E615A] dark:text-[#E5E7EB]">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -120,18 +111,18 @@ export function VistaLogin({ onLoginSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ejemplo@prestamosleo.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-medium text-[#2C221E] placeholder-[#9E918A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27] transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27] transition-all"
                 />
               </div>
             </div>
 
             {/* Password Field */}
             <div>
-              <label className="block text-xs font-bold text-[#2C221E] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#2C221E] dark:text-[#F3F4F6] uppercase tracking-wider mb-1.5">
                 Contraseña
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6E615A]">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6E615A] dark:text-[#E5E7EB]">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -140,7 +131,7 @@ export function VistaLogin({ onLoginSuccess }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-medium text-[#2C221E] placeholder-[#9E918A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27] transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27] transition-all"
                 />
                 <button
                   type="button"
@@ -206,28 +197,28 @@ export function VistaLogin({ onLoginSuccess }) {
 
       {/* MODAL RECUPERACIÓN DE CONTRASEÑA */}
       {isForgotModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white border border-[#E6DCD2] rounded-3xl p-6 w-full max-w-md warm-shadow relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-[#1E1E1E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-3xl p-6 w-full max-w-md warm-shadow relative transition-colors duration-300">
             <button
               onClick={() => setIsForgotModalOpen(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-[#6E615A] hover:bg-[#FAF8F5] hover:text-[#2C221E] transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-full text-[#6E615A] dark:text-[#E5E7EB] hover:bg-[#FAF8F5] dark:hover:bg-[#24211E] hover:text-[#2C221E] dark:hover:text-[#F3F4F6] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#FDF3ED] text-[#D96B27] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-[#FDF3ED] dark:bg-[#2C221E] text-[#D96B27] dark:text-[#E07A5F] flex items-center justify-center">
                 <KeyRound className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-[#2C221E]">Recuperar Contraseña</h3>
-                <p className="text-xs text-[#6E615A]">Recibirás un correo con las instrucciones</p>
+                <h3 className="font-bold text-lg text-[#2C221E] dark:text-[#F3F4F6]">Recuperar Contraseña</h3>
+                <p className="text-xs text-[#6E615A] dark:text-[#E5E7EB]">Recibirás un correo con las instrucciones</p>
               </div>
             </div>
 
             {forgotSuccessMessage ? (
-              <div className="my-4 p-4 rounded-2xl bg-[#EAF5F0] border border-[#2D7A5D]/20 text-[#2D7A5D] text-xs font-semibold flex flex-col items-center text-center gap-2">
-                <CheckCircle2 className="w-8 h-8 text-[#2D7A5D]" />
+              <div className="my-4 p-4 rounded-2xl bg-[#EAF5F0] dark:bg-[#1E2D27] border border-[#2D7A5D]/20 dark:border-[#2D7A5D]/40 text-[#2D7A5D] dark:text-[#3D9970] text-xs font-semibold flex flex-col items-center text-center gap-2">
+                <CheckCircle2 className="w-8 h-8 text-[#2D7A5D] dark:text-[#3D9970]" />
                 <p className="leading-relaxed">{forgotSuccessMessage}</p>
                 <button
                   onClick={() => setIsForgotModalOpen(false)}
@@ -239,18 +230,18 @@ export function VistaLogin({ onLoginSuccess }) {
             ) : (
               <form onSubmit={handleForgotSubmit} className="space-y-4">
                 {forgotErrorMessage && (
-                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
+                  <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-semibold flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
                     <span>{forgotErrorMessage}</span>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold text-[#2C221E] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-[#2C221E] dark:text-[#F3F4F6] uppercase tracking-wider mb-1.5">
                     Ingresa tu Correo Registrado
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6E615A]">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6E615A] dark:text-[#E5E7EB]">
                       <Mail className="w-4 h-4" />
                     </div>
                     <input
@@ -259,7 +250,7 @@ export function VistaLogin({ onLoginSuccess }) {
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="admin@prestamosleo.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-medium text-[#2C221E] placeholder-[#9E918A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
+                      className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
                     />
                   </div>
                 </div>

@@ -194,7 +194,7 @@ export function VistaClientes({
                 : 'bg-white text-[#6E615A] border-[#E6DCD2] hover:bg-[#FAF8F5]'
             }`}
           >
-            Con Retraso / En Mora ({counts.overdue})
+            Mora ({counts.overdue})
           </button>
 
           <button
@@ -205,7 +205,7 @@ export function VistaClientes({
                 : 'bg-white text-[#6E615A] border-[#E6DCD2] hover:bg-[#FAF8F5]'
             }`}
           >
-            Cancelados / Finalizados ({counts.paid})
+            Finalizados ({counts.paid})
           </button>
         </div>
       </div>
@@ -325,7 +325,7 @@ export function VistaClientes({
                     </button>
 
                     <button
-                      onClick={() => navigate('/nuevo-cliente')}
+                      onClick={() => navigate('/nuevo-cliente', { state: { selectedClient: client } })}
                       className="flex items-center justify-center gap-1 py-2 px-3 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-xs hover:brightness-110 transition-all"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -425,7 +425,7 @@ export function VistaClientes({
               <button
                 onClick={() => {
                   setIsDetailModalOpen(false);
-                  navigate('/nuevo-cliente');
+                  navigate('/nuevo-cliente', { state: { selectedClient: activeSelectedClient || selectedClient } });
                 }}
                 className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-xs hover:brightness-110"
               >

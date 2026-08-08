@@ -28,8 +28,10 @@ export function TrashModal({ isOpen, onClose, onDataChanged }) {
 
   useEffect(() => {
     if (isOpen) {
-      fetchTrashData();
-      setConfirmPurgeTarget(null);
+      queueMicrotask(() => {
+        fetchTrashData();
+        setConfirmPurgeTarget(null);
+      });
     }
   }, [isOpen, fetchTrashData]);
 

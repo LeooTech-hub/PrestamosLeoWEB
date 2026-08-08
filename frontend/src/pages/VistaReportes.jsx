@@ -529,6 +529,7 @@ export function VistaReportes({
       </div>
 
       <EditExpenseModal
+        key={editingExpense?.id || 'no-expense'}
         expense={editingExpense}
         isOpen={!!editingExpense}
         onClose={() => setEditingExpense(null)}

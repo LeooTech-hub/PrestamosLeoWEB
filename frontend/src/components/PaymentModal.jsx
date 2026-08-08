@@ -12,10 +12,12 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
   useEffect(() => {
     if (loan) {
       const defaultAmt = loan.remainingAmount < loan.dailyPaymentAmount ? loan.remainingAmount : (loan.dailyPaymentAmount || 0);
-      setAmount(defaultAmt);
-      setLateFee(0);
-      setNotes('');
-      setSuccessData(null);
+      queueMicrotask(() => {
+        setAmount(defaultAmt);
+        setLateFee(0);
+        setNotes('');
+        setSuccessData(null);
+      });
     }
   }, [loan]);
 
@@ -40,25 +42,25 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] warm-shadow-lg relative overflow-hidden">
+      <div className="bg-white dark:bg-[#1E1E1E] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#E6DCD2] pb-4 mb-4">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-4 mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[#FDF3ED] text-[#D96B27] flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-[#FDF3ED] dark:bg-[#2C221E] text-[#D96B27] dark:text-[#E07A5F] flex items-center justify-center font-bold">
               <DollarSign className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-[#2C221E]">
+              <h3 className="text-base font-extrabold text-[#2C221E] dark:text-[#F3F4F6]">
                 Registrar Cobro / Abono
               </h3>
-              <p className="text-xs text-[#6E615A] font-semibold">
+              <p className="text-xs text-[#6E615A] dark:text-[#E5E7EB] font-semibold">
                 Cliente: {loan.clientName} {loan.clientAlias ? `(${loan.clientAlias})` : ''}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-[#FAF8F5] text-[#6E615A]"
+            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#24211E] text-[#6E615A] dark:text-[#E5E7EB]"
           >
             <X className="w-5 h-5" />
           </button>

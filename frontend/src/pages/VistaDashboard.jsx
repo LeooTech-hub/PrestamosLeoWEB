@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
 import {
   TrendingUp,
-  Coins,
   Users,
   ArrowUpRight,
   Plus,
   Route,
   CreditCard,
-  Percent,
   Clock,
   Pencil,
   Trash2,
@@ -21,7 +19,6 @@ export function VistaDashboard({
   summary = {},
   recentLoans = [],
   recentPayments = [],
-  onOpenQuickCreateLoan,
   onUpdatePayment,
   onDeletePayment,
 }) {
@@ -72,87 +69,83 @@ export function VistaDashboard({
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
+        <div className="bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-2 transition-colors duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#6E615A] uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#E5E7EB] uppercase tracking-wider">
             MONTO PRESTAMOS TOTALES
             </span>
-            <div className="p-2 rounded-xl bg-[#FDF3ED] text-[#D96B27] font-black text-xs leading-none flex items-center justify-center min-w-[32px] h-[32px]">
+            <div className="p-2 rounded-xl bg-[#FDF3ED] dark:bg-[#2C221E] text-[#D96B27] dark:text-[#E07A5F] font-black text-xs leading-none flex items-center justify-center min-w-[32px] h-[32px]">
               S/.
             </div>
           </div>
-          <div className="text-lg sm:text-2xl font-black text-[#2C221E]">
+          <div className="text-lg sm:text-2xl font-black text-[#2C221E] dark:text-[#F3F4F6]">
             {formatCurrency(summary.totalCapitalLent)}
           </div>
-          <p className="text-[11px] text-[#6E615A] flex items-center gap-1">
+          <p className="text-[11px] text-[#6E615A] dark:text-[#E5E7EB] flex items-center gap-1">
             <span>Monto total prestado hasta la fecha</span>
           </p>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
+        <div className="bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-2 transition-colors duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#6E615A] uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#E5E7EB] uppercase tracking-wider">
               Ganancia
             </span>
-            <div className="p-2 rounded-xl bg-[#EEF6F2] text-[#2D7A5D]">
+            <div className="p-2 rounded-xl bg-[#EEF6F2] dark:bg-[#1E2D27] text-[#2D7A5D] dark:text-[#3D9970]">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-lg sm:text-2xl font-black text-[#2D7A5D]">
+          <div className="text-lg sm:text-2xl font-black text-[#2D7A5D] dark:text-[#3D9970]">
             {formatCurrency(summary.totalEstimatedProfit)}
           </div>
-          <p className="text-[11px] text-[#2D7A5D] font-semibold">
-            +20% Ganancia bruta
+          <p className="text-[11px] text-[#6E615A] dark:text-[#E5E7EB]">
+            Utilidad proyectada (20%)
           </p>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
+        <div className="bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-2 transition-colors duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#6E615A] uppercase tracking-wider">
-              Cobrado Hoy
+            <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#E5E7EB] uppercase tracking-wider">
+              Recaudado Hoy
             </span>
-            <div className="p-2 rounded-xl bg-[#FDF3ED] text-[#D96B27]">
-              <ArrowUpRight className="w-4 h-4" />
+            <div className="p-2 rounded-xl bg-[#EEF6F2] dark:bg-[#1E2D27] text-[#2D7A5D] dark:text-[#3D9970]">
+              <CreditCard className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-lg sm:text-2xl font-black text-[#2C221E]">
+          <div className="text-lg sm:text-2xl font-black text-[#2D7A5D] dark:text-[#3D9970]">
             {formatCurrency(summary.collectedToday)}
           </div>
-          <p className="text-[11px] text-[#6E615A]">
-            {summary.pendingClientsTodayCount || 0} clientes pendientes por cobrar hoy
+          <p className="text-[11px] text-[#6E615A] dark:text-[#E5E7EB]">
+            Pagos ingresados durante el día
           </p>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-2">
+        <div className="bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-2 transition-colors duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#6E615A] uppercase tracking-wider">
-              Préstamos Activos
+            <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#E5E7EB] uppercase tracking-wider">
+              Clientes Activos
             </span>
-            <div className="p-2 rounded-xl bg-[#FAF8F5] text-[#2C221E]">
+            <div className="p-2 rounded-xl bg-[#FDF3ED] dark:bg-[#2C221E] text-[#D96B27] dark:text-[#E07A5F]">
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-lg sm:text-2xl font-black text-[#2C221E]">
-            {summary.totalActiveLoansCount || 0}
+          <div className="text-lg sm:text-2xl font-black text-[#2C221E] dark:text-[#F3F4F6]">
+            {summary.totalActiveLoansCount}
           </div>
-          <div className="flex items-center gap-2 text-[11px]">
-            {summary.overdueCount > 0 && (
-              <span className="text-[#C84B31] font-bold">
-                {summary.overdueCount} en mora
-              </span>
-            )}
-          </div>
+          <p className="text-[11px] text-[#6E615A] dark:text-[#E5E7EB]">
+            Préstamos vigentes en cartera
+          </p>
         </div>
       </div>
 
-      {/* Progress & Route Shortcut Card */}
-      <div className="bg-white p-6 rounded-3xl border border-[#E6DCD2] warm-shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="space-y-1.5 flex-1 w-full">
-          <div className="flex justify-between items-center text-xs font-bold">
-            <span className="text-[#2C221E]">Progreso de Cobranza del Día</span>
-            <span className="text-[#D96B27]">{summary.collectionProgressPercent || 100}%</span>
+      {/* Quick Action Route Bar */}
+      <div className="bg-white dark:bg-[#1E1E1E] p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-300">
+        <div className="flex-1 w-full space-y-1.5">
+          <div className="flex items-center justify-between text-xs font-extrabold">
+            <span className="text-[#2C221E] dark:text-[#F3F4F6]">Progreso de Cobranza del Día</span>
+            <span className="text-[#D96B27] dark:text-[#E07A5F]">{summary.collectionProgressPercent || 100}%</span>
           </div>
-          <div className="w-full h-3 bg-[#FAF8F5] rounded-full overflow-hidden border border-[#E6DCD2]">
+          <div className="w-full h-3 bg-[#FAF8F5] dark:bg-[#24211E] rounded-full overflow-hidden border border-[#E6DCD2] dark:border-[#332F2C]">
             <div
               className="h-full terracotta-gradient transition-all duration-500 rounded-full"
               style={{ width: `${Math.min(100, Math.max(0, summary.collectionProgressPercent || 100))}%` }}
@@ -162,7 +155,7 @@ export function VistaDashboard({
 
         <button
           onClick={() => navigate('/ruta-diaria')}
-          className="w-full md:w-auto px-5 py-3 rounded-2xl bg-[#2C221E] text-white font-extrabold text-xs shadow-xs hover:bg-[#D96B27] transition-all flex items-center justify-center gap-2"
+          className="w-full md:w-auto px-5 py-3 rounded-2xl bg-[#2C221E] dark:bg-[#332F2C] text-white font-extrabold text-xs shadow-xs hover:bg-[#D96B27] dark:hover:bg-[#E07A5F] transition-all flex items-center justify-center gap-2"
         >
           <Route className="w-4 h-4" />
           <span>Ir a Ruta Diaria ({summary.pendingClientsTodayCount || 0} pendientes)</span>
@@ -171,15 +164,15 @@ export function VistaDashboard({
 
       {/* Tables Preview Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-5 rounded-3xl border border-[#E6DCD2] warm-shadow space-y-4">
+        <div className="bg-white dark:bg-[#1E1E1E] p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-4 transition-colors duration-300">
           <div className="flex items-center justify-between">
-            <h3 className="font-extrabold text-base text-[#2C221E] flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-[#D96B27]" />
+            <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F4F6] flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-[#D96B27] dark:text-[#E07A5F]" />
               <span>Últimos Préstamos Registrados</span>
             </h3>
             <button
               onClick={() => navigate('/prestamos')}
-              className="text-xs font-bold text-[#D96B27] hover:underline"
+              className="text-xs font-bold text-[#D96B27] dark:text-[#E07A5F] hover:underline"
             >
               Ver todos
             </button>
@@ -189,13 +182,13 @@ export function VistaDashboard({
             {recentLoans.slice(0, 4).map((loan) => (
               <div
                 key={loan.id}
-                className="p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/60 flex items-center justify-between text-xs"
+                className="p-3 bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C] flex items-center justify-between text-xs transition-colors duration-300"
               >
                 <div>
-                  <strong className="text-[#2C221E] block font-bold">
+                  <strong className="text-[#2C221E] dark:text-[#F3F4F6] block font-bold">
                     {loan.clientName}
                   </strong>
-                  <span className="text-[#6E615A]">
+                  <span className="text-[#6E615A] dark:text-[#E5E7EB]">
                     {formatCurrency(loan.capital)} + 20% = {formatCurrency(loan.totalToPay)} ({loan.paymentDays} días)
                   </span>
                 </div>
@@ -204,7 +197,7 @@ export function VistaDashboard({
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full border block mb-1 ${
                       loan.status === 'OVERDUE'
-                        ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
+                        ? 'bg-[#FDF2F0] dark:bg-[#3D2522] text-[#C84B31] dark:text-[#E57373] border-[#C84B31]/30'
                         : loan.status === 'PAID'
                         ? 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30'
                         : 'bg-[#FDF3ED] text-[#D96B27] border-[#D96B27]/30'

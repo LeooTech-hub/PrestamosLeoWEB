@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { formatCurrency } from '../utils/loanHelpers';
 import { X, CheckCircle2, DollarSign, Calendar, FileText } from 'lucide-react';
 
 export function EditPaymentModal({ payment, isOpen, onClose, onConfirmEditPayment }) {
@@ -10,9 +9,11 @@ export function EditPaymentModal({ payment, isOpen, onClose, onConfirmEditPaymen
 
   useEffect(() => {
     if (payment) {
-      setAmount(payment.amount || '');
-      setDate(payment.date || new Date().toISOString().split('T')[0]);
-      setNotes(payment.notes || '');
+      queueMicrotask(() => {
+        setAmount(payment.amount || '');
+        setDate(payment.date || new Date().toISOString().split('T')[0]);
+        setNotes(payment.notes || '');
+      });
     }
   }, [payment]);
 

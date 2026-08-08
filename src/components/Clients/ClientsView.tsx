@@ -173,7 +173,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                 : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
             }`}
           >
-            Con Retraso / En Mora ({counts.overdue})
+            Mora ({counts.overdue})
           </button>
           <button
             onClick={() => setStatusFilter('PAID')}
@@ -183,7 +183,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                 : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
             }`}
           >
-            Cancelados / Finalizados ({counts.paid})
+            Finalizados ({counts.paid})
           </button>
         </div>
       </div>

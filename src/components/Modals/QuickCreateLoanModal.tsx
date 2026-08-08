@@ -36,7 +36,7 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
   const [startDate, setStartDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
-  const [notes, setNotes] = useState<string>('');
+  const [notes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   if (!isOpen) return null;

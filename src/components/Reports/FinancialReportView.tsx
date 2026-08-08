@@ -642,6 +642,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
       </div>
 
       <EditExpenseModal
+        key={editingExpense?.id || 'no-expense'}
         expense={editingExpense}
         isOpen={!!editingExpense}
         onClose={() => setEditingExpense(null)}

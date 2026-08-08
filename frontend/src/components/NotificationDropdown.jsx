@@ -6,25 +6,25 @@ export function NotificationDropdown({ alerts = [], isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end p-4 pt-16 bg-black/30 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-md w-full p-5 border border-[#E6DCD2] warm-shadow-lg relative overflow-hidden max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between border-b border-[#E6DCD2] pb-3 mb-3">
+    <div className="fixed inset-0 z-50 flex items-start justify-end p-4 pt-16 bg-black/40 backdrop-blur-xs animate-fadeIn">
+      <div className="bg-white dark:bg-[#1E1E1E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-3xl max-w-md w-full p-5 warm-shadow-lg relative overflow-hidden max-h-[80vh] flex flex-col transition-colors duration-300">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-3 mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#FDF3ED] text-[#D96B27] flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-[#FDF3ED] dark:bg-[#2C221E] text-[#D96B27] dark:text-[#E07A5F] flex items-center justify-center font-bold">
               <Bell className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-[#2C221E]">
+              <h3 className="font-extrabold text-sm text-[#2C221E] dark:text-[#F3F4F6]">
                 Centro de Alertas ({alerts.length})
               </h3>
-              <p className="text-[11px] text-[#6E615A]">
+              <p className="text-[11px] text-[#6E615A] dark:text-[#E5E7EB]">
                 Préstamos por vencer o en estado de mora.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-[#FAF8F5] text-[#6E615A]"
+            className="p-1.5 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#24211E] text-[#6E615A] dark:text-[#E5E7EB]"
           >
             <X className="w-4 h-4" />
           </button>

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   keywords: ["prestamos", "cobranzas", "gestion de prestamos", "ruta diaria", "20 por ciento"],
   authors: [{ name: "PrestamosLeoWEB" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: "/Logo_PrestamosLeo.png",
   },
 };
 

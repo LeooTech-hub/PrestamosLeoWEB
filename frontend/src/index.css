@@ -20,6 +20,24 @@
   }
 }
 
+html.dark {
+  color-scheme: dark;
+  background-color: #181614;
+}
+
+html.dark body {
+  background-color: #181614;
+  color: #F3F4F6;
+}
+
+html.dark .warm-shadow {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .warm-shadow-lg {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -34,3 +52,51 @@
 .animate-fadeIn {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes welcomeScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.75) translateY(12px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.04) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes welcomeGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(45, 122, 93, 0.25), 0 10px 25px -5px rgba(44, 34, 30, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(45, 122, 93, 0.5), 0 10px 25px -5px rgba(44, 34, 30, 0.15);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.animate-welcomeScale {
+  animation: welcomeScale 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-welcomeGlow {
+  animation: welcomeGlow 2.2s ease-in-out infinite;
+}
+
+.animate-fadeOut {
+  animation: fadeOut 0.4s ease-out forwards;
+}
+

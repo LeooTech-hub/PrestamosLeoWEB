@@ -17,7 +17,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split('T')[0]
   );
-  const [notes, setNotes] = useState('');
+  const [notes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;

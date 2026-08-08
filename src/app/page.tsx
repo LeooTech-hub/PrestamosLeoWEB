@@ -104,7 +104,16 @@ export default function Home() {
   }, [reportPeriod]);
 
   useEffect(() => {
-    loadData();
+    let isMounted = true;
+    const initLoad = async () => {
+      if (isMounted) {
+        await loadData();
+      }
+    };
+    initLoad();
+    return () => {
+      isMounted = false;
+    };
   }, [loadData]);
 
   // Create new client & loan handler

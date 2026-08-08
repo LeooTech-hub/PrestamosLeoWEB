@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { QuickCreateLoanModal } from './components/QuickCreateLoanModal';
 import { TrashModal } from './components/TrashModal';
+import { WelcomeModal } from './components/WelcomeModal';
 import { PrivateRoute } from './components/PrivateRoute';
 
 import { VistaLogin } from './pages/VistaLogin';
@@ -56,6 +57,7 @@ export default function App() {
   const [isQuickCreateLoanOpen, setIsQuickCreateLoanOpen] = useState(false);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   // Función para cerrar sesión y redirigir a Login
   const handleLogout = useCallback(() => {
@@ -186,6 +188,7 @@ export default function App() {
   const handleLoginSuccess = (newToken, newUser) => {
     setToken(newToken);
     setUser(newUser);
+    setShowWelcomeModal(true);
     navigate('/');
   };
 
@@ -359,7 +362,14 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F5]">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5] dark:bg-[#181614] text-[#2C221E] dark:text-[#F3F4F6] transition-colors duration-300">
+      {/* Modal / Notificación de Bienvenida Animada */}
+      <WelcomeModal
+        isOpen={showWelcomeModal}
+        user={user}
+        onComplete={() => setShowWelcomeModal(false)}
+      />
+
       {/* Top Header con datos del usuario e icono de cerrar sesión */}
       <Header
         alerts={alerts}
@@ -509,8 +519,8 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="hidden md:block py-6 border-t border-[#E6DCD2] text-center text-xs text-[#6E615A] bg-white">
-        <p>PrestamosLeoWEB ©2026 Todos los Derechos Reservados (S/.).</p>
+      <footer className="hidden md:block py-6 border-t border-[#E6DCD2] dark:border-[#332F2C] text-center text-xs text-[#6E615A] dark:text-[#E5E7EB] bg-white dark:bg-[#1E1E1E] transition-colors duration-300">
+        <p>PrestamosLeoWEB ©2026 Todos los Derechos Reservados</p>
       </footer>
     </div>
   );

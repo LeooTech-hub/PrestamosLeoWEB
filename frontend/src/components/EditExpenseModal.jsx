@@ -1,23 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, CheckCircle2, DollarSign, Tag, FileText, Calendar } from 'lucide-react';
 
 const CATEGORIES = ['TRANSPORTE', 'ALIMENTACION', 'PAPELERIA', 'COMISIONES', 'OTROS'];
 
 export function EditExpenseModal({ expense, isOpen, onClose, onConfirmEditExpense }) {
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('OTROS');
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState('');
+  const [amount, setAmount] = useState(() => expense?.amount || '');
+  const [category, setCategory] = useState(() => expense?.category || 'OTROS');
+  const [description, setDescription] = useState(() => expense?.description || '');
+  const [date, setDate] = useState(() => expense?.date || new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (expense) {
-      setAmount(expense.amount || '');
-      setCategory(expense.category || 'OTROS');
-      setDescription(expense.description || '');
-      setDate(expense.date || new Date().toISOString().split('T')[0]);
-    }
-  }, [expense]);
 
   if (!isOpen || !expense) return null;
 
@@ -48,18 +39,18 @@ export function EditExpenseModal({ expense, isOpen, onClose, onConfirmEditExpens
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] warm-shadow-lg relative overflow-hidden">
+      <div className="bg-white dark:bg-[#1E1E1E] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[#E6DCD2] pb-4 mb-4">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-4 mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[#FDF2F0] text-[#C84B31] flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-[#FDF2F0] dark:bg-[#3D2522] text-[#C84B31] dark:text-[#E57373] flex items-center justify-center font-bold">
               <Tag className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-[#2C221E]">
+              <h3 className="text-base font-extrabold text-[#2C221E] dark:text-[#F3F4F6]">
                 Editar Gasto Operativo
               </h3>
-              <p className="text-xs text-[#6E615A] font-semibold">
+              <p className="text-xs text-[#6E615A] dark:text-[#E5E7EB] font-semibold">
                 Actualiza el concepto o monto del gasto
               </p>
             </div>
@@ -67,7 +58,7 @@ export function EditExpenseModal({ expense, isOpen, onClose, onConfirmEditExpens
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-[#FAF8F5] text-[#6E615A]"
+            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#24211E] text-[#6E615A] dark:text-[#E5E7EB]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -76,7 +67,7 @@ export function EditExpenseModal({ expense, isOpen, onClose, onConfirmEditExpens
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-[#6E615A] mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1 flex items-center gap-1">
               <FileText className="w-3.5 h-3.5 text-[#E89D4F]" />
               Concepto / Descripción:
             </label>
@@ -85,20 +76,20 @@ export function EditExpenseModal({ expense, isOpen, onClose, onConfirmEditExpens
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ej: Combustible moto, Papelería..."
-              className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+              placeholder=""
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-semibold text-[#2C221E] dark:text-[#F3F4F6] focus:outline-none focus:border-[#D96B27]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#6E615A] mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1 flex items-center gap-1">
               <Tag className="w-3.5 h-3.5 text-[#E89D4F]" />
               Categoría:
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-bold text-[#2C221E] dark:text-[#F3F4F6] focus:outline-none focus:border-[#D96B27]"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -109,12 +100,12 @@ export function EditExpenseModal({ expense, isOpen, onClose, onConfirmEditExpens
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#6E615A] mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1 flex items-center gap-1">
               <DollarSign className="w-3.5 h-3.5 text-[#E89D4F]" />
               Monto del Gasto (S/.):
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs font-extrabold text-[#C84B31]">
+              <span className="absolute left-3 top-2.5 text-xs font-extrabold text-[#C84B31] dark:text-[#E57373]">
                 S/.
               </span>
               <input
@@ -124,13 +115,13 @@ export function EditExpenseModal({ expense, isOpen, onClose, onConfirmEditExpens
                 step="any"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-extrabold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-extrabold text-[#2C221E] dark:text-[#F3F4F6] focus:outline-none focus:border-[#D96B27]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#6E615A] mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1 flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-[#E89D4F]" />
               Fecha del Gasto:
             </label>
@@ -139,7 +130,7 @@ export function EditExpenseModal({ expense, isOpen, onClose, onConfirmEditExpens
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-semibold text-[#2C221E] dark:text-[#F3F4F6] focus:outline-none focus:border-[#D96B27]"
             />
           </div>
 
