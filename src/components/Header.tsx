@@ -49,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
           Desktop: Logo + Título + Fecha | [+ Crear] [Bell] [Refresh] [Theme]
           flex-nowrap + overflow-hidden evita que los ítems se encimen.
       ────────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 bg-[#FAF8F5]/95 dark:bg-[#1C1917]/95 backdrop-blur-md border-b border-[#E6DCD2] dark:border-[#3D352E] px-3 sm:px-6 py-2 sm:py-3 transition-colors duration-300 overflow-hidden">
+      <header className="sticky top-0 z-30 bg-[#FAF8F5]/95 dark:bg-[#1C1917]/95 backdrop-blur-md border-b border-[#E6DCD2] dark:border-[#3D352E] px-4 sm:px-6 py-2.5 sm:py-3 transition-colors duration-300 overflow-hidden">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 flex-nowrap">
 
           {/* ── Brand & Logo ─────────────────────────────── */}
@@ -69,8 +69,8 @@ export const Header: React.FC<HeaderProps> = ({
                 <h1 className="font-extrabold text-[15px] sm:text-xl tracking-tight text-[#2C221E] dark:text-[#EAE0D5] truncate leading-none">
                   Prestamos<span className="text-[#D96B27] dark:text-[#E07A5F]">Leo</span>
                 </h1>
-                {/* Badge — visible sólo ≥ 360 px aprox (hidden en muy pequeños) */}
-                <span className="hidden xs:inline-flex sm:inline-flex bg-[#FDF3ED] dark:bg-[#26221F] text-[#D96B27] dark:text-[#E07A5F] text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border border-[#D96B27]/20 dark:border-[#E07A5F]/30 uppercase shrink-0 whitespace-nowrap">
+                {/* Badge — visible sólo ≥ 640 px (hidden en móvil) */}
+                <span className="hidden sm:inline-flex bg-[#FDF3ED] dark:bg-[#26221F] text-[#D96B27] dark:text-[#E07A5F] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D96B27]/20 dark:border-[#E07A5F]/30 uppercase shrink-0 whitespace-nowrap">
                   Perú S/. 20%
                 </span>
               </div>
@@ -98,10 +98,10 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Campana de Alertas */}
             <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#26221F] border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
+              className="relative p-2 rounded-xl bg-white dark:bg-[#26221F] border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
               title="Centro de Alertas"
             >
-              <Bell className="w-[18px] h-[18px] sm:w-4 sm:h-4 text-[#2C221E] dark:text-[#EAE0D5]" />
+              <Bell className="w-4 h-4 text-[#2C221E] dark:text-[#EAE0D5]" />
               {alertsCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#C84B31] text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#1C1917] animate-pulse">
                   {alertsCount > 9 ? '9+' : alertsCount}
@@ -109,29 +109,29 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Actualizar — icono ligeramente más grande en móvil para facilitar el toque */}
+            {/* Actualizar */}
             <button
               onClick={onRefresh}
               title="Actualizar datos"
-              className="p-1.5 sm:p-2 rounded-xl bg-white dark:bg-[#26221F] border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
+              className="p-2 rounded-xl bg-white dark:bg-[#26221F] border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 transition-all active:scale-95 warm-shadow"
             >
-              <RefreshCw className="w-[18px] h-[18px] sm:w-4 sm:h-4 text-[#2C221E] dark:text-[#EAE0D5]" />
+              <RefreshCw className="w-4 h-4 text-[#2C221E] dark:text-[#EAE0D5]" />
             </button>
 
             {/* Modo Día / Modo Nocturno Cálido */}
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Cambiar a Modo Día' : 'Activar Modo Nocturno Cálido'}
-              className={`p-1.5 sm:p-2 rounded-xl border transition-all active:scale-95 warm-shadow ${
+              className={`p-2 rounded-xl border transition-all active:scale-95 warm-shadow ${
                 theme === 'dark'
                   ? 'bg-[#2D2824] border-[#4A3F37] text-[#E89D4F] hover:bg-[#3D352E]'
                   : 'bg-white border-[#E6DCD2] text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FDF3ED]'
               }`}
             >
               {theme === 'dark' ? (
-                <Sun className="w-[18px] h-[18px] sm:w-4 sm:h-4 text-[#E89D4F]" />
+                <Sun className="w-4 h-4 text-[#E89D4F]" />
               ) : (
-                <Moon className="w-[18px] h-[18px] sm:w-4 sm:h-4 text-[#2C221E]" />
+                <Moon className="w-4 h-4 text-[#2C221E]" />
               )}
             </button>
           </div>
