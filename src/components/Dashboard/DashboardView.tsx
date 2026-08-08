@@ -41,58 +41,58 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }
 
   return (
-    <div className="space-y-6 pb-24 md:pb-12">
+    <div className="space-y-4 sm:space-y-6 pb-24 md:pb-12">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#2C221E] via-[#3D302A] to-[#2C221E] text-white rounded-3xl p-5 sm:p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(#E89D4F_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+      <div className="bg-gradient-to-r from-[#D96B27] via-[#C25A19] to-[#2C221E] dark:from-[#D96B27] dark:via-[#C25A19] dark:to-[#1E1C1A] text-white rounded-3xl p-4 sm:p-6 shadow-md relative overflow-hidden transition-colors duration-300">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-15 bg-[radial-gradient(#FFFFFF_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-[#E89D4F]/20 text-[#E89D4F] border border-[#E89D4F]/30 text-xs font-semibold px-3 py-1 rounded-full mb-2">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-1.5 bg-white/20 text-[#FFFFFF] border border-white/30 text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full mb-1.5 sm:mb-2">
+              <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#FFFFFF]" />
               <span>Resumen de Cobranzas Hoy</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FFFFFF]">
               ¡Hola, Leo! 👋
             </h2>
-            <p className="text-xs sm:text-sm text-[#D5C8BC] mt-1 max-w-md">
+            <p className="text-xs sm:text-sm text-[#FFFFFF] opacity-95 mt-0.5 sm:mt-1 max-w-md">
               Control de préstamos del 20% en Soles (S/.) por días de pago.
             </p>
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto pt-1 sm:pt-0">
             <button
               onClick={() => setActiveTab('newClient')}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl terracotta-gradient text-white text-xs sm:text-sm font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-[#FFFFFF] border border-white/30 text-xs sm:text-sm font-semibold shadow-md active:scale-95 transition-all"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#FFFFFF]" />
               <span>Registrar Cliente</span>
             </button>
             <button
               onClick={() => setActiveTab('dailyRoute')}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-[#2C221E] hover:bg-[#FAF8F5] text-xs sm:text-sm font-semibold shadow-md active:scale-95 transition-all"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white text-[#2C221E] dark:text-[#1E1C1A] hover:bg-[#FAF8F5] text-xs sm:text-sm font-semibold shadow-md active:scale-95 transition-all"
             >
-              <Zap className="w-4 h-4 text-[#E89D4F]" />
+              <Zap className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#D96B27]" />
               <span>Cobro Rápido</span>
             </button>
           </div>
         </div>
 
         {/* Collection Progress */}
-        <div className="mt-5 pt-4 border-t border-white/10">
+        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-white/20">
           <div className="flex justify-between items-center text-xs mb-1.5">
-            <span className="text-[#D5C8BC] font-medium flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#2D7A5D]" />
+            <span className="text-[#FFFFFF] font-medium flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#FFFFFF]" />
               Meta de recaudo del día
             </span>
-            <span className="font-bold text-[#E89D4F]">
+            <span className="font-bold text-[#FFFFFF]">
               {summary.collectionProgressPercent}% completado
             </span>
           </div>
-          <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+          <div className="w-full bg-white/20 rounded-full h-2 sm:h-2.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-[#E89D4F] to-[#2D7A5D] h-2.5 rounded-full transition-all duration-500"
+              className="bg-white h-2 sm:h-2.5 rounded-full transition-all duration-500"
               style={{ width: `${summary.collectionProgressPercent}%` }}
             />
           </div>
@@ -100,78 +100,78 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Main KPI Summary Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Card 1: Capital Prestado */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E6DCD2] warm-shadow hover:border-[#D96B27]/40 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-[#6E615A]">Capital Invertido</span>
-            <div className="w-9 h-9 rounded-xl bg-[#FDF3ED] text-[#D96B27] flex items-center justify-center">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 transition-colors duration-300">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] truncate">Capital Invertido</span>
+            <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] flex items-center justify-center shrink-0">
               <Coins className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-lg sm:text-2xl font-black text-[#2C221E] tracking-tight truncate">
+          <p className="text-base sm:text-2xl font-black text-[#2C221E] dark:text-[#F3F1EF] tracking-tight truncate">
             {formatCurrency(summary.totalCapitalLent)}
           </p>
-          <span className="text-[11px] text-[#6E615A] flex items-center gap-1 mt-1">
-            <Users className="w-3 h-3 text-[#E89D4F]" />
-            {summary.totalActiveLoansCount} préstamos activos
+          <span className="text-[10px] sm:text-[11px] text-[#6E615A] dark:text-[#A8A19B] flex items-center gap-1 mt-1 truncate">
+            <Users className="w-3 h-3 text-[#E89D4F] shrink-0" />
+            <span>{summary.totalActiveLoansCount} activos</span>
           </span>
         </div>
 
         {/* Card 2: Ganancia Estimada (20%) */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E6DCD2] warm-shadow hover:border-[#E89D4F]/40 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-[#6E615A]">Ganancia (20%)</span>
-            <div className="w-9 h-9 rounded-xl bg-[#FDF6EE] text-[#E89D4F] flex items-center justify-center">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow hover:border-[#E89D4F]/40 dark:hover:border-[#E89D4F]/40 transition-colors duration-300">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] truncate">Ganancia (20%)</span>
+            <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#FDF6EE] dark:bg-[#E89D4F]/15 text-[#E89D4F] flex items-center justify-center shrink-0">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-lg sm:text-2xl font-black text-[#2C221E] tracking-tight truncate">
+          <p className="text-base sm:text-2xl font-black text-[#2C221E] dark:text-[#F3F1EF] tracking-tight truncate">
             {formatCurrency(summary.totalEstimatedProfit)}
           </p>
-          <span className="text-[11px] text-[#2D7A5D] font-medium flex items-center gap-1 mt-1">
-            <ArrowUpRight className="w-3.5 h-3.5" />
-            Interés 20%
+          <span className="text-[10px] sm:text-[11px] text-[#2D7A5D] dark:text-[#3D9970] font-medium flex items-center gap-1 mt-1 truncate">
+            <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
+            <span>Interés 20%</span>
           </span>
         </div>
 
         {/* Card 3: Cobrado Hoy */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E6DCD2] warm-shadow hover:border-[#2D7A5D]/40 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-[#6E615A]">Recaudado Hoy</span>
-            <div className="w-9 h-9 rounded-xl bg-[#EEF6F2] text-[#2D7A5D] flex items-center justify-center">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow hover:border-[#2D7A5D]/40 dark:hover:border-[#3D9970]/40 transition-colors duration-300">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] truncate">Recaudado Hoy</span>
+            <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#EEF6F2] dark:bg-[#3D9970]/15 text-[#2D7A5D] dark:text-[#3D9970] flex items-center justify-center shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-lg sm:text-2xl font-black text-[#2D7A5D] tracking-tight truncate">
+          <p className="text-base sm:text-2xl font-black text-[#2D7A5D] dark:text-[#3D9970] tracking-tight truncate">
             {formatCurrency(summary.collectedToday)}
           </p>
-          <span className="text-[11px] text-[#6E615A] mt-1 block">
-            Ingresado a caja hoy
+          <span className="text-[10px] sm:text-[11px] text-[#6E615A] dark:text-[#A8A19B] mt-1 block truncate">
+            Ingresado hoy
           </span>
         </div>
 
         {/* Card 4: Clientes Pendientes Hoy */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E6DCD2] warm-shadow hover:border-[#C84B31]/40 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-[#6E615A]">Pendientes Hoy</span>
-            <div className="w-9 h-9 rounded-xl bg-[#FDF2F0] text-[#C84B31] flex items-center justify-center">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow hover:border-[#C84B31]/40 dark:hover:border-[#C84B31]/40 transition-colors duration-300">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] truncate">Pendientes Hoy</span>
+            <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 text-[#C84B31] flex items-center justify-center shrink-0">
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <p className="text-lg sm:text-2xl font-black text-[#C84B31] tracking-tight">
+          <div className="flex items-baseline gap-1.5 truncate">
+            <p className="text-base sm:text-2xl font-black text-[#C84B31] tracking-tight">
               {summary.pendingClientsTodayCount}
             </p>
-            <span className="text-xs font-semibold text-[#6E615A]">clientes</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B]">clientes</span>
           </div>
           {summary.overdueCount > 0 ? (
-            <span className="text-[11px] text-[#C84B31] font-medium flex items-center gap-1 mt-1">
-              <AlertTriangle className="w-3 h-3" />
-              {summary.overdueCount} en mora
+            <span className="text-[10px] sm:text-[11px] text-[#C84B31] font-medium flex items-center gap-1 mt-1 truncate">
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              <span>{summary.overdueCount} en mora</span>
             </span>
           ) : (
-            <span className="text-[11px] text-[#2D7A5D] font-medium mt-1 block">
+            <span className="text-[10px] sm:text-[11px] text-[#2D7A5D] dark:text-[#3D9970] font-medium mt-1 block truncate">
               Sin mora atrasada
             </span>
           )}
@@ -180,15 +180,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Middle Section: Active Loans Preview & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-3xl p-5 border border-[#E6DCD2] warm-shadow">
+        <div className="lg:col-span-2 bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-base text-[#2C221E]">Préstamos Recientes</h3>
-              <p className="text-xs text-[#6E615A]">Progreso de cancelación por días acordados</p>
+              <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF]">Préstamos Recientes</h3>
+              <p className="text-xs text-[#6E615A] dark:text-[#A8A19B]">Progreso de cancelación por días acordados</p>
             </div>
             <button
               onClick={() => setActiveTab('clients')}
-              className="text-xs font-semibold text-[#D96B27] hover:text-[#C25A19] flex items-center gap-1"
+              className="text-xs font-semibold text-[#D96B27] dark:text-[#E07A5F] hover:text-[#C25A19] dark:hover:text-[#E07A5F] flex items-center gap-1"
             >
               <span>Ver Todos</span>
               <ChevronRight className="w-4 h-4" />
@@ -196,7 +196,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {recentLoans.length === 0 ? (
-            <div className="text-center py-8 text-[#6E615A] text-sm">
+            <div className="text-center py-8 text-[#6E615A] dark:text-[#A8A19B] text-sm">
               No hay préstamos registrados aún.
             </div>
           ) : (
@@ -206,20 +206,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div
                     key={loan.id}
-                    className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#E6DCD2]/80 hover:border-[#D96B27]/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                    className="p-3.5 rounded-2xl bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2]/80 dark:border-[#332F2C] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 transition-colors duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-[#2C221E] truncate">
+                        <span className="font-bold text-sm text-[#2C221E] dark:text-[#F3F1EF] truncate">
                           {loan.clientName}
                         </span>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             loan.status === 'OVERDUE'
-                              ? 'bg-[#FDF2F0] text-[#C84B31] border border-[#C84B31]/30'
+                              ? 'bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] border border-[#C84B31]/30'
                               : loan.status === 'PAID'
-                              ? 'bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/30'
-                              : 'bg-[#FDF6EE] text-[#E89D4F] border border-[#E89D4F]/30'
+                              ? 'bg-[#EEF6F2] dark:bg-[#3D9970]/20 text-[#2D7A5D] dark:text-[#3D9970] border border-[#2D7A5D]/30 dark:border-[#3D9970]/30'
+                              : 'bg-[#FDF6EE] dark:bg-[#E89D4F]/20 text-[#E89D4F] border border-[#E89D4F]/30'
                           }`}
                         >
                           {loan.status === 'OVERDUE'
@@ -229,22 +229,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             : `${loan.paymentDays} DÍAS`}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-[#6E615A] mt-1">
-                        <span>Capital: <strong className="text-[#2C221E]">{formatCurrency(loan.capital)}</strong></span>
-                        <span>Total (20%): <strong className="text-[#D96B27]">{formatCurrency(loan.totalToPay)}</strong></span>
+                      <div className="flex items-center gap-3 text-xs text-[#6E615A] dark:text-[#A8A19B] mt-1">
+                        <span>Capital: <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatCurrency(loan.capital)}</strong></span>
+                        <span>Total (20%): <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(loan.totalToPay)}</strong></span>
                       </div>
                     </div>
 
                     <div className="w-full sm:w-44 text-right">
                       <div className="flex justify-between sm:justify-end gap-2 text-xs font-semibold mb-1">
-                        <span className="text-[#6E615A]">
+                        <span className="text-[#6E615A] dark:text-[#A8A19B]">
                           Día {loan.paidDaysCount}/{loan.paymentDays}
                         </span>
-                        <span className="text-[#2D7A5D]">{percent}%</span>
+                        <span className="text-[#2D7A5D] dark:text-[#3D9970]">{percent}%</span>
                       </div>
-                      <div className="w-full bg-[#E6DCD2] rounded-full h-2 overflow-hidden">
+                      <div className="w-full bg-[#E6DCD2] dark:bg-[#332F2C] rounded-full h-2 overflow-hidden">
                         <div
-                          className="bg-[#2D7A5D] h-2 rounded-full"
+                          className="bg-[#2D7A5D] dark:bg-[#3D9970] h-2 rounded-full"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
@@ -257,19 +257,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Recent Payments Feed */}
-        <div className="bg-white rounded-3xl p-5 border border-[#E6DCD2] warm-shadow">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-base text-[#2C221E] flex items-center gap-1.5">
-                <Receipt className="w-4 h-4 text-[#D96B27]" />
+              <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-1.5">
+                <Receipt className="w-4 h-4 text-[#D96B27] dark:text-[#E07A5F]" />
                 Cobros Recientes
               </h3>
-              <p className="text-xs text-[#6E615A]">Últimos pagos de la ruta</p>
+              <p className="text-xs text-[#6E615A] dark:text-[#A8A19B]">Últimos pagos de la ruta</p>
             </div>
           </div>
 
           {recentPayments.length === 0 ? (
-            <div className="text-center py-8 text-[#6E615A] text-xs">
+            <div className="text-center py-8 text-[#6E615A] dark:text-[#A8A19B] text-xs">
               Aún no se registraron pagos hoy.
             </div>
           ) : (
@@ -277,21 +277,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {recentPayments.slice(0, 5).map((pay) => (
                 <div
                   key={pay.id}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-[#EEF6F2]/60 border border-[#2D7A5D]/20 text-xs"
+                  className="flex items-center justify-between p-3 rounded-2xl bg-[#EEF6F2]/60 dark:bg-[#3D9970]/10 border border-[#2D7A5D]/20 dark:border-[#3D9970]/20 text-xs transition-colors duration-300"
                 >
                   <div>
-                    <span className="font-semibold text-[#2C221E] block truncate max-w-[140px]">
+                    <span className="font-semibold text-[#2C221E] dark:text-[#F3F1EF] block truncate max-w-[140px]">
                       {pay.clientName}
                     </span>
-                    <span className="text-[#6E615A] text-[11px]">
+                    <span className="text-[#6E615A] dark:text-[#A8A19B] text-[11px]">
                       {pay.notes || 'Pago del día'}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-[#2D7A5D] text-sm block">
+                    <span className="font-bold text-[#2D7A5D] dark:text-[#3D9970] text-sm block">
                       +{formatCurrency(pay.amount)}
                     </span>
-                    <span className="text-[10px] text-[#6E615A]">{formatDatePE(pay.date)}</span>
+                    <span className="text-[10px] text-[#6E615A] dark:text-[#A8A19B]">{formatDatePE(pay.date)}</span>
                   </div>
                 </div>
               ))}

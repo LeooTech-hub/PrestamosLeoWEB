@@ -40,29 +40,27 @@ export const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  return (
+  };  return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] warm-shadow-lg relative overflow-hidden space-y-5">
+      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow-lg relative overflow-hidden space-y-5 transition-colors duration-300">
         {/* Modal Header */}
-        <div className="flex items-start justify-between border-b border-[#E6DCD2] pb-4">
+        <div className="flex items-start justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FDF2F0] text-[#C84B31] flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] flex items-center justify-center font-bold">
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
               <span className="text-xs font-bold text-[#C84B31] uppercase tracking-wider">
                 Confirmación de Borrado Seguro
               </span>
-              <h3 className="text-base font-extrabold text-[#2C221E]">
+              <h3 className="text-base font-extrabold text-[#2C221E] dark:text-[#F3F1EF]">
                 {itemName}
               </h3>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-[#FAF8F5] text-[#6E615A]"
+            className="p-1.5 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -70,7 +68,7 @@ export const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
 
         {/* Warning Banner */}
         {hasHistory ? (
-          <div className="bg-[#FDF2F0] border border-[#C84B31]/30 rounded-2xl p-4 text-xs text-[#C84B31] space-y-1.5">
+          <div className="bg-[#FDF2F0] dark:bg-[#C84B31]/15 border border-[#C84B31]/30 rounded-2xl p-4 text-xs text-[#C84B31] space-y-1.5">
             <div className="flex items-center gap-1.5 font-bold text-sm">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>¡Advertencia: Registro con Historial!</span>
@@ -82,14 +80,14 @@ export const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
             </p>
           </div>
         ) : (
-          <p className="text-xs text-[#6E615A] leading-relaxed">
+          <p className="text-xs text-[#6E615A] dark:text-[#A8A19B] leading-relaxed">
             Selecciona la opción de borrado deseada para este registro.
           </p>
         )}
 
         {/* Mode Selector */}
         <div className="space-y-3">
-          <label className="block text-xs font-bold text-[#2C221E]">
+          <label className="block text-xs font-bold text-[#2C221E] dark:text-[#F3F1EF]">
             Selecciona la acción a realizar:
           </label>
 
@@ -98,21 +96,21 @@ export const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
             onClick={() => setSelectedMode('ARCHIVE')}
             className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
               selectedMode === 'ARCHIVE'
-                ? 'border-[#2D7A5D] bg-[#EEF6F2] ring-2 ring-[#2D7A5D]/20'
-                : 'border-[#E6DCD2] bg-[#FAF8F5] hover:bg-[#F5F0EB]'
+                ? 'border-[#2D7A5D] dark:border-[#3D9970] bg-[#EEF6F2] dark:bg-[#3D9970]/15 ring-2 ring-[#2D7A5D]/20 dark:ring-[#3D9970]/20'
+                : 'border-[#E6DCD2] dark:border-[#332F2C] bg-[#FAF8F5] dark:bg-[#121110] hover:bg-[#F5F0EB] dark:hover:bg-[#332F2C]/50'
             }`}
           >
-            <div className="p-2 rounded-xl bg-white text-[#2D7A5D] shadow-xs shrink-0">
+            <div className="p-2 rounded-xl bg-white dark:bg-[#1E1C1A] text-[#2D7A5D] dark:text-[#3D9970] shadow-xs shrink-0">
               <Archive className="w-5 h-5" />
             </div>
             <div className="flex-1 text-xs">
-              <div className="flex items-center justify-between font-bold text-[#2C221E]">
+              <div className="flex items-center justify-between font-bold text-[#2C221E] dark:text-[#F3F1EF]">
                 <span>Archivar / Marcar Inactivo</span>
-                <span className="text-[10px] bg-[#2D7A5D] text-white font-bold px-2 py-0.5 rounded-full">
+                <span className="text-[10px] bg-[#2D7A5D] dark:bg-[#3D9970] text-white font-bold px-2 py-0.5 rounded-full">
                   Recomendado
                 </span>
               </div>
-              <p className="text-[#6E615A] text-[11px] mt-0.5">
+              <p className="text-[#6E615A] dark:text-[#A8A19B] text-[11px] mt-0.5">
                 Conserva el historial de pagos y reportes financieros, ocultándolo de la ruta de cobro diaria.
               </p>
             </div>
@@ -123,18 +121,18 @@ export const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
             onClick={() => setSelectedMode('PERMANENT')}
             className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
               selectedMode === 'PERMANENT'
-                ? 'border-[#C84B31] bg-[#FDF2F0] ring-2 ring-[#C84B31]/20'
-                : 'border-[#E6DCD2] bg-[#FAF8F5] hover:bg-[#F5F0EB]'
+                ? 'border-[#C84B31] bg-[#FDF2F0] dark:bg-[#C84B31]/15 ring-2 ring-[#C84B31]/20'
+                : 'border-[#E6DCD2] dark:border-[#332F2C] bg-[#FAF8F5] dark:bg-[#121110] hover:bg-[#F5F0EB] dark:hover:bg-[#332F2C]/50'
             }`}
           >
-            <div className="p-2 rounded-xl bg-white text-[#C84B31] shadow-xs shrink-0">
+            <div className="p-2 rounded-xl bg-white dark:bg-[#1E1C1A] text-[#C84B31] shadow-xs shrink-0">
               <Trash2 className="w-5 h-5" />
             </div>
             <div className="flex-1 text-xs">
               <span className="font-bold text-[#C84B31] block">
                 Eliminar Definitivamente
               </span>
-              <p className="text-[#6E615A] text-[11px] mt-0.5">
+              <p className="text-[#6E615A] dark:text-[#A8A19B] text-[11px] mt-0.5">
                 Borra irreversiblemente el registro de la base de datos local.
               </p>
             </div>
@@ -146,7 +144,7 @@ export const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] text-[#6E615A] font-bold text-xs hover:bg-[#FAF8F5]"
+            className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#A8A19B] font-bold text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#121110]"
           >
             Cancelar
           </button>

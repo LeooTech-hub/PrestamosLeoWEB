@@ -152,18 +152,18 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
       {/* Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] flex items-center gap-2">
-            <UserPlus className="w-6 h-6 text-[#D96B27]" />
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+            <UserPlus className="w-6 h-6 text-[#D96B27] dark:text-[#E07A5F]" />
             Registrar Cliente y Nuevo Préstamo
           </h2>
-          <p className="text-xs sm:text-sm text-[#6E615A] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
             Alta rápida de clientes en Soles (S/.) con interés del 20% y días de pago acordados.
           </p>
         </div>
       </div>
 
       {successMessage && (
-        <div className="bg-[#EEF6F2] border border-[#2D7A5D]/30 text-[#2D7A5D] p-4 rounded-2xl flex items-center gap-3 warm-shadow">
+        <div className="bg-[#EEF6F2] dark:bg-[#3D9970]/20 border border-[#2D7A5D]/30 dark:border-[#3D9970]/30 text-[#2D7A5D] dark:text-[#3D9970] p-4 rounded-2xl flex items-center gap-3 warm-shadow">
           <CheckCircle2 className="w-6 h-6 shrink-0" />
           <span className="text-sm font-semibold">{successMessage}</span>
         </div>
@@ -173,23 +173,23 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
         {/* Form Inputs (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* Card 1: Personal Data */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] warm-shadow space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 pb-3">
-              <h3 className="font-bold text-base text-[#2C221E] flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-[#D96B27]" />
+          <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 dark:border-[#332F2C] pb-3">
+              <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-[#D96B27] dark:text-[#E07A5F]" />
                 1. Datos Personales del Cliente
               </h3>
             </div>
 
             {/* Select existing or new */}
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] mb-1.5">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1.5">
                 Cliente Nuevo o Seleccionar de Lista:
               </label>
               <select
                 value={selectedClientId}
                 onChange={(e) => handleClientSelect(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
               >
                 <option value="new">➕ Registrar un Cliente Nuevo</option>
                 {clients.map((c) => (
@@ -202,24 +202,24 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                   Nombre Completo*:
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
                     placeholder="Belinda Facundo"
-                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] placeholder-[#A89B92] dark:placeholder-[#A8A19B] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                   Apodo / Alias (Opcional):
                 </label>
                 <input
@@ -227,62 +227,62 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                   value={clientAlias}
                   onChange={(e) => setClientAlias(e.target.value)}
                   placeholder=""
-                  className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                  className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                   Teléfono / WhatsApp*:
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Phone className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
                     placeholder=""
-                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                     required
                   />
                 </div>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                   Dirección / Referencia de Cobro*:
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <MapPin className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={clientAddress}
                     onChange={(e) => setClientAddress(e.target.value)}
                     placeholder=""
-                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                    className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                   DNI (Obligatorio):
                 </label>
                 <div className="relative">
-                  <FileText className="w-4 h-4 text-[#A89B92] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <FileText className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={clientIdentification}
                     onChange={(e) => setClientIdentification(e.target.value)}
                     placeholder="45987654"
-                    className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                    className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                   Notas / Observaciones:
                 </label>
                 <input
@@ -290,20 +290,20 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Observaciones de cobro"
-                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                  className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                 />
               </div>
             </div>
           </div>
 
           {/* Card 2: Loan Setup */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] warm-shadow space-y-5">
-            <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 pb-3">
-              <h3 className="font-bold text-base text-[#2C221E] flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-[#D96B27]" />
+          <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-5">
+            <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 dark:border-[#332F2C] pb-3">
+              <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-[#D96B27] dark:text-[#E07A5F]" />
                 2. Condición del Préstamo (S/.)
               </h3>
-              <span className="bg-[#FDF3ED] text-[#D96B27] text-xs font-extrabold px-2.5 py-1 rounded-full border border-[#D96B27]/20 flex items-center gap-1">
+              <span className="bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] text-xs font-extrabold px-2.5 py-1 rounded-full border border-[#D96B27]/20 dark:border-[#E07A5F]/30 flex items-center gap-1">
                 <Percent className="w-3.5 h-3.5" />
                 Interés: 20% Fijo
               </span>
@@ -311,7 +311,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 
             {/* Presets Soles */}
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] mb-2">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-2">
                 Montos Frecuentes en Soles:
               </label>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -323,7 +323,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                     className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border ${
                       capital === preset
                         ? 'terracotta-gradient text-white border-transparent shadow-sm'
-                        : 'bg-[#FAF8F5] text-[#2C221E] border-[#E6DCD2] hover:bg-[#F5F0EB]'
+                        : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#2C221E] dark:text-[#F3F1EF] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#F5F0EB] dark:hover:bg-[#262320]'
                     }`}
                   >
                     S/. {preset}
@@ -334,11 +334,11 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 
             {/* Custom Capital */}
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] mb-1.5">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1.5">
                 Monto Prestado en Soles (S/.):
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-lg text-[#D96B27]">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-lg text-[#D96B27] dark:text-[#E07A5F]">
                   S/.
                 </span>
                 <input
@@ -348,7 +348,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                   value={capital || ''}
                   onChange={(e) => setCapital(e.target.value === '' ? 0 : Number(e.target.value))}
                   placeholder="500"
-                  className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl font-black text-lg text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
+                  className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl font-black text-lg text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40 focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
                   required
                 />
               </div>
@@ -356,7 +356,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 
             {/* Payment Days Setup */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-[#6E615A]">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B]">
                 Días de Pago Acordados:
               </label>
               <div className="flex flex-wrap gap-1.5 mb-1.5">
@@ -368,7 +368,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                     className={`px-2.5 py-1 rounded-xl text-xs font-extrabold transition-all border ${
                       parsedPaymentDays === preset
                         ? 'terracotta-gradient text-white border-transparent'
-                        : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/30'
+                        : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/30 dark:hover:bg-[#332F2C]/30'
                     }`}
                   >
                     {preset} días
@@ -382,7 +382,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                 value={paymentDaysInput}
                 onChange={(e) => setPaymentDaysInput(e.target.value)}
                 placeholder="Número de días (1 - 365)"
-                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-sm font-bold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40 focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
                 required
               />
             </div>
@@ -390,7 +390,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
             {/* Dates Calculation */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div>
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1 flex items-center gap-1">
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1 flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-[#E89D4F]" />
                   Fecha de Inicio:
                 </label>
@@ -398,17 +398,17 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs sm:text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                  className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs sm:text-sm font-bold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#6E615A] mb-1 flex items-center gap-1">
-                  <CalendarCheck className="w-3.5 h-3.5 text-[#2D7A5D]" />
+                <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1 flex items-center gap-1">
+                  <CalendarCheck className="w-3.5 h-3.5 text-[#2D7A5D] dark:text-[#3D9970]" />
                   Fecha de Vencimiento (+{parsedPaymentDays} días):
                 </label>
-                <div className="px-3 py-2 bg-[#EEF6F2] border border-[#2D7A5D]/30 rounded-xl text-xs sm:text-sm font-black text-[#2D7A5D]">
+                <div className="px-3 py-2 bg-[#EEF6F2] dark:bg-[#3D9970]/15 border border-[#2D7A5D]/30 dark:border-[#3D9970]/30 rounded-xl text-xs sm:text-sm font-black text-[#2D7A5D] dark:text-[#3D9970]">
                   {formatDatePE(dueDate)}
                 </div>
               </div>
@@ -418,7 +418,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 
         {/* Breakdown Card & Action (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-gradient-to-b from-[#2C221E] via-[#382C27] to-[#2C221E] text-white rounded-3xl p-6 shadow-xl sticky top-20 border border-[#4A3B35]">
+          <div className="bg-gradient-to-b from-[#2C221E] via-[#382C27] to-[#2C221E] dark:from-[#1E1C1A] dark:via-[#262320] dark:to-[#121110] text-white rounded-3xl p-6 shadow-xl sticky top-20 border border-[#4A3B35] dark:border-[#332F2C]">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <h3 className="font-bold text-base text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#E89D4F]" />
@@ -457,7 +457,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                 <span className="text-xs text-[#D5C8BC] uppercase tracking-wider block font-semibold">
                   Cobro diario ({parsedPaymentDays} días acordados)
                 </span>
-                <p className="text-2xl sm:text-3xl font-black text-white mt-1 text-[#D96B27]">
+                <p className="text-2xl sm:text-3xl font-black text-white mt-1 text-[#D96B27] dark:text-[#E07A5F]">
                   {formatCurrency(breakdown.dailyPaymentAmount)}
                 </p>
                 <span className="text-[11px] text-[#E89D4F] font-medium mt-1 block">

@@ -112,11 +112,11 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] flex items-center gap-2">
-            <Users className="w-6 h-6 text-[#D96B27]" />
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+            <Users className="w-6 h-6 text-[#D96B27] dark:text-[#E07A5F]" />
             Gestión de Clientes & Historial
           </h2>
-          <p className="text-xs sm:text-sm text-[#6E615A] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
             Directorio de clientes, apodos/alias, edición, filtro por estado y créditos en Soles (S/.).
           </p>
         </div>
@@ -131,15 +131,15 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       </div>
 
       {/* Search & Filter Chips */}
-      <div className="bg-white rounded-3xl p-4 border border-[#E6DCD2] warm-shadow space-y-3">
+      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-4 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-3">
         <div className="relative">
-          <Search className="w-4 h-4 text-[#A89B92] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#A89B92] dark:text-[#A8A19B] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por nombre, apodo/alias, teléfono, dirección o DNI..."
-            className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+            className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] placeholder-[#A89B92] dark:placeholder-[#A8A19B] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
           />
         </div>
 
@@ -149,8 +149,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             onClick={() => setStatusFilter('ALL')}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
               statusFilter === 'ALL'
-                ? 'terracotta-gradient text-white border-[#D96B27]'
-                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
+                ? 'terracotta-gradient text-white border-[#D96B27] dark:border-[#E07A5F]'
+                : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#332F2C]/40'
             }`}
           >
             Todos ({counts.all})
@@ -159,8 +159,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             onClick={() => setStatusFilter('UP_TO_DATE')}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
               statusFilter === 'UP_TO_DATE'
-                ? 'bg-[#2D7A5D] text-white border-[#2D7A5D]'
-                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
+                ? 'bg-[#2D7A5D] dark:bg-[#3D9970] text-white border-[#2D7A5D] dark:border-[#3D9970]'
+                : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#332F2C]/40'
             }`}
           >
             Al Día ({counts.upToDate})
@@ -170,7 +170,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
               statusFilter === 'OVERDUE'
                 ? 'bg-[#C84B31] text-white border-[#C84B31]'
-                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
+                : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#332F2C]/40'
             }`}
           >
             Mora ({counts.overdue})
@@ -179,8 +179,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             onClick={() => setStatusFilter('PAID')}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
               statusFilter === 'PAID'
-                ? 'bg-[#2C221E] text-white border-[#2C221E]'
-                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#E6DCD2]/40'
+                ? 'bg-[#2C221E] dark:bg-[#F3F1EF] text-white dark:text-[#121110] border-[#2C221E] dark:border-[#F3F1EF]'
+                : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#E6DCD2]/40 dark:hover:bg-[#332F2C]/40'
             }`}
           >
             Finalizados ({counts.paid})
@@ -190,10 +190,10 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
       {/* Client List */}
       {filteredClients.length === 0 ? (
-        <div className="bg-white rounded-3xl p-10 text-center border border-[#E6DCD2] warm-shadow">
-          <Users className="w-12 h-12 text-[#A89B92] mx-auto mb-3 opacity-50" />
-          <h3 className="font-bold text-base text-[#2C221E]">No se encontraron clientes</h3>
-          <p className="text-xs text-[#6E615A] mt-1">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
+          <Users className="w-12 h-12 text-[#A89B92] dark:text-[#A8A19B] mx-auto mb-3 opacity-50" />
+          <h3 className="font-bold text-base text-[#2C221E] dark:text-[#F3F1EF]">No se encontraron clientes</h3>
+          <p className="text-xs text-[#6E615A] dark:text-[#A8A19B] mt-1">
             Intenta con otro término de búsqueda o registra un nuevo cliente.
           </p>
         </div>
@@ -208,37 +208,37 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             const totalRemaining = activeLoans.reduce((acc, l) => acc + l.remainingAmount, 0);
 
             let statusLabel = 'Sin Préstamos Activos';
-            let statusStyle = 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2]';
+            let statusStyle = 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] border-[#E6DCD2] dark:border-[#332F2C]';
 
             if (hasOverdue) {
               statusLabel = 'En Mora';
-              statusStyle = 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30';
+              statusStyle = 'bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] border-[#C84B31]/30';
             } else if (activeLoans.length > 0) {
               statusLabel = 'Al Día';
-              statusStyle = 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30';
+              statusStyle = 'bg-[#EEF6F2] dark:bg-[#3D9970]/20 text-[#2D7A5D] dark:text-[#3D9970] border-[#2D7A5D]/30 dark:border-[#3D9970]/30';
             }
 
             return (
               <div
                 key={client.id}
-                className="bg-white rounded-3xl p-5 border border-[#E6DCD2] hover:border-[#D96B27]/50 warm-shadow transition-all flex flex-col justify-between space-y-4"
+                className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] hover:border-[#D96B27]/50 dark:hover:border-[#E07A5F]/50 warm-shadow transition-colors duration-300 flex flex-col justify-between space-y-4"
               >
                 <div>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#FDF3ED] text-[#D96B27] font-black flex items-center justify-center text-base border border-[#D96B27]/20">
+                      <div className="w-10 h-10 rounded-2xl bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] font-black flex items-center justify-center text-base border border-[#D96B27]/20 dark:border-[#E07A5F]/30">
                         {client.name.charAt(0)}
                       </div>
                       <div>
-                        <h3 className="font-extrabold text-base text-[#2C221E] flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-1.5 flex-wrap">
                           <span>{client.name}</span>
                           {client.alias && (
-                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] text-[#D96B27] px-2 py-0.5 rounded-full border border-[#D96B27]/30">
+                            <span className="text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] px-2 py-0.5 rounded-full border border-[#D96B27]/30 dark:border-[#E07A5F]/30">
                               ({client.alias})
                             </span>
                           )}
                         </h3>
-                        <div className="flex items-center gap-2 text-xs text-[#6E615A] mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
                           <span className="flex items-center gap-1">
                             <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
                             {client.phone}
@@ -253,7 +253,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                           e.stopPropagation();
                           setClientToEdit(client);
                         }}
-                        className="p-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FDF3ED] text-[#D96B27] border border-[#E6DCD2] transition-all flex items-center gap-1 text-xs font-semibold px-2"
+                        className="p-1.5 rounded-xl bg-[#FAF8F5] dark:bg-[#121110] hover:bg-[#FDF3ED] dark:hover:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#332F2C] transition-all flex items-center gap-1 text-xs font-semibold px-2"
                         title="Editar datos del cliente"
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -264,7 +264,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                           e.stopPropagation();
                           setClientToDelete(client);
                         }}
-                        className="p-1.5 rounded-xl bg-[#FDF2F0] hover:bg-[#C84B31] hover:text-white text-[#C84B31] border border-[#C84B31]/30 transition-all text-xs font-semibold"
+                        className="p-1.5 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 hover:bg-[#C84B31] hover:text-white text-[#C84B31] border border-[#C84B31]/30 transition-all text-xs font-semibold"
                         title="Eliminar o Archivar Cliente"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -281,21 +281,21 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
                   {/* Client Address */}
                   {client.address && (
-                    <div className="flex items-center gap-1.5 text-xs text-[#6E615A] mt-2">
+                    <div className="flex items-center gap-1.5 text-xs text-[#6E615A] dark:text-[#A8A19B] mt-2">
                       <MapPin className="w-3.5 h-3.5 text-[#E89D4F] shrink-0" />
                       <span className="truncate">{client.address}</span>
                     </div>
                   )}
 
                   {/* Loans Summary Row */}
-                  <div className="grid grid-cols-2 gap-2 mt-3 bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]/70 text-xs">
+                  <div className="grid grid-cols-2 gap-2 mt-3 bg-[#FAF8F5] dark:bg-[#121110] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#332F2C] text-xs">
                     <div>
-                      <span className="text-[#6E615A] block">Total Prestaron:</span>
-                      <strong className="text-[#2C221E]">{formatCurrency(totalBorrowed)}</strong>
+                      <span className="text-[#6E615A] dark:text-[#A8A19B] block">Total Prestaron:</span>
+                      <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatCurrency(totalBorrowed)}</strong>
                     </div>
                     <div>
-                      <span className="text-[#6E615A] block">Saldo Restante:</span>
-                      <strong className={totalRemaining > 0 ? 'text-[#C84B31]' : 'text-[#2D7A5D]'}>
+                      <span className="text-[#6E615A] dark:text-[#A8A19B] block">Saldo Restante:</span>
+                      <strong className={totalRemaining > 0 ? 'text-[#C84B31]' : 'text-[#2D7A5D] dark:text-[#3D9970]'}>
                         {formatCurrency(totalRemaining)}
                       </strong>
                     </div>
@@ -304,7 +304,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
                 <div
                   onClick={() => setSelectedClientForDetail(client)}
-                  className="flex items-center justify-between pt-2 text-xs font-semibold text-[#D96B27] cursor-pointer hover:underline"
+                  className="flex items-center justify-between pt-2 text-xs font-semibold text-[#D96B27] dark:text-[#E07A5F] cursor-pointer hover:underline"
                 >
                   <span>Ver préstamos e historial completo</span>
                   <ChevronRight className="w-4 h-4" />

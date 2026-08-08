@@ -125,25 +125,25 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
           </div>
 
           {/* Modal Scrollable Body */}
-          <div className="p-5 overflow-y-auto space-y-5 flex-1">
+          <div className="p-5 overflow-y-auto space-y-5 flex-1 bg-white dark:bg-[#1E1C1A] text-[#2C221E] dark:text-[#F3F1EF] transition-colors duration-300">
             {/* Client Info Grid */}
-            <div className="bg-[#FAF8F5] rounded-2xl p-4 border border-[#E6DCD2] grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs relative">
+            <div className="bg-[#FAF8F5] dark:bg-[#121110] rounded-2xl p-4 border border-[#E6DCD2] dark:border-[#332F2C] grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs relative">
               <div>
-                <span className="text-[#6E615A] block">Dirección / Ref:</span>
-                <strong className="text-[#2C221E] block truncate">{client.address || 'No registrada'}</strong>
+                <span className="text-[#6E615A] dark:text-[#A8A19B] block">Dirección / Ref:</span>
+                <strong className="text-[#2C221E] dark:text-[#F3F1EF] block truncate">{client.address || 'No registrada'}</strong>
               </div>
               <div>
-                <span className="text-[#6E615A] block">Total Prestaron:</span>
-                <strong className="text-[#D96B27] font-extrabold block">{formatCurrency(totalCapitalBorrowed)}</strong>
+                <span className="text-[#6E615A] dark:text-[#A8A19B] block">Total Prestaron:</span>
+                <strong className="text-[#D96B27] dark:text-[#E07A5F] font-extrabold block">{formatCurrency(totalCapitalBorrowed)}</strong>
               </div>
               <div>
-                <span className="text-[#6E615A] block">Total Pagado:</span>
-                <strong className="text-[#2D7A5D] font-extrabold block">{formatCurrency(totalPaidByClient)}</strong>
+                <span className="text-[#6E615A] dark:text-[#A8A19B] block">Total Pagado:</span>
+                <strong className="text-[#2D7A5D] dark:text-[#3D9970] font-extrabold block">{formatCurrency(totalPaidByClient)}</strong>
               </div>
               {client.notes && (
-                <div className="col-span-2 sm:col-span-3 pt-2 border-t border-[#E6DCD2]">
-                  <span className="text-[#6E615A] block">Observaciones de Cobro:</span>
-                  <p className="text-[#2C221E] italic mt-0.5">{client.notes}</p>
+                <div className="col-span-2 sm:col-span-3 pt-2 border-t border-[#E6DCD2] dark:border-[#332F2C]">
+                  <span className="text-[#6E615A] dark:text-[#A8A19B] block">Observaciones de Cobro:</span>
+                  <p className="text-[#2C221E] dark:text-[#F3F1EF] italic mt-0.5">{client.notes}</p>
                 </div>
               )}
             </div>
@@ -157,7 +157,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
                     activeTab === 'LOANS'
                       ? 'terracotta-gradient text-white shadow-xs'
-                      : 'bg-[#FAF8F5] text-[#6E615A] hover:bg-[#F5F0EB] border border-[#E6DCD2]'
+                      : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] hover:bg-[#F5F0EB] dark:hover:bg-[#332F2C]/40 border border-[#E6DCD2] dark:border-[#332F2C]'
                   }`}
                 >
                   <CreditCard className="w-3.5 h-3.5" />
@@ -169,7 +169,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
                     activeTab === 'PAYMENTS'
                       ? 'terracotta-gradient text-white shadow-xs'
-                      : 'bg-[#FAF8F5] text-[#6E615A] hover:bg-[#F5F0EB] border border-[#E6DCD2]'
+                      : 'bg-[#FAF8F5] dark:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B] hover:bg-[#F5F0EB] dark:hover:bg-[#332F2C]/40 border border-[#E6DCD2] dark:border-[#332F2C]'
                   }`}
                 >
                   <History className="w-3.5 h-3.5" />
@@ -193,7 +193,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
             {activeTab === 'LOANS' && (
               <div className="space-y-3">
                 {loans.length === 0 ? (
-                  <div className="text-center py-6 text-xs text-[#6E615A] bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]">
+                  <div className="text-center py-6 text-xs text-[#6E615A] dark:text-[#A8A19B] bg-[#FAF8F5] dark:bg-[#121110] rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C]">
                     Este cliente no tiene préstamos registrados.
                   </div>
                 ) : (
@@ -204,17 +204,17 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                     return (
                       <div
                         key={loan.id}
-                        className="bg-white rounded-2xl p-4 border border-[#E6DCD2] warm-shadow space-y-3"
+                        className="bg-white dark:bg-[#1E1C1A] rounded-2xl p-4 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-3"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span
                               className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
                                 loan.status === 'PAID'
-                                  ? 'bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/30'
+                                  ? 'bg-[#EEF6F2] dark:bg-[#3D9970]/20 text-[#2D7A5D] dark:text-[#3D9970] border border-[#2D7A5D]/30 dark:border-[#3D9970]/30'
                                   : loan.status === 'OVERDUE'
-                                  ? 'bg-[#FDF2F0] text-[#C84B31] border border-[#C84B31]/30'
-                                  : 'bg-[#FDF6EE] text-[#E89D4F] border border-[#E89D4F]/30'
+                                  ? 'bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] border border-[#C84B31]/30'
+                                  : 'bg-[#FDF6EE] dark:bg-[#E89D4F]/20 text-[#E89D4F] border border-[#E89D4F]/30'
                               }`}
                             >
                               {loan.status === 'PAID'
@@ -223,15 +223,15 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                                 ? 'EN MORA'
                                 : 'ACTIVO'}
                             </span>
-                            <span className="text-xs font-bold text-[#6E615A]">
+                            <span className="text-xs font-bold text-[#6E615A] dark:text-[#A8A19B]">
                               {loan.paymentDays} Días de Pago
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-[#6E615A]">
+                          <div className="flex items-center gap-2 text-xs text-[#6E615A] dark:text-[#A8A19B]">
                             <span>Inicio: {formatDatePE(loan.startDate)}</span>
                             <button
                               onClick={() => setSelectedLoanForEdit(loan)}
-                              className="p-1 rounded-lg bg-[#FAF8F5] hover:bg-[#F5F0EB] text-[#D96B27] border border-[#E6DCD2] transition-all cursor-pointer"
+                              className="p-1 rounded-lg bg-[#FAF8F5] dark:bg-[#121110] hover:bg-[#F5F0EB] dark:hover:bg-[#332F2C]/50 text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#332F2C] transition-all cursor-pointer"
                               title="Editar Condiciones del Préstamo"
                             >
                               <Pencil className="w-3.5 h-3.5" />
@@ -239,45 +239,45 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 text-xs bg-[#FAF8F5] p-3 rounded-xl border border-[#E6DCD2]/60">
+                        <div className="grid grid-cols-3 gap-2 text-xs bg-[#FAF8F5] dark:bg-[#121110] p-3 rounded-xl border border-[#E6DCD2]/60 dark:border-[#332F2C]">
                           <div>
-                            <span className="text-[#6E615A] block">Capital:</span>
-                            <strong className="text-[#2C221E]">{formatCurrency(loan.capital)}</strong>
+                            <span className="text-[#6E615A] dark:text-[#A8A19B] block">Capital:</span>
+                            <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{formatCurrency(loan.capital)}</strong>
                           </div>
                           <div>
-                            <span className="text-[#6E615A] block">Total (20%):</span>
-                            <strong className="text-[#D96B27]">{formatCurrency(loan.totalToPay)}</strong>
+                            <span className="text-[#6E615A] dark:text-[#A8A19B] block">Total (20%):</span>
+                            <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(loan.totalToPay)}</strong>
                           </div>
                           <div>
-                            <span className="text-[#6E615A] block">Saldo Restante:</span>
+                            <span className="text-[#6E615A] dark:text-[#A8A19B] block">Saldo Restante:</span>
                             <strong className="text-[#C84B31]">{formatCurrency(loan.remainingAmount)}</strong>
                           </div>
                         </div>
 
                         {/* Progress Bar */}
                         <div>
-                          <div className="flex justify-between text-[11px] font-semibold text-[#6E615A] mb-1">
+                          <div className="flex justify-between text-[11px] font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                             <span>
                               Día {loan.paidDaysCount}/{loan.paymentDays} ({formatCurrency(loan.dailyPaymentAmount)}/día)
                             </span>
-                            <span className="text-[#2D7A5D]">{percent}% Pagado</span>
+                            <span className="text-[#2D7A5D] dark:text-[#3D9970]">{percent}% Pagado</span>
                           </div>
-                          <div className="w-full bg-[#E6DCD2] rounded-full h-2 overflow-hidden">
+                          <div className="w-full bg-[#E6DCD2] dark:bg-[#332F2C] rounded-full h-2 overflow-hidden">
                             <div
-                              className="bg-[#2D7A5D] h-2 rounded-full"
+                              className="bg-[#2D7A5D] dark:bg-[#3D9970] h-2 rounded-full"
                               style={{ width: `${percent}%` }}
                             />
                           </div>
                         </div>
 
                         {/* Payment History inside Loan */}
-                        <div className="pt-2 border-t border-[#E6DCD2]/60">
-                          <span className="text-[11px] font-bold text-[#6E615A] flex items-center gap-1 mb-2">
+                        <div className="pt-2 border-t border-[#E6DCD2]/60 dark:border-[#332F2C]">
+                          <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#A8A19B] flex items-center gap-1 mb-2">
                             <History className="w-3.5 h-3.5 text-[#E89D4F]" />
                             Historial de Cobros Recibidos ({loanPayments.length}):
                           </span>
                           {loanPayments.length === 0 ? (
-                            <span className="text-[11px] text-[#A89B92] italic">
+                            <span className="text-[11px] text-[#A89B92] dark:text-[#A8A19B] italic">
                               Aún no se han registrado pagos para este préstamo.
                             </span>
                           ) : (
@@ -285,19 +285,19 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                               {loanPayments.map((pay) => (
                                 <div
                                   key={pay.id}
-                                  className={`flex items-center justify-between bg-[#EEF6F2]/40 p-2.5 rounded-xl text-[11px] transition-all ${
+                                  className={`flex items-center justify-between bg-[#EEF6F2]/40 dark:bg-[#3D9970]/10 p-2.5 rounded-xl text-[11px] transition-all ${
                                     deletingPaymentId === pay.id ? 'opacity-50 pointer-events-none' : ''
                                   }`}
                                 >
                                   <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2D7A5D]" />
-                                    <span className="font-medium text-[#2C221E]">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2D7A5D] dark:text-[#3D9970]" />
+                                    <span className="font-medium text-[#2C221E] dark:text-[#F3F1EF]">
                                       {pay.notes || 'Pago del día'}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-[#6E615A]">{formatDatePE(pay.date)}</span>
-                                    <strong className="text-[#2D7A5D] font-bold">
+                                    <span className="text-[#6E615A] dark:text-[#A8A19B]">{formatDatePE(pay.date)}</span>
+                                    <strong className="text-[#2D7A5D] dark:text-[#3D9970] font-bold">
                                       +{formatCurrency(pay.amount)}
                                     </strong>
                                     
@@ -306,7 +306,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                                       <button
                                         type="button"
                                         onClick={() => setSelectedPaymentForReceipt({ payment: pay, loan })}
-                                        className="p-1 rounded-lg text-[#2D7A5D] hover:text-[#D96B27] hover:bg-[#EEF6F2] border border-[#2D7A5D]/20 hover:border-[#D96B27]/30 transition-all cursor-pointer"
+                                        className="p-1 rounded-lg text-[#2D7A5D] dark:text-[#3D9970] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#EEF6F2] dark:hover:bg-[#3D9970]/20 border border-[#2D7A5D]/20 dark:border-[#3D9970]/30 transition-all cursor-pointer"
                                         title="Generar / Reenviar Constancia de Pago"
                                       >
                                         <Receipt className="w-3.5 h-3.5" />
@@ -316,7 +316,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                                         <button
                                           type="button"
                                           onClick={() => setEditingPayment(pay)}
-                                          className="p-1 rounded-lg text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FAF8F5] border border-[#E6DCD2] transition-all cursor-pointer"
+                                          className="p-1 rounded-lg text-[#6E615A] dark:text-[#A8A19B] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FAF8F5] dark:hover:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] transition-all cursor-pointer"
                                           title="Editar este pago"
                                         >
                                           <Pencil className="w-3.5 h-3.5" />
@@ -328,7 +328,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                                           type="button"
                                           onClick={() => handleDeleteClick(pay)}
                                           disabled={deletingPaymentId === pay.id}
-                                          className="p-1 rounded-lg text-[#A89B92] hover:text-[#DC2626] hover:bg-[#FDF2F0] border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
+                                          className="p-1 rounded-lg text-[#A89B92] dark:text-[#A8A19B] hover:text-[#DC2626] hover:bg-[#FDF2F0] dark:hover:bg-[#C84B31]/20 border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
                                           title="Anular este pago"
                                         >
                                           <Trash2 className={`w-3.5 h-3.5 ${deletingPaymentId === pay.id ? 'animate-spin' : ''}`} />
@@ -352,7 +352,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
             {activeTab === 'PAYMENTS' && (
               <div className="space-y-3">
                 {payments.length === 0 ? (
-                  <div className="text-center py-8 text-xs text-[#6E615A] bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]">
+                  <div className="text-center py-8 text-xs text-[#6E615A] dark:text-[#A8A19B] bg-[#FAF8F5] dark:bg-[#121110] rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C]">
                     No se han registrado pagos para este cliente.
                   </div>
                 ) : (
@@ -363,32 +363,32 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                       return (
                         <div
                           key={pay.id}
-                          className={`bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-3 flex justify-between items-center text-xs transition-all hover:border-[#D96B27]/40 ${
+                          className={`bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl p-3 flex justify-between items-center text-xs transition-all hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 ${
                             deletingPaymentId === pay.id ? 'opacity-50 pointer-events-none' : ''
                           }`}
                         >
                           <div>
                             <div className="flex items-center gap-2">
-                              <strong className="text-[#2C221E] text-sm font-extrabold">
+                              <strong className="text-[#2C221E] dark:text-[#F3F1EF] text-sm font-extrabold">
                                 +{formatCurrency(pay.amount)}
                               </strong>
                               {pay.dayNumber && (
-                                <span className="bg-[#E89D4F]/20 text-[#2C221E] font-semibold text-[10px] px-2 py-0.5 rounded-full border border-[#E89D4F]/30">
+                                <span className="bg-[#E89D4F]/20 text-[#2C221E] dark:text-[#F3F1EF] font-semibold text-[10px] px-2 py-0.5 rounded-full border border-[#E89D4F]/30">
                                   Día {pay.dayNumber}
                                 </span>
                               )}
                             </div>
-                            <span className="text-[#6E615A] text-xs">
+                            <span className="text-[#6E615A] dark:text-[#A8A19B] text-xs">
                               {formatDatePE(pay.date)} • {pay.notes || 'Abono de préstamo'}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-1">
-                            {/* Constancia / Compartir Button - Positioned to the left of Edit (Pencil) and Delete (Trash2) */}
+                            {/* Constancia / Compartir Button */}
                             <button
                               type="button"
                               onClick={() => setSelectedPaymentForReceipt({ payment: pay, loan: relatedLoan })}
-                              className="p-1.5 rounded-xl text-[#2D7A5D] hover:text-[#D96B27] hover:bg-[#EEF6F2] border border-[#2D7A5D]/20 hover:border-[#D96B27]/30 transition-all cursor-pointer flex items-center gap-1"
+                              className="p-1.5 rounded-xl text-[#2D7A5D] dark:text-[#3D9970] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#EEF6F2] dark:hover:bg-[#3D9970]/20 border border-[#2D7A5D]/20 dark:border-[#3D9970]/30 transition-all cursor-pointer flex items-center gap-1"
                               title="Generar / Reenviar Constancia de Pago"
                             >
                               <Receipt className="w-3.5 h-3.5" />
@@ -398,7 +398,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setEditingPayment(pay)}
-                                className="p-1.5 rounded-xl text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FAF8F5] border border-[#E6DCD2] transition-all cursor-pointer"
+                                className="p-1.5 rounded-xl text-[#6E615A] dark:text-[#A8A19B] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FAF8F5] dark:hover:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] transition-all cursor-pointer"
                                 title="Editar este pago"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
@@ -410,7 +410,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                                 type="button"
                                 onClick={() => handleDeleteClick(pay)}
                                 disabled={deletingPaymentId === pay.id}
-                                className="p-1.5 rounded-xl text-[#A89B92] hover:text-[#DC2626] hover:bg-[#FDF2F0] border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
+                                className="p-1.5 rounded-xl text-[#A89B92] dark:text-[#A8A19B] hover:text-[#DC2626] hover:bg-[#FDF2F0] dark:hover:bg-[#C84B31]/20 border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
                                 title="Anular / Eliminar este pago"
                               >
                                 <Trash2 className={`w-3.5 h-3.5 ${deletingPaymentId === pay.id ? 'animate-spin' : ''}`} />
@@ -427,10 +427,10 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
           </div>
 
           {/* Modal Footer */}
-          <div className="p-4 bg-[#FAF8F5] border-t border-[#E6DCD2] flex justify-end shrink-0">
+          <div className="p-4 bg-[#FAF8F5] dark:bg-[#121110] border-t border-[#E6DCD2] dark:border-[#332F2C] flex justify-end shrink-0">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 bg-white border border-[#E6DCD2] text-[#6E615A] font-bold text-xs rounded-xl hover:bg-[#F5F0EB] cursor-pointer"
+              className="px-5 py-2.5 bg-white dark:bg-[#1E1C1A] border border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#A8A19B] font-bold text-xs rounded-xl hover:bg-[#F5F0EB] dark:hover:bg-[#332F2C]/50 cursor-pointer"
             >
               Cerrar
             </button>

@@ -82,19 +82,19 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 border border-[#E6DCD2] warm-shadow-lg relative overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-[#E6DCD2] pb-4">
+      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl max-w-lg w-full p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow-lg relative overflow-hidden max-h-[90vh] overflow-y-auto transition-colors duration-300">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#332F2C] pb-4">
           <div>
-            <span className="text-xs font-bold text-[#D96B27] uppercase tracking-wider">
+            <span className="text-xs font-bold text-[#D96B27] dark:text-[#E07A5F] uppercase tracking-wider">
               Edición de Condiciones del Préstamo
             </span>
-            <h3 className="text-lg font-extrabold text-[#2C221E]">
+            <h3 className="text-lg font-extrabold text-[#2C221E] dark:text-[#F3F1EF]">
               {loan.clientName}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-[#FAF8F5] text-[#6E615A]"
+            className="p-2 rounded-full hover:bg-[#FAF8F5] dark:hover:bg-[#121110] text-[#6E615A] dark:text-[#A8A19B]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -103,11 +103,11 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
         <form onSubmit={handleSubmit} className="py-4 space-y-4">
           {/* Capital Input */}
           <div>
-            <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
               Monto Prestado en Soles (S/.):
             </label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-base text-[#D96B27]">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-base text-[#D96B27] dark:text-[#E07A5F]">
                 S/.
               </span>
               <input
@@ -116,7 +116,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
                 min="1"
                 value={capital || ''}
                 onChange={(e) => setCapital(e.target.value === '' ? 0 : Number(e.target.value))}
-                className="w-full pl-11 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-base font-extrabold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                className="w-full pl-11 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-base font-extrabold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                 required
               />
             </div>
@@ -124,7 +124,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
 
           {/* Días de pago acordados */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-[#6E615A]">
+            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B]">
               Días de Pago Acordados:
             </label>
             <input
@@ -134,7 +134,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
               value={paymentDaysInput}
               onChange={(e) => setPaymentDaysInput(e.target.value)}
               placeholder="Número de días (1 - 365)"
-              className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-bold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40 focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
               required
             />
           </div>
@@ -142,55 +142,55 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
           {/* Dates */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                 Fecha de Inicio:
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+                className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-bold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                 Vencimiento (+{parsedPaymentDays} días):
               </label>
-              <div className="px-3 py-2 bg-[#EEF6F2] border border-[#2D7A5D]/30 rounded-xl text-xs font-black text-[#2D7A5D]">
+              <div className="px-3 py-2 bg-[#EEF6F2] dark:bg-[#3D9970]/15 border border-[#2D7A5D]/30 dark:border-[#3D9970]/30 rounded-xl text-xs font-black text-[#2D7A5D] dark:text-[#3D9970]">
                 {formatDatePE(dueDate)}
               </div>
             </div>
           </div>
 
           {/* Live Recalculated Breakdown */}
-          <div className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-4 text-xs space-y-2">
+          <div className="bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl p-4 text-xs space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-[#6E615A]">Interés (20%):</span>
+              <span className="text-[#6E615A] dark:text-[#A8A19B]">Interés (20%):</span>
               <strong className="text-[#E89D4F]">+{formatCurrency(breakdown.interestAmount)}</strong>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[#6E615A]">Total a Cancelar:</span>
-              <strong className="text-[#2C221E] font-black text-sm">{formatCurrency(breakdown.totalToPay)}</strong>
+              <span className="text-[#6E615A] dark:text-[#A8A19B]">Total a Cancelar:</span>
+              <strong className="text-[#2C221E] dark:text-[#F3F1EF] font-black text-sm">{formatCurrency(breakdown.totalToPay)}</strong>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-[#E6DCD2]">
-              <span className="text-[#6E615A] font-semibold">Nuevo Cobro Diario Sugerido:</span>
-              <strong className="text-[#D96B27] font-black text-sm">
+            <div className="flex justify-between items-center pt-2 border-t border-[#E6DCD2] dark:border-[#332F2C]">
+              <span className="text-[#6E615A] dark:text-[#A8A19B] font-semibold">Nuevo Cobro Diario Sugerido:</span>
+              <strong className="text-[#D96B27] dark:text-[#E07A5F] font-black text-sm">
                 {formatCurrency(breakdown.dailyPaymentAmount)} / día
               </strong>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
               Notas / Observaciones:
             </label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+              className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
             />
           </div>
 
@@ -198,7 +198,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] text-[#6E615A] font-bold text-xs hover:bg-[#FAF8F5]"
+              className="flex-1 py-3 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#A8A19B] font-bold text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#121110]"
             >
               Cancelar
             </button>

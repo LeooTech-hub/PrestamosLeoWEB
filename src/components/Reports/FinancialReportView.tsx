@@ -312,11 +312,11 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
       {/* Header & Period Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-[#D96B27]" />
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+            <BarChart3 className="w-6 h-6 text-[#D96B27] dark:text-[#E07A5F]" />
             Reporte Financiero
           </h2>
-          <p className="text-xs sm:text-sm text-[#6E615A] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
             Balance de caja, recaudo real vs. proyectado, gastos operativos y ganancia neta en Soles (S/.).
           </p>
         </div>
@@ -325,7 +325,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
           {/* Export Buttons */}
           <button
             onClick={handleExportToPDF}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#D96B27] hover:bg-[#c25a1d] text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#D96B27] dark:bg-[#E07A5F] hover:bg-[#c25a1d] text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
             title="Exportar a PDF"
           >
             <span>Exportar a PDF</span>
@@ -333,20 +333,20 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
 
           <button
             onClick={handleExportToExcel}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2D7A5D] hover:bg-[#23634b] text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2D7A5D] dark:bg-[#3D9970] hover:bg-[#23634b] text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
             title="Exportar a Excel"
           >
             <span>Exportar a Excel</span>
           </button>
 
           {/* Period Pills */}
-          <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-[#E6DCD2] warm-shadow">
+          <div className="flex items-center gap-1 bg-white dark:bg-[#1E1C1A] p-1.5 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300">
             <button
               onClick={() => onPeriodChange('WEEKLY')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 period === 'WEEKLY'
                   ? 'terracotta-gradient text-white shadow-xs'
-                  : 'text-[#6E615A] hover:text-[#2C221E]'
+                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
               }`}
             >
               Semanal
@@ -356,7 +356,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 period === 'BIWEEKLY'
                   ? 'terracotta-gradient text-white shadow-xs'
-                  : 'text-[#6E615A] hover:text-[#2C221E]'
+                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
               }`}
             >
               Quincenal
@@ -366,7 +366,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 period === 'MONTHLY'
                   ? 'terracotta-gradient text-white shadow-xs'
-                  : 'text-[#6E615A] hover:text-[#2C221E]'
+                  : 'text-[#6E615A] dark:text-[#A8A19B] hover:text-[#2C221E] dark:hover:text-[#F3F1EF]'
               }`}
             >
               Mensual
@@ -376,10 +376,10 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
       </div>
 
       {/* Period Banner info */}
-      <div className="bg-[#FAF8F5] rounded-2xl p-3.5 border border-[#E6DCD2] flex items-center justify-between text-xs text-[#6E615A]">
+      <div className="bg-[#FAF8F5] dark:bg-[#121110] rounded-2xl p-3.5 border border-[#E6DCD2] dark:border-[#332F2C] flex items-center justify-between text-xs text-[#6E615A] dark:text-[#A8A19B] transition-colors duration-300">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-[#E89D4F]" />
-          <span>Período evaluado: <strong className="text-[#2C221E]">{report.periodLabel}</strong></span>
+          <span>Período evaluado: <strong className="text-[#2C221E] dark:text-[#F3F1EF]">{report.periodLabel}</strong></span>
         </div>
         <div>
           <span>{report.startDate} — {report.endDate}</span>
@@ -389,55 +389,55 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
       {/* Primary KPI Grid (4 Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Capital Invertido */}
-        <div className="bg-white rounded-3xl p-5 border border-[#E6DCD2] warm-shadow space-y-2">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#6E615A]">Capital Invertido</span>
-            <div className="w-8 h-8 rounded-xl bg-[#FDF3ED] text-[#D96B27] flex items-center justify-center">
+            <span className="text-xs font-bold text-[#6E615A] dark:text-[#A8A19B]">Capital Invertido</span>
+            <div className="w-8 h-8 rounded-xl bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-[#2C221E]">
+          <p className="text-2xl font-black text-[#2C221E] dark:text-[#F3F1EF]">
             {formatCurrency(report.capitalInvested)}
           </p>
-          <span className="text-[11px] text-[#6E615A] block">
+          <span className="text-[11px] text-[#6E615A] dark:text-[#A8A19B] block">
             Dinero prestado en el período
           </span>
         </div>
 
         {/* Card 2: Recaudo Real */}
-        <div className="bg-white rounded-3xl p-5 border border-[#E6DCD2] warm-shadow space-y-2">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#6E615A]">Recaudo Real</span>
-            <div className="w-8 h-8 rounded-xl bg-[#EEF6F2] text-[#2D7A5D] flex items-center justify-center">
+            <span className="text-xs font-bold text-[#6E615A] dark:text-[#A8A19B]">Recaudo Real</span>
+            <div className="w-8 h-8 rounded-xl bg-[#EEF6F2] dark:bg-[#3D9970]/15 text-[#2D7A5D] dark:text-[#3D9970] flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-[#2D7A5D]">
+          <p className="text-2xl font-black text-[#2D7A5D] dark:text-[#3D9970]">
             {formatCurrency(report.realCollected)}
           </p>
-          <span className="text-[11px] text-[#6E615A] block">
+          <span className="text-[11px] text-[#6E615A] dark:text-[#A8A19B] block">
             Efectivo ingresado a caja
           </span>
         </div>
 
         {/* Card 3: Gastos Operativos */}
-        <div className="bg-white rounded-3xl p-5 border border-[#E6DCD2] warm-shadow space-y-2">
+        <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#6E615A]">Gastos Operativos</span>
-            <div className="w-8 h-8 rounded-xl bg-[#FDF2F0] text-[#C84B31] flex items-center justify-center">
+            <span className="text-xs font-bold text-[#6E615A] dark:text-[#A8A19B]">Gastos Operativos</span>
+            <div className="w-8 h-8 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 text-[#C84B31] flex items-center justify-center">
               <MinusCircle className="w-4 h-4" />
             </div>
           </div>
           <p className="text-2xl font-black text-[#C84B31]">
             {formatCurrency(report.totalExpenses)}
           </p>
-          <span className="text-[11px] text-[#6E615A] block">
+          <span className="text-[11px] text-[#6E615A] dark:text-[#A8A19B] block">
             {report.expensesList.length} egresos registrados
           </span>
         </div>
 
         {/* Card 4: Ganancia Neta */}
-        <div className="bg-gradient-to-br from-[#2C221E] to-[#382C27] text-white rounded-3xl p-5 shadow-lg space-y-2 border border-[#4A3B35]">
+        <div className="bg-gradient-to-br from-[#2C221E] to-[#382C27] dark:from-[#1E1C1A] dark:to-[#121110] text-white rounded-3xl p-5 shadow-lg space-y-2 border border-[#4A3B35] dark:border-[#332F2C]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-[#D5C8BC]">Ganancia Neta</span>
             <div className="w-8 h-8 rounded-xl bg-[#E89D4F]/20 text-[#E89D4F] flex items-center justify-center border border-[#E89D4F]/30">
@@ -454,44 +454,44 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
       </div>
 
       {/* Recaudo Real vs. Proyectado Comparison */}
-      <div className="bg-white rounded-3xl p-6 border border-[#E6DCD2] warm-shadow space-y-4">
-        <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 pb-3">
+      <div className="bg-white dark:bg-[#1E1C1A] rounded-3xl p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-4">
+        <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 dark:border-[#332F2C] pb-3">
           <div>
-            <h3 className="font-extrabold text-base text-[#2C221E] flex items-center gap-2">
-              <PieChart className="w-5 h-5 text-[#D96B27]" />
+            <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+              <PieChart className="w-5 h-5 text-[#D96B27] dark:text-[#E07A5F]" />
               Recaudo Real vs. Proyectado
             </h3>
-            <p className="text-xs text-[#6E615A]">
+            <p className="text-xs text-[#6E615A] dark:text-[#A8A19B]">
               Comparativa del dinero ingresado a caja frente al total esperado.
             </p>
           </div>
-          <span className="bg-[#EEF6F2] text-[#2D7A5D] font-extrabold text-sm px-3 py-1 rounded-full border border-[#2D7A5D]/30">
+          <span className="bg-[#EEF6F2] dark:bg-[#3D9970]/20 text-[#2D7A5D] dark:text-[#3D9970] font-extrabold text-sm px-3 py-1 rounded-full border border-[#2D7A5D]/30 dark:border-[#3D9970]/30">
             {collectionPercent}% Cobrado
           </span>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-2">
-          <div className="w-full bg-[#E6DCD2] rounded-full h-4 overflow-hidden">
+          <div className="w-full bg-[#E6DCD2] dark:bg-[#332F2C] rounded-full h-4 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-[#E89D4F] to-[#2D7A5D] h-4 rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-[#E89D4F] to-[#2D7A5D] dark:to-[#3D9970] h-4 rounded-full transition-all duration-500"
               style={{ width: `${collectionPercent}%` }}
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2">
-            <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]">
-              <span className="text-[#6E615A] block">Recaudo Real Ingresado:</span>
-              <strong className="text-base text-[#2D7A5D] font-black">{formatCurrency(report.realCollected)}</strong>
+            <div className="bg-[#FAF8F5] dark:bg-[#121110] p-3 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C]">
+              <span className="text-[#6E615A] dark:text-[#A8A19B] block">Recaudo Real Ingresado:</span>
+              <strong className="text-base text-[#2D7A5D] dark:text-[#3D9970] font-black">{formatCurrency(report.realCollected)}</strong>
             </div>
 
-            <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]">
-              <span className="text-[#6E615A] block">Recaudo Proyectado (Total):</span>
-              <strong className="text-base text-[#2C221E] font-black">{formatCurrency(report.projectedCollection)}</strong>
+            <div className="bg-[#FAF8F5] dark:bg-[#121110] p-3 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C]">
+              <span className="text-[#6E615A] dark:text-[#A8A19B] block">Recaudo Proyectado (Total):</span>
+              <strong className="text-base text-[#2C221E] dark:text-[#F3F1EF] font-black">{formatCurrency(report.projectedCollection)}</strong>
             </div>
 
-            <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]">
-              <span className="text-[#6E615A] block">Faltante por Recaudar:</span>
+            <div className="bg-[#FAF8F5] dark:bg-[#121110] p-3 rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C]">
+              <span className="text-[#6E615A] dark:text-[#A8A19B] block">Faltante por Recaudar:</span>
               <strong className="text-base text-[#C84B31] font-black">{formatCurrency(report.remainingToCollect)}</strong>
             </div>
           </div>
@@ -501,20 +501,20 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
       {/* Operational Expenses Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Add Expense Form (5 cols) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] warm-shadow space-y-4">
-          <div className="border-b border-[#E6DCD2]/60 pb-3">
-            <h3 className="font-extrabold text-base text-[#2C221E] flex items-center gap-2">
+        <div className="lg:col-span-5 bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-4">
+          <div className="border-b border-[#E6DCD2]/60 dark:border-[#332F2C] pb-3">
+            <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
               <MinusCircle className="w-5 h-5 text-[#C84B31]" />
               Registrar Gasto Operativo
             </h3>
-            <p className="text-xs text-[#6E615A] mt-0.5">
+            <p className="text-xs text-[#6E615A] dark:text-[#A8A19B] mt-0.5">
               Gastos de ruta (combustible, transporte, copias, alimentación, etc.).
             </p>
           </div>
 
           <form onSubmit={handleAddExpenseSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                 Monto del Gasto (S/.):
               </label>
               <div className="relative">
@@ -528,20 +528,20 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
                   value={amount || ''}
                   onChange={(e) => setAmount(Number(e.target.value))}
                   placeholder="Monto"
-                  className="w-full pl-10 pr-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-sm font-bold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
+                  className="w-full pl-10 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-sm font-bold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                 Categoría:
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-semibold text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs sm:text-sm font-semibold text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
               >
                 <option value="COMBUSTIBLE">⛽ Combustible / Gasolina</option>
                 <option value="TRANSPORTE">🛵 Pasajes / Transporte</option>
@@ -552,7 +552,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#6E615A] mb-1">
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#A8A19B] mb-1">
                 Descripción / Detalle:
               </label>
               <input
@@ -560,7 +560,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descripción del gasto"
-                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#121110] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#F3F1EF] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40"
                 required
               />
             </div>
@@ -577,10 +577,10 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
         </div>
 
         {/* Expense History Table (7 cols) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] warm-shadow space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 pb-3">
-            <h3 className="font-extrabold text-base text-[#2C221E] flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-[#6E615A]" />
+        <div className="lg:col-span-7 bg-white dark:bg-[#1E1C1A] rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow transition-colors duration-300 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E6DCD2]/60 dark:border-[#332F2C] pb-3">
+            <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F1EF] flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-[#6E615A] dark:text-[#A8A19B]" />
               Gastos Registrados ({report.expensesList.length})
             </h3>
             <span className="text-xs font-bold text-[#C84B31]">
@@ -589,7 +589,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
           </div>
 
           {report.expensesList.length === 0 ? (
-            <div className="text-center py-10 text-xs text-[#6E615A]">
+            <div className="text-center py-10 text-xs text-[#6E615A] dark:text-[#A8A19B]">
               No hay gastos registrados en este período.
             </div>
           ) : (
@@ -597,18 +597,18 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
               {report.expensesList.map((exp: OperationalExpense) => (
                 <div
                   key={exp.id}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-[#FDF2F0]/60 border border-[#C84B31]/20 text-xs"
+                  className="flex items-center justify-between p-3 rounded-2xl bg-[#FDF2F0]/60 dark:bg-[#C84B31]/10 border border-[#C84B31]/20 dark:border-[#C84B31]/30 text-xs transition-colors duration-300"
                 >
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#2C221E]">
+                      <span className="font-bold text-[#2C221E] dark:text-[#F3F1EF]">
                         {exp.description}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#C84B31] border border-[#C84B31]/30">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white dark:bg-[#121110] text-[#C84B31] border border-[#C84B31]/30">
                         {exp.category}
                       </span>
                     </div>
-                    <span className="text-[10px] text-[#6E615A] block">
+                    <span className="text-[10px] text-[#6E615A] dark:text-[#A8A19B] block">
                       {formatDatePE(exp.date)}
                     </span>
                   </div>
@@ -620,7 +620,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
                     {onUpdateExpense && (
                       <button
                         onClick={() => setEditingExpense(exp)}
-                        className="p-1.5 rounded-lg hover:bg-white text-[#D96B27] transition-all"
+                        className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#121110] text-[#D96B27] dark:text-[#E07A5F] transition-all"
                         title="Editar gasto"
                       >
                         <Pencil className="w-4 h-4" />
@@ -628,7 +628,7 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
                     )}
                     <button
                       onClick={() => onDeleteExpense(exp.id)}
-                      className="p-1.5 rounded-lg hover:bg-white text-[#C84B31] transition-all"
+                      className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#121110] text-[#C84B31] transition-all"
                       title="Eliminar gasto"
                     >
                       <Trash2 className="w-4 h-4" />
