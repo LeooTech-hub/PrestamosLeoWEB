@@ -48,19 +48,15 @@ export const Header: React.FC<HeaderProps> = ({
     month: 'long',
   }).format(currentTime) : '';
 
-  const part2Year = currentTime ? new Intl.DateTimeFormat('es-PE', {
-    year: 'numeric'
-  }).format(currentTime) : '';
-
   const formattedTime = currentTime ? new Intl.DateTimeFormat('es-PE', {
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   }).format(currentTime).toUpperCase() : '';
 
   const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
   const dateLine1 = capitalize(part1Date);
-  const dateLine2 = currentTime ? `De ${part2Year} | ${formattedTime}` : '';
+  const dateLine2 = currentTime ? `Hora: ${formattedTime}` : '';
 
   const alertsCount = alerts.length;
 
@@ -86,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="text-lg font-bold tracking-tight text-[#2C221E] dark:text-[#EAE0D5] truncate leading-none">
                 Prestamos<span className="text-[#D96B27] dark:text-[#E07A5F]">Leo</span>
               </h1>
-              <div className="flex flex-col text-xs font-semibold text-neutral-700 dark:text-neutral-300 capitalize truncate mt-0.5">
+              <div className="flex flex-col text-xs font-semibold text-stone-700 dark:text-stone-300 capitalize truncate mt-0.5">
                 <div className="flex items-center gap-1.5 truncate">
                   <Calendar className="w-3.5 h-3.5 text-[#E89D4F] shrink-0" />
                   <span className="truncate">{dateLine1}</span>

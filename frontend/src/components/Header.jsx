@@ -37,12 +37,8 @@ export function Header({
     month: 'long',
   }).format(currentTime);
 
-  const part2Year = new Intl.DateTimeFormat('es-PE', {
-    year: 'numeric'
-  }).format(currentTime);
-
   const formattedTime = new Intl.DateTimeFormat('es-PE', {
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   }).format(currentTime).toUpperCase();
@@ -50,7 +46,7 @@ export function Header({
   const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
   
   const dateLine1 = capitalize(part1Date);
-  const dateLine2 = `De ${part2Year} | ${formattedTime}`;
+  const dateLine2 = `Hora: ${formattedTime}`;
   
   const alertsCount = alerts.length;
 
@@ -71,7 +67,7 @@ export function Header({
               <h1 className="font-bold text-lg tracking-tight text-[#2C221E] truncate">
                 Prestamos<span className="text-[#D96B27]">Leo</span>
               </h1>
-              <div className="flex flex-col text-xs font-semibold text-neutral-700 capitalize truncate mt-0.5">
+              <div className="flex flex-col text-xs font-semibold text-stone-700 capitalize truncate mt-0.5">
                 <div className="flex items-center gap-1.5 truncate">
                   <Calendar className="w-3.5 h-3.5 text-[#E89D4F] shrink-0" />
                   <span className="truncate">{dateLine1}</span>
