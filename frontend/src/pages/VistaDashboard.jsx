@@ -45,15 +45,15 @@ export function VistaDashboard({
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="terracotta-gradient text-white p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="terracotta-gradient text-white p-4 sm:p-8 rounded-2xl shadow-sm relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="relative z-10 space-y-1">
-          <span className="bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+          <span className="hidden sm:inline-block bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             PRESTAMOS LEITOTECH
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            PANEL DE ADMINISTRACION DE PRESTAMOS
+          <h2 className="text-xl font-bold tracking-tight">
+            Panel de Préstamos
           </h2>
-          <p className="text-xs sm:text-sm text-white/90 max-w-xl">
+          <p className="hidden sm:block text-xs sm:text-sm text-white/90 max-w-xl">
             Resumen de prestamos, ingresos y gastos
           </p>
         </div>
