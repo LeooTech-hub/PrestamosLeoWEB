@@ -20,9 +20,30 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
-export const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'ADMIN') {
+export const requireAdmin = async (req, res, next) => {
+  if (!req.user || !req.user.id) {
     return res.status(403).json({ message: 'Acceso restringido a administradores' });
   }
-  next();
+
+  // Comparación insensible a mayúsculas del rol en el token
+  const roleFromToken = String(req.user.role || '').toUpperCase();
+
+  if (roleFromToken === 'ADMIN') {
+    return next();
+  }
+
+  // Fallback: si el token no trae rol ADMIN (token antiguo o rol actualizado en BD),
+  // consultar el rol real del usuario directamente en la base de datos
+  try {
+    const pool = (await import('../config/db.js')).default;
+    const [rows] = await pool.query('SELECT role FROM users WHERE id = ?', [req.user.id]);
+
+    if (rows && rows.length > 0 && String(rows[0].role || '').toUpperCase() === 'ADMIN') {
+      return next();
+    }
+  } catch (dbError) {
+    console.error('Error consultando rol de usuario en DB:', dbError.message);
+  }
+
+  return res.status(403).json({ message: 'Acceso restringido a administradores' });
 };
