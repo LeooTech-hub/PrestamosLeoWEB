@@ -46,8 +46,24 @@ export async function initDb() {
 
     await safeAddColumn('clients', 'alias', 'VARCHAR(100) NULL');
     await safeAddColumn('clients', 'route_order', 'INT DEFAULT 0');
+    await safeAddColumn('clients', 'assigned_to_user_id', 'VARCHAR(255) NULL');
+    await safeAddColumn('clients', 'created_by_user_id', 'VARCHAR(255) NULL');
+    await safeAddColumn('clients', 'assigned_to', 'VARCHAR(255) NULL');
+    await safeAddColumn('clients', 'created_by', 'VARCHAR(255) NULL');
     await safeAddColumn('loans', 'penalty_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'mora', 'DECIMAL(10,2) DEFAULT 0.00');
+    await safeAddColumn('loans', 'assigned_to_user_id', 'VARCHAR(255) NULL');
+    await safeAddColumn('loans', 'created_by_user_id', 'VARCHAR(255) NULL');
+    await safeAddColumn('loans', 'assigned_to', 'VARCHAR(255) NULL');
+    await safeAddColumn('loans', 'created_by', 'VARCHAR(255) NULL');
+    
+    // Migrate: add role column to users table if not present
+    await safeAddColumn('users', 'role', "VARCHAR(20) NOT NULL DEFAULT 'COBRADOR'");
+    
+    // Ensure existing default admin user has ADMIN role
+    await pool.query(
+      `UPDATE users SET role = 'ADMIN' WHERE email = 'admin@prestamosleo.com' AND (role IS NULL OR role = 'COBRADOR')`
+    );
 
     // 3. Loans table
     await pool.query(`
@@ -100,6 +116,20 @@ export async function initDb() {
     `);
 
     await safeAddColumn('payments', 'late_fee', 'DECIMAL(10,2) DEFAULT 0.00');
+    await safeAddColumn('payments', 'collected_by', 'VARCHAR(255) NULL');
+
+    // 6. Activity logs table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL,
+        user_name VARCHAR(100) NOT NULL,
+        action_type VARCHAR(50) NOT NULL,
+        description TEXT NOT NULL,
+        amount DECIMAL(10,2) DEFAULT 0.00,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
     // 5. Expenses table
     await pool.query(`
@@ -123,13 +153,13 @@ export async function initDb() {
       const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
       await pool.query(
-        `INSERT INTO users (id, name, email, password_hash, created_at) VALUES (?, ?, ?, ?, ?)`,
-        [userId, 'Administrador Leo', 'admin@prestamosleo.com', passwordHash, createdAt]
+        `INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+        [userId, 'Administrador Leo', 'admin@prestamosleo.com', passwordHash, 'ADMIN', createdAt]
       );
       console.log('✅ Usuario por defecto creado: admin@prestamosleo.com / admin123');
     }
 
-    console.log('✅ Tablas y columnas (alias, route_order, late_fee) inicializadas correctamente en TiDB Cloud.');
+    console.log('✅ Tablas y columnas (alias, route_order, late_fee, activity_logs) inicializadas correctamente en TiDB Cloud.');
   } catch (error) {
     console.error('❌ Error al inicializar la base de datos:', error.message);
   }

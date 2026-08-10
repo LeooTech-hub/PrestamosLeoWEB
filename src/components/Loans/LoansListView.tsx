@@ -34,6 +34,7 @@ interface LoansListViewProps {
     data: { capital: number; paymentDays: number; startDate: string; dueDate?: string; commission?: number; penaltyAmount?: number; notes?: string }
   ) => Promise<void>;
   onDeleteLoan: (loanId: string, mode: 'ARCHIVE' | 'PERMANENT') => Promise<void>;
+  isAdmin?: boolean;
 }
 
 export const LoansListView: React.FC<LoansListViewProps> = ({
@@ -41,6 +42,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
   onRegisterPayment,
   onUpdateLoan,
   onDeleteLoan,
+  isAdmin = true,
 }) => {
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'EXPIRING' | 'OVERDUE' | 'PAID'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -315,13 +317,15 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
 
-                    <button
-                      onClick={() => setSelectedLoanForDelete(loan)}
-                      className="p-2 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 hover:bg-[#C84B31] hover:text-white text-[#C84B31] border border-[#C84B31]/30 active:scale-95 transition-all"
-                      title="Eliminar / Archivar Préstamo"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setSelectedLoanForDelete(loan)}
+                        className="p-2 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 hover:bg-[#C84B31] hover:text-white text-[#C84B31] border border-[#C84B31]/30 active:scale-95 transition-all"
+                        title="Eliminar / Archivar Préstamo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

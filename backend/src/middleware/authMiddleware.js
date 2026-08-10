@@ -19,3 +19,10 @@ export const verifyToken = (req, res, next) => {
     return res.status(401).json({ error: 'Token inválido o expirado' });
   }
 };
+
+export const requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'ADMIN') {
+    return res.status(403).json({ message: 'Acceso restringido a administradores' });
+  }
+  next();
+};

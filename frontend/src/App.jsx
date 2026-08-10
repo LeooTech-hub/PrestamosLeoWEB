@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { QuickCreateLoanModal } from './components/QuickCreateLoanModal';
 import { TrashModal } from './components/TrashModal';
+import { UserManagementModal } from './components/UserManagementModal';
 import { WelcomeModal } from './components/WelcomeModal';
 import { PrivateRoute } from './components/PrivateRoute';
 
@@ -56,6 +57,7 @@ export default function App() {
 
   const [isQuickCreateLoanOpen, setIsQuickCreateLoanOpen] = useState(false);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
@@ -379,6 +381,7 @@ export default function App() {
         onResetDemo={handleResetDemoData}
         onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
         onOpenTrash={() => setIsTrashOpen(true)}
+        onOpenUserManagement={() => setIsUserManagementOpen(true)}
         user={user}
         onLogout={handleLogout}
       />
@@ -387,6 +390,8 @@ export default function App() {
       <Navigation
         pendingCountToday={summary?.pendingClientsTodayCount || 0}
         overdueCount={summary?.overdueCount || 0}
+        onOpenUserManagement={() => setIsUserManagementOpen(true)}
+        user={user}
       />
 
       {/* Main Content Pages Area (Dashboard y Vistas Encapsuladas bajo isAuthenticated) */}
@@ -418,6 +423,7 @@ export default function App() {
                     recentLoans={loans}
                     recentPayments={payments}
                     onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
+                    onOpenUserManagement={() => setIsUserManagementOpen(true)}
                     onUpdatePayment={handleUpdatePayment}
                     onDeletePayment={handleDeletePayment}
                   />
@@ -469,14 +475,18 @@ export default function App() {
               path="/reportes"
               element={
                 <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
-                  <VistaReportes
-                    report={financialReport}
-                    period={reportPeriod}
-                    onPeriodChange={handlePeriodChange}
-                    onAddExpense={handleAddExpense}
-                    onUpdateExpense={handleUpdateExpense}
-                    onDeleteExpense={handleDeleteExpense}
-                  />
+                  {user?.role === 'COBRADOR' ? (
+                    <Navigate to="/ruta-diaria" replace />
+                  ) : (
+                    <VistaReportes
+                      report={financialReport}
+                      period={reportPeriod}
+                      onPeriodChange={handlePeriodChange}
+                      onAddExpense={handleAddExpense}
+                      onUpdateExpense={handleUpdateExpense}
+                      onDeleteExpense={handleDeleteExpense}
+                    />
+                  )}
                 </PrivateRoute>
               }
             />
@@ -511,6 +521,12 @@ export default function App() {
         isOpen={isQuickCreateLoanOpen}
         onClose={() => setIsQuickCreateLoanOpen(false)}
         onSubmitLoan={handleCreateLoan}
+      />
+
+      {/* User Management Modal */}
+      <UserManagementModal
+        isOpen={isUserManagementOpen}
+        onClose={() => setIsUserManagementOpen(false)}
       />
 
       {/* Recycle Bin Trash Modal */}

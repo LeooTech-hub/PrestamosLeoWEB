@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Calendar, Bell, PlusCircle, Trash2, LogOut, User, Sun, Moon } from 'lucide-react';
+import { RefreshCw, Calendar, Bell, PlusCircle, Trash2, LogOut, User, Users, Sun, Moon } from 'lucide-react';
 import { NotificationDropdown } from './NotificationDropdown';
 import { getInitialTheme, applyTheme } from '../utils/themeUtils';
 
@@ -9,7 +9,8 @@ export function Header({
   onOpenQuickCreateLoan,
   onOpenTrash,
   user,
-  onLogout
+  onLogout,
+  onOpenUserManagement,
 }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [theme, setTheme] = useState(() => getInitialTheme());
@@ -49,6 +50,7 @@ export function Header({
   const dateLine2 = `Hora: ${formattedTime}`;
   
   const alertsCount = alerts.length;
+  const isAdmin = !user?.role || user?.role === 'ADMIN';
 
   return (
     <>
@@ -96,8 +98,8 @@ export function Header({
               )}
             </button>
 
-            {/* 2º Historial / Papelera */}
-            {onOpenTrash && (
+            {/* 2º Historial / Papelera (Solo ADMIN) */}
+            {isAdmin && onOpenTrash && (
               <button
                 onClick={onOpenTrash}
                 title="Historial de Borrados"
@@ -129,10 +131,33 @@ export function Header({
               <LogOut className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#E5E7EB]" />
             </button>
 
-            {/* 5º Badge "ADMIN" */}
-            <div className="flex items-center justify-center px-2.5 py-1 rounded-full border border-[#E6DCD2] bg-[#F4EBE1] text-[#D96B27] font-bold text-[11px] shadow-sm">
-              ADMIN
-            </div>
+            {/* 5º Ícono de Usuarios (Solo ADMIN) */}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={onOpenUserManagement}
+                title="Gestión de Usuarios"
+                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#E5E7EB] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all active:scale-95"
+              >
+                <Users className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#E5E7EB]" />
+              </button>
+            )}
+
+            {/* 6º Role Badge */}
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={onOpenUserManagement}
+                title="Gestión de Usuarios"
+                className="bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                ADMIN
+              </button>
+            ) : (
+              <div className="bg-stone-200 text-stone-800 dark:bg-neutral-700 dark:text-neutral-200 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                COBRADOR
+              </div>
+            )}
           </div>
         </div>
       </header>

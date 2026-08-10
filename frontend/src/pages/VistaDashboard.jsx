@@ -21,6 +21,7 @@ export function VistaDashboard({
   recentPayments = [],
   onUpdatePayment,
   onDeletePayment,
+  onOpenUserManagement,
 }) {
   const navigate = useNavigate();
   const [editingPayment, setEditingPayment] = useState(null);
@@ -58,13 +59,22 @@ export function VistaDashboard({
           </p>
         </div>
 
-        <button
-          onClick={() => navigate('/nuevo-cliente')}
-          className="relative z-10 bg-white text-[#D96B27] px-5 py-3 rounded-2xl font-extrabold text-xs shadow-sm hover:bg-[#FAF8F5] active:scale-95 transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Crear Nuevo Préstamo</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap relative z-10">
+          <button
+            onClick={() => navigate('/nuevo-cliente')}
+            className="bg-white text-[#D96B27] px-5 py-3 rounded-2xl font-extrabold text-xs shadow-sm hover:bg-[#FAF8F5] active:scale-95 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Crear Nuevo Préstamo</span>
+          </button>
+          <button 
+            type="button" 
+            onClick={onOpenUserManagement} 
+            className="bg-stone-900 text-white px-4 py-2 rounded-xl font-bold text-sm ml-2 z-50 cursor-pointer flex items-center gap-2 shadow-md hover:bg-black transition-all"
+          >
+            👤 Gestionar Usuarios / Crear Cobrador
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards Grid */}

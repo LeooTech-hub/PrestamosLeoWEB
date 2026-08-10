@@ -9,6 +9,8 @@ export interface Client {
   status: 'ACTIVE' | 'ARCHIVED';
   routeOrder?: number;
   createdAt?: string;
+  assignedTo?: string;
+  createdBy?: string;
 }
 
 export interface Loan {

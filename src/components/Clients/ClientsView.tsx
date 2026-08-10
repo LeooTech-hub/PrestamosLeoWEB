@@ -34,6 +34,7 @@ interface ClientsViewProps {
   onDeleteClient: (clientId: string, mode: 'ARCHIVE' | 'PERMANENT') => Promise<void>;
   onDeletePayment?: (paymentId: string) => Promise<void>;
   onUpdatePayment?: (id: string, data: { amount?: number; date?: string; notes?: string }) => Promise<void>;
+  isAdmin?: boolean;
 }
 
 export const ClientsView: React.FC<ClientsViewProps> = ({
@@ -47,6 +48,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   onDeleteClient,
   onDeletePayment,
   onUpdatePayment,
+  isAdmin = true,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'UP_TO_DATE' | 'OVERDUE' | 'PAID'>('ALL');
@@ -259,16 +261,18 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setClientToDelete(client);
-                        }}
-                        className="p-1.5 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 hover:bg-[#C84B31] hover:text-white text-[#C84B31] border border-[#C84B31]/30 transition-all text-xs font-semibold"
-                        title="Eliminar o Archivar Cliente"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setClientToDelete(client);
+                          }}
+                          className="p-1.5 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 hover:bg-[#C84B31] hover:text-white text-[#C84B31] border border-[#C84B31]/30 transition-all text-xs font-semibold"
+                          title="Eliminar o Archivar Cliente"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 

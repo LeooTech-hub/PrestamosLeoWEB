@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { RefreshCw, Calendar, Bell, PlusCircle, Sun, Moon, LogOut, Trash2 } from 'lucide-react';
+import { RefreshCw, Calendar, Bell, PlusCircle, Sun, Moon, LogOut, Trash2, Users, Shield } from 'lucide-react';
 import { AlertNotification } from '@/types';
 import { NotificationDropdown } from './Notifications/NotificationDropdown';
 import { getInitialTheme, applyTheme } from '@/lib/themeUtils';
+import { getStoredUser, clearAuth } from '@/lib/auth';
 
 interface HeaderProps {
   alerts: AlertNotification[];
@@ -13,6 +14,8 @@ interface HeaderProps {
   onResetDemo?: () => void;
   onOpenQuickCreateLoan: () => void;
   onOpenTrash?: () => void;
+  onOpenUserManagement?: () => void;
+  userRole?: 'ADMIN' | 'COBRADOR';
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,18 +23,34 @@ export const Header: React.FC<HeaderProps> = ({
   onRefresh,
   onOpenQuickCreateLoan,
   onOpenTrash,
+  onOpenUserManagement,
+  userRole,
 }) => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => getInitialTheme());
+  const [resolvedRole, setResolvedRole] = useState<'ADMIN' | 'COBRADOR'>('COBRADOR');
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
+  useEffect(() => {
+    const user = getStoredUser();
+    const role = userRole || user?.role || 'COBRADOR';
+    setResolvedRole(role as 'ADMIN' | 'COBRADOR');
+  }, [userRole]);
+
+  const isAdmin = resolvedRole === 'ADMIN';
+
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
     applyTheme(nextTheme);
+  };
+
+  const handleLogout = () => {
+    clearAuth();
+    window.location.reload();
   };
 
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
@@ -112,14 +131,16 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* 2º Historial / Papelera */}
-            <button
-              onClick={onOpenTrash}
-              title="Historial de Borrados"
-              className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
-            >
-              <Trash2 className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
-            </button>
+            {/* 2º Historial / Papelera — ADMIN only */}
+            {isAdmin && (
+              <button
+                onClick={onOpenTrash}
+                title="Historial de Borrados"
+                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
+              >
+                <Trash2 className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
+              </button>
+            )}
 
             {/* 3º Modo Oscuro */}
             <button
@@ -136,17 +157,36 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* 4º Cerrar Sesión */}
             <button
-              onClick={() => console.log('Logout clicked')}
+              type="button"
+              onClick={handleLogout}
               title="Cerrar Sesión"
               className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#C84B31] dark:hover:text-[#C84B31] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
             >
               <LogOut className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
             </button>
 
-            {/* 5º Badge "ADMIN" */}
-            <div className="flex items-center justify-center px-2.5 py-1 rounded-full border border-[#E6DCD2] dark:border-[#3D352E] bg-[#F4EBE1] dark:bg-[#2A241F] text-[#D96B27] dark:text-[#E07A5F] font-bold text-[11px] shadow-sm">
-              ADMIN
-            </div>
+            {/* 5º Ícono Directo de Usuarios */}
+            <button
+              type="button"
+              id="open-user-management-btn"
+              onClick={onOpenUserManagement}
+              title="Gestión de Usuarios"
+              className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-neutral-800 transition-all active:scale-95"
+            >
+              <Users className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#EAE0D5]" />
+            </button>
+
+            {/* 6º Role Badge — ADMIN */}
+            <button
+              type="button"
+              id="role-badge-btn"
+              onClick={onOpenUserManagement}
+              title="Gestión de Usuarios"
+              className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-full border font-bold text-[11px] shadow-sm transition-all duration-150 border-[#D96B27]/40 dark:border-[#E07A5F]/40 bg-[#FDF3ED] dark:bg-[#D96B27]/20 text-[#D96B27] dark:text-[#E07A5F] cursor-pointer hover:bg-amber-100 dark:hover:bg-[#D96B27]/30 active:scale-95"
+            >
+              <Shield className="w-3 h-3" />
+              {resolvedRole}
+            </button>
           </div>
         </div>
       </header>

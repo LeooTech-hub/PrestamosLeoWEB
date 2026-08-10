@@ -24,6 +24,8 @@ interface DashboardViewProps {
   recentLoans: Loan[];
   recentPayments: Payment[];
   setActiveTab: (tab: TabType) => void;
+  isAdmin?: boolean;
+  onOpenUserManagement?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -31,6 +33,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   recentLoans,
   recentPayments,
   setActiveTab,
+  isAdmin = true,
+  onOpenUserManagement,
 }) => {
   if (!summary) {
     return (
@@ -68,6 +72,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             >
               <UserPlus className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#FFFFFF]" />
               <span>+ Crear Nuevo Préstamo</span>
+            </button>
+            <button
+              onClick={onOpenUserManagement}
+              className="bg-stone-900 hover:bg-black text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm shadow-md transition-all active:scale-95"
+            >
+              👤 Gestionar Usuarios / Cobradores
             </button>
             <button
               onClick={() => setActiveTab('dailyRoute')}
@@ -119,21 +129,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Card 2: Ganancia Estimada (20%) */}
+        {isAdmin && (
         <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#E89D4F]/40 dark:hover:border-[#E89D4F]/40 transition-colors duration-300">
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 truncate">GANANCIA (20%)</span>
-            <div className="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-[#FDF6EE] dark:bg-[#E89D4F]/15 text-[#E89D4F] flex items-center justify-center shrink-0">
-              <TrendingUp className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+          <div className="flex items-center gap-2 mb-2 sm:mb-3">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#F4EBE1] dark:bg-[#3D352E] flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D96B27] dark:text-[#E07A5F]" />
             </div>
+            <h3 className="text-[11px] sm:text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] uppercase tracking-wider">
+              GANANCIA (20%)
+            </h3>
           </div>
-          <p className="text-lg sm:text-2xl font-bold sm:font-black text-[#2C221E] dark:text-[#EAE0D5] tracking-tight truncate">
-            {formatCurrency(summary.totalEstimatedProfit)}
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl sm:text-2xl font-black text-[#D96B27] dark:text-[#E07A5F] tracking-tight">
+              {formatCurrency(summary.totalEstimatedProfit)}
+            </span>
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-[#8C7A70] dark:text-[#A8988C] mt-1.5 font-medium leading-tight">
+            Interés esperado del capital activo
           </p>
-          <span className="text-[10px] sm:text-[11px] text-[#2D7A5D] dark:text-[#3D9970] font-medium flex items-center gap-1 mt-1 truncate">
-            <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
-            <span>Interés 20%</span>
-          </span>
         </div>
+        )}
 
         {/* Card 3: Cobrado Hoy */}
         <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#2D7A5D]/40 dark:hover:border-[#3D9970]/40 transition-colors duration-300">

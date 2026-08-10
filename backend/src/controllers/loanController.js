@@ -38,6 +38,9 @@ function mapRowToClient(row) {
     createdAt: String(row.created_at || row.createdAt || new Date().toISOString()),
     status: row.status || 'ACTIVE',
     routeOrder: Number(row.route_order ?? row.routeOrder ?? 0),
+    assignedTo: row.assigned_to || row.assigned_to_user_id || undefined,
+    assignedToName: row.assigned_to_name || row.collector_name || undefined,
+    createdBy: row.created_by || row.created_by_user_id || undefined,
   };
 }
 
@@ -81,6 +84,9 @@ function mapRowToLoan(row) {
     createdAt: String(row.created_at || new Date().toISOString()),
     lastPaymentDate: row.last_payment_date ? String(row.last_payment_date) : undefined,
     isArchived: Boolean(row.is_archived),
+    assignedTo: row.assigned_to || row.assigned_to_user_id || undefined,
+    assignedToName: row.assigned_to_name || row.collector_name || undefined,
+    createdBy: row.created_by || row.created_by_user_id || undefined,
   };
 }
 
@@ -116,17 +122,55 @@ const loanController = {
   async getClients(req, res) {
     try {
       const includeArchived = req.query.archived === 'true' || req.query.includeArchived === 'true';
+      const isCobrador = req.user && req.user.role === 'COBRADOR';
+      const userId = req.user ? req.user.id : null;
       let rows = [];
-      if (includeArchived) {
-        const [r] = await pool.query('SELECT * FROM clients ORDER BY route_order ASC, id DESC');
-        rows = r;
+
+      const baseQuery = `
+        SELECT c.*, u.name AS assigned_to_name 
+        FROM clients c 
+        LEFT JOIN users u ON (c.assigned_to = u.id OR c.assigned_to_user_id = u.id)
+      `;
+
+      if (isCobrador && userId) {
+        if (includeArchived) {
+          try {
+            const [r] = await pool.query(
+              `${baseQuery} WHERE (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.route_order ASC, c.id DESC`,
+              [userId, userId, userId, userId]
+            );
+            rows = r;
+          } catch {
+            const [r] = await pool.query(`${baseQuery} ORDER BY c.route_order ASC, c.id DESC`);
+            rows = r;
+          }
+        } else {
+          try {
+            const [r] = await pool.query(
+              `${baseQuery} WHERE (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) AND (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.route_order ASC, c.id DESC`,
+              [userId, userId, userId, userId]
+            );
+            rows = r;
+          } catch {
+            const [r] = await pool.query(
+              `${baseQuery} WHERE (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.route_order ASC, c.id DESC`,
+              [userId, userId, userId, userId]
+            );
+            rows = r;
+          }
+        }
       } else {
-        try {
-          const [r] = await pool.query("SELECT * FROM clients WHERE (status != 'INACTIVE' OR status IS NULL) AND (is_archived = 0 OR is_archived IS NULL) ORDER BY route_order ASC, id DESC");
+        if (includeArchived) {
+          const [r] = await pool.query(`${baseQuery} ORDER BY c.route_order ASC, c.id DESC`);
           rows = r;
-        } catch {
-          const [r] = await pool.query("SELECT * FROM clients WHERE status != 'INACTIVE' OR status IS NULL ORDER BY route_order ASC, id DESC");
-          rows = r;
+        } else {
+          try {
+            const [r] = await pool.query(`${baseQuery} WHERE (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) ORDER BY c.route_order ASC, c.id DESC`);
+            rows = r;
+          } catch {
+            const [r] = await pool.query(`${baseQuery} WHERE c.status != 'INACTIVE' OR c.status IS NULL ORDER BY c.route_order ASC, c.id DESC`);
+            rows = r;
+          }
         }
       }
       return res.json(rows.map(mapRowToClient));
@@ -136,23 +180,81 @@ const loanController = {
     }
   },
 
+  // PUT /api/clients/assign
+  async assignClients(req, res) {
+    const connection = await pool.getConnection();
+    try {
+      const { clientIds, collectorId } = req.body;
+      if (!Array.isArray(clientIds) || clientIds.length === 0) {
+        return res.status(400).json({ error: 'Debes proporcionar clientIds como un arreglo' });
+      }
+
+      const assignedVal = collectorId && collectorId !== 'unassigned' ? String(collectorId) : null;
+
+      await connection.beginTransaction();
+      for (const cid of clientIds) {
+        try {
+          await connection.execute(
+            `UPDATE clients SET assigned_to = ?, assigned_to_user_id = ? WHERE id = ?`,
+            [assignedVal, assignedVal, String(cid)]
+          );
+        } catch (_) {
+          await connection.execute(
+            `UPDATE clients SET assigned_to = ? WHERE id = ?`,
+            [assignedVal, String(cid)]
+          );
+        }
+
+        try {
+          await connection.execute(
+            `UPDATE loans SET assigned_to = ?, assigned_to_user_id = ? WHERE client_id = ?`,
+            [assignedVal, assignedVal, String(cid)]
+          );
+        } catch (_) {}
+      }
+      await connection.commit();
+
+      return res.json({
+        success: true,
+        message: `${clientIds.length} cliente(s) asignados exitosamente`,
+        assignedCount: clientIds.length,
+        collectorId: assignedVal
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error in assignClients:', error);
+      return res.status(500).json({ error: error.message });
+    } finally {
+      connection.release();
+    }
+  },
+
   // POST /api/clients
   async createClient(req, res) {
     try {
-      const { name, alias, phone, address, identification, notes, routeOrder } = req.body;
+      const { name, alias, phone, address, identification, notes, routeOrder, assignedToUserId } = req.body;
       const id = generateUUID();
       const createdAt = new Date().toISOString();
+      const userId = req.user ? req.user.id : null;
+      const assignedId = assignedToUserId || userId;
 
       try {
         await pool.execute(
-          `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0]
+          `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order, assigned_to_user_id, created_by_user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0, assignedId, userId]
         );
       } catch (_) {
-        await pool.execute(
-          `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [id, name?.trim() || 'Sin Nombre', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE']
-        );
+        try {
+          await pool.execute(
+            `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0]
+          );
+        } catch (__) {
+          await pool.execute(
+            `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, name?.trim() || 'Sin Nombre', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE']
+          );
+        }
       }
 
       return res.status(201).json({
@@ -343,12 +445,38 @@ const loanController = {
   // GET /api/loans
   async getLoans(req, res) {
     try {
-      const [rows] = await pool.execute(`
-        SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
-        FROM loans l
-        LEFT JOIN clients c ON l.client_id = c.id
-        ORDER BY l.created_at DESC
-      `);
+      const isCobrador = req.user && req.user.role === 'COBRADOR';
+      const userId = req.user ? req.user.id : null;
+      let rows = [];
+
+      if (isCobrador && userId) {
+        try {
+          const [r] = await pool.execute(`
+            SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
+            FROM loans l
+            LEFT JOIN clients c ON l.client_id = c.id
+            WHERE (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR (l.assigned_to_user_id IS NULL AND l.created_by_user_id IS NULL))
+            ORDER BY l.created_at DESC
+          `, [userId, userId]);
+          rows = r;
+        } catch {
+          const [r] = await pool.execute(`
+            SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
+            FROM loans l
+            LEFT JOIN clients c ON l.client_id = c.id
+            ORDER BY l.created_at DESC
+          `);
+          rows = r;
+        }
+      } else {
+        const [r] = await pool.execute(`
+          SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
+          FROM loans l
+          LEFT JOIN clients c ON l.client_id = c.id
+          ORDER BY l.created_at DESC
+        `);
+        rows = r;
+      }
       return res.json(rows.map(mapRowToLoan));
     } catch (error) {
       console.error('Error in getLoans:', error);
@@ -364,6 +492,8 @@ const loanController = {
         capital, paymentDays, startDate, notes
       } = req.body;
 
+      const userId = req.user ? req.user.id : null;
+
       const finalName = clientName?.trim() || 'Cliente Sin Nombre';
       const finalAlias = (clientAlias || alias)?.trim() || null;
       const finalPhone = clientPhone?.trim() || '';
@@ -374,11 +504,19 @@ const loanController = {
 
       if (!targetClientId) {
         targetClientId = `cli_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-        await pool.execute(
-          `INSERT INTO clients (id, name, alias, phone, address, identification, notes, status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', NOW())`,
-          [targetClientId, finalName, finalAlias, finalPhone, finalAddress, finalIdent, notes || null]
-        );
+        try {
+          await pool.execute(
+            `INSERT INTO clients (id, name, alias, phone, address, identification, notes, status, created_at, assigned_to_user_id, created_by_user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', NOW(), ?, ?)`,
+            [targetClientId, finalName, finalAlias, finalPhone, finalAddress, finalIdent, notes || null, userId, userId]
+          );
+        } catch (_) {
+          await pool.execute(
+            `INSERT INTO clients (id, name, alias, phone, address, identification, notes, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', NOW())`,
+            [targetClientId, finalName, finalAlias, finalPhone, finalAddress, finalIdent, notes || null]
+          );
+        }
       } else {
         await pool.execute(
           `UPDATE clients SET name = ?, alias = ?, phone = ?, address = ?, identification = ? WHERE id = ?`,
@@ -401,28 +539,56 @@ const loanController = {
 
       const loanId = `loan_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
-      await pool.execute(
-        `INSERT INTO loans (
-          id, client_id, client_name, client_phone, client_address,
-          capital, amount_borrowed, interest_rate, interest_amount, penalty_amount, mora, total_to_pay, total_amount,
-          payment_days, days_agreed, daily_payment_amount, daily_payment,
-          paid_amount, remaining_amount, paid_days_count,
-          start_date, due_date, status, notes, is_archived, created_at
-        ) VALUES (
-          ?, ?, ?, ?, ?,
-          ?, ?, 20.00, ?, 0.00, 0.00, ?, ?,
-          ?, ?, ?, ?,
-          0.00, ?, 0,
-          ?, ?, 'ACTIVE', ?, 0, NOW()
-        )`,
-        [
-          loanId, targetClientId, finalName, finalPhone, finalAddress,
-          numCapital, numCapital, interestAmount, totalToPay, totalToPay,
-          numDays, numDays, dailyPaymentAmount, dailyPaymentAmount,
-          totalToPay,
-          startDateStr, dueDateStr, notes?.trim() || null
-        ]
-      );
+      try {
+        await pool.execute(
+          `INSERT INTO loans (
+            id, client_id, client_name, client_phone, client_address,
+            capital, amount_borrowed, interest_rate, interest_amount, penalty_amount, mora, total_to_pay, total_amount,
+            payment_days, days_agreed, daily_payment_amount, daily_payment,
+            paid_amount, remaining_amount, paid_days_count,
+            start_date, due_date, status, notes, is_archived, created_at,
+            assigned_to_user_id, created_by_user_id
+          ) VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?, 20.00, ?, 0.00, 0.00, ?, ?,
+            ?, ?, ?, ?,
+            0.00, ?, 0,
+            ?, ?, 'ACTIVE', ?, 0, NOW(),
+            ?, ?
+          )`,
+          [
+            loanId, targetClientId, finalName, finalPhone, finalAddress,
+            numCapital, numCapital, interestAmount, totalToPay, totalToPay,
+            numDays, numDays, dailyPaymentAmount, dailyPaymentAmount,
+            totalToPay,
+            startDateStr, dueDateStr, notes?.trim() || null,
+            userId, userId
+          ]
+        );
+      } catch (_) {
+        await pool.execute(
+          `INSERT INTO loans (
+            id, client_id, client_name, client_phone, client_address,
+            capital, amount_borrowed, interest_rate, interest_amount, penalty_amount, mora, total_to_pay, total_amount,
+            payment_days, days_agreed, daily_payment_amount, daily_payment,
+            paid_amount, remaining_amount, paid_days_count,
+            start_date, due_date, status, notes, is_archived, created_at
+          ) VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?, 20.00, ?, 0.00, 0.00, ?, ?,
+            ?, ?, ?, ?,
+            0.00, ?, 0,
+            ?, ?, 'ACTIVE', ?, 0, NOW()
+          )`,
+          [
+            loanId, targetClientId, finalName, finalPhone, finalAddress,
+            numCapital, numCapital, interestAmount, totalToPay, totalToPay,
+            numDays, numDays, dailyPaymentAmount, dailyPaymentAmount,
+            totalToPay,
+            startDateStr, dueDateStr, notes?.trim() || null
+          ]
+        );
+      }
 
       const [newLoanRows] = await pool.execute(`SELECT * FROM loans WHERE id = ?`, [loanId]);
       return res.status(201).json(mapRowToLoan(newLoanRows[0]));
@@ -594,6 +760,8 @@ const loanController = {
   async registerPayment(req, res) {
     const connection = await pool.getConnection();
     try {
+      const userId = req.user?.id || 'unknown';
+      const userName = req.user?.name || 'Usuario';
       const { loanId, amount, notes, lateFee, mora } = req.body;
 
       const numericAmount = Number(amount);
@@ -674,6 +842,13 @@ const loanController = {
         }
       }
       await connection.commit();
+
+      try {
+        await pool.execute(
+          `INSERT INTO activity_logs (user_id, user_name, action_type, description, amount) VALUES (?, ?, 'PAGO_REGISTRADO', ?, ?)`,
+          [userId, userName, `Cobró S/. ${numericAmount.toFixed(2)} a ${loan.clientName}`, numericAmount]
+        );
+      } catch (_) { /* activity_log is optional, don't fail payment */ }
 
       return res.status(201).json({ payment: newPayment, updatedLoan });
     } catch (error) {
@@ -1448,6 +1623,115 @@ const loanController = {
       return res.json({ success: true, message: 'Datos demo restablecidos en Soles S/.' });
     } catch (error) {
       console.error('Error in seedDatabase:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // GET /api/admin/collectors/stats
+  async getCollectorStats(req, res) {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      
+      // Get all collectors (role = COBRADOR or ADMIN)
+      const [collectors] = await pool.query(
+        `SELECT id, name, email, role FROM users ORDER BY name ASC`
+      );
+
+      const stats = await Promise.all(collectors.map(async (collector) => {
+        try {
+          // Recaudado hoy by this collector
+          let collectedToday = 0;
+          try {
+            const [todayRows] = await pool.query(
+              `SELECT COALESCE(SUM(a.amount), 0) as total FROM activity_logs a WHERE a.user_id = ? AND DATE(a.created_at) = ? AND a.action_type = 'PAGO_REGISTRADO'`,
+              [collector.id, todayStr]
+            );
+            collectedToday = Number(todayRows[0]?.total || 0);
+          } catch (_) {}
+
+          // Recaudado histórico total
+          let collectedTotal = 0;
+          try {
+            const [totalRows] = await pool.query(
+              `SELECT COALESCE(SUM(a.amount), 0) as total FROM activity_logs a WHERE a.user_id = ? AND a.action_type = 'PAGO_REGISTRADO'`,
+              [collector.id]
+            );
+            collectedTotal = Number(totalRows[0]?.total || 0);
+          } catch (_) {}
+
+          // Clientes asignados activos
+          let assignedClients = 0;
+          try {
+            const [clientRows] = await pool.query(
+              `SELECT COUNT(*) as total FROM clients WHERE (assigned_to = ? OR assigned_to_user_id = ?) AND (status != 'INACTIVE' OR status IS NULL) AND (is_archived = 0 OR is_archived IS NULL)`,
+              [collector.id, collector.id]
+            );
+            assignedClients = Number(clientRows[0]?.total || 0);
+          } catch {
+            const [clientRows] = await pool.query(
+              `SELECT COUNT(*) as total FROM clients WHERE assigned_to = ? AND status != 'INACTIVE'`,
+              [collector.id]
+            );
+            assignedClients = Number(clientRows[0]?.total || 0);
+          }
+
+          return {
+            id: collector.id,
+            name: collector.name,
+            email: collector.email,
+            role: collector.role,
+            collectedToday,
+            collectedTotal,
+            assignedClients,
+          };
+        } catch (_) {
+          return {
+            id: collector.id,
+            name: collector.name,
+            email: collector.email,
+            role: collector.role,
+            collectedToday: 0,
+            collectedTotal: 0,
+            assignedClients: 0,
+          };
+        }
+      }));
+
+      return res.json({ success: true, stats });
+    } catch (error) {
+      console.error('Error in getCollectorStats:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // GET /api/admin/collectors/:id/activity
+  async getCollectorActivity(req, res) {
+    try {
+      const { id } = req.params;
+      const limit = parseInt(req.query.limit) || 50;
+      
+      let activities = [];
+      try {
+        const [rows] = await pool.query(
+          `SELECT * FROM activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+          [id, limit]
+        );
+        activities = rows.map(row => ({
+          id: row.id,
+          userId: row.user_id,
+          userName: row.user_name,
+          actionType: row.action_type,
+          description: row.description,
+          amount: Number(row.amount || 0),
+          createdAt: row.created_at,
+        }));
+      } catch (_) {
+        activities = [];
+      }
+
+      return res.json({ success: true, activities });
+    } catch (error) {
+      console.error('Error in getCollectorActivity:', error);
       return res.status(500).json({ error: error.message });
     }
   },

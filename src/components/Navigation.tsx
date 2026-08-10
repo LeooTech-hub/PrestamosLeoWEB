@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LayoutDashboard, Route, CreditCard, UserPlus, BarChart3, Users } from 'lucide-react';
+import { LayoutDashboard, Route, CreditCard, UserPlus, BarChart3, Users, Shield } from 'lucide-react';
 
 export type TabType = 'dashboard' | 'dailyRoute' | 'loans' | 'newClient' | 'reports' | 'clients';
 
@@ -10,6 +10,8 @@ interface NavigationProps {
   setActiveTab: (tab: TabType) => void;
   pendingCountToday: number;
   overdueCount?: number;
+  isAdmin?: boolean;
+  onOpenUserManagement?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -17,6 +19,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   setActiveTab,
   pendingCountToday,
   overdueCount = 0,
+  isAdmin = false,
+  onOpenUserManagement,
 }) => {
   const tabs = [
     {
@@ -81,12 +85,24 @@ export const Navigation: React.FC<NavigationProps> = ({
               </button>
             );
           })}
+
+          {/* Pestaña Usuarios — Directa sin condición */}
+          <button
+            id="nav-usuarios-btn"
+            onClick={onOpenUserManagement}
+            className="flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition-all relative whitespace-nowrap border-transparent text-[#D96B27] dark:text-[#E07A5F] hover:text-[#C25A19] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED]/60 dark:hover:bg-[#3D261A]/60 hover:border-[#D96B27]/40 font-semibold"
+            title="Gestión de Usuarios"
+          >
+            <Users className="w-4 h-4 text-[#D96B27] dark:text-[#E07A5F]" />
+            <span>Usuarios</span>
+          </button>
         </div>
       </nav>
 
-      {/* Mobile Fixed Bottom Bar (6 Columns) */}
+      {/* Mobile Fixed Bottom Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#1C1917]/95 backdrop-blur-lg border-t border-[#E6DCD2] dark:border-[#3D352E] px-1 py-1.5 warm-shadow-lg transition-colors duration-300">
-        <div className="grid grid-cols-6 items-center gap-0.5">
+        {/* TEMPORAL: siempre 7 columnas para mostrar botón Usuarios */}
+        <div className="grid items-center gap-0.5 grid-cols-7">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -114,6 +130,18 @@ export const Navigation: React.FC<NavigationProps> = ({
               </button>
             );
           })}
+
+          {/* Botón Usuarios — Directo sin condición */}
+          <button
+            id="nav-mobile-usuarios-btn"
+            onClick={onOpenUserManagement}
+            className="flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all text-[#D96B27] dark:text-[#E07A5F] hover:bg-[#FDF3ED] dark:hover:bg-[#3D261A]/70 active:scale-95 font-bold"
+          >
+            <div className="relative">
+              <Users className="w-4 h-4 mb-0.5 text-[#D96B27] dark:text-[#E07A5F]" />
+            </div>
+            <span className="text-[9px] leading-tight truncate w-full text-center">Usuarios</span>
+          </button>
         </div>
       </nav>
     </>

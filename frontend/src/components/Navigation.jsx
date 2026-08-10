@@ -2,41 +2,59 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Route, CreditCard, UserPlus, BarChart3, Users } from 'lucide-react';
 
-export function Navigation({ pendingCountToday = 0, overdueCount = 0 }) {
-  const tabs = [
+export function Navigation({ pendingCountToday = 0, overdueCount = 0, onOpenUserManagement, user }) {
+  const isAdmin = !user?.role || user?.role === 'ADMIN';
+
+  const allTabs = [
     {
       to: '/',
       label: 'Dashboard',
       icon: LayoutDashboard,
+      roles: ['ADMIN', 'COBRADOR'],
     },
     {
       to: '/ruta-diaria',
       label: 'Ruta Diaria',
       icon: Route,
       badge: pendingCountToday > 0 ? pendingCountToday : undefined,
+      roles: ['ADMIN', 'COBRADOR'],
     },
     {
       to: '/prestamos',
       label: 'Préstamos',
       icon: CreditCard,
       badge: overdueCount > 0 ? overdueCount : undefined,
+      roles: ['ADMIN', 'COBRADOR'],
     },
     {
       to: '/nuevo-cliente',
       label: 'Nuevo Cliente',
       icon: UserPlus,
+      roles: ['ADMIN', 'COBRADOR'],
     },
     {
       to: '/reportes',
       label: 'Reportes',
       icon: BarChart3,
+      roles: ['ADMIN'],
     },
     {
       to: '/clientes',
       label: 'Clientes',
       icon: Users,
+      roles: ['ADMIN', 'COBRADOR'],
+    },
+    {
+      to: '#',
+      label: 'Usuarios',
+      icon: Users,
+      isUserManagement: true,
+      roles: ['ADMIN'],
     },
   ];
+
+  const tabs = allTabs.filter(tab => isAdmin || tab.roles.includes('COBRADOR'));
+  const gridClass = tabs.length === 7 ? 'grid-cols-7' : tabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5';
 
   return (
     <>
@@ -45,6 +63,19 @@ export function Navigation({ pendingCountToday = 0, overdueCount = 0 }) {
         <div className="max-w-6xl mx-auto flex items-center gap-1 overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            if (tab.isUserManagement) {
+              return (
+                <button
+                  key={tab.label}
+                  onClick={onOpenUserManagement}
+                  className="flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 border-transparent text-[#D96B27] dark:text-[#E07A5F] hover:text-[#C25A19] dark:hover:text-[#E07A5F] hover:bg-[#FDF3ED]/60 dark:hover:bg-[#2C221E]/60 transition-all relative whitespace-nowrap font-semibold cursor-pointer"
+                  title="Gestión de Usuarios"
+                >
+                  <Icon className="w-4 h-4 text-[#D96B27] dark:text-[#E07A5F]" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            }
             return (
               <NavLink
                 key={tab.to}
@@ -75,11 +106,27 @@ export function Navigation({ pendingCountToday = 0, overdueCount = 0 }) {
         </div>
       </nav>
 
-      {/* Mobile Fixed Bottom Bar (6 Columns) */}
+      {/* Mobile Fixed Bottom Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#1E1E1E]/95 backdrop-blur-lg border-t border-[#E6DCD2] dark:border-[#332F2C] px-1 py-1.5 warm-shadow-lg transition-colors duration-300">
-        <div className="grid grid-cols-6 items-center gap-0.5">
+        <div className={`grid ${gridClass} items-center gap-0.5`}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            if (tab.isUserManagement) {
+              return (
+                <button
+                  key={tab.label}
+                  onClick={onOpenUserManagement}
+                  className="flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all relative text-[#D96B27] dark:text-[#E07A5F] font-bold active:scale-95 cursor-pointer"
+                >
+                  <div className="relative">
+                    <Icon className="w-4 h-4 mb-0.5 text-[#D96B27] dark:text-[#E07A5F]" />
+                  </div>
+                  <span className="text-[9px] leading-tight truncate w-full text-center">
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            }
             return (
               <NavLink
                 key={tab.to}

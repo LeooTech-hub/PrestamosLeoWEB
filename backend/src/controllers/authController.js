@@ -31,7 +31,7 @@ export const authController = {
 
       const secret = process.env.JWT_SECRET || 'prestamos_leo_jwt_secret_key_2026_super_secure';
       const token = jwt.sign(
-        { id: user.id, email: user.email, name: user.name },
+        { id: user.id, email: user.email, name: user.name, role: user.role || 'COBRADOR' },
         secret,
         { expiresIn: '24h' }
       );
@@ -43,6 +43,7 @@ export const authController = {
           id: user.id,
           name: user.name,
           email: user.email,
+          role: user.role || 'COBRADOR',
         },
       });
     } catch (error) {
@@ -152,7 +153,7 @@ export const authController = {
         return res.status(401).json({ error: 'No autorizado' });
       }
 
-      const [users] = await pool.query('SELECT id, name, email, created_at FROM users WHERE id = ?', [userId]);
+      const [users] = await pool.query('SELECT id, name, email, role, created_at FROM users WHERE id = ?', [userId]);
 
       if (!users || users.length === 0) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -166,6 +167,7 @@ export const authController = {
           id: user.id,
           name: user.name,
           email: user.email,
+          role: user.role || 'COBRADOR',
           createdAt: user.created_at,
         },
       });
