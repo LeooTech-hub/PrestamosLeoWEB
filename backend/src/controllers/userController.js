@@ -9,10 +9,16 @@ export const userController = {
   // GET /api/users - List all users (ADMIN only)
   async listUsers(req, res) {
     try {
-      const [rows] = await pool.query(
-        'SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC'
-      );
-      return res.json({ success: true, users: rows });
+      const { role } = req.query;
+      let query = 'SELECT id, name, email, role, created_at FROM users';
+      let params = [];
+      if (role) {
+        query += ' WHERE UPPER(role) = ?';
+        params.push(String(role).toUpperCase());
+      }
+      query += ' ORDER BY created_at DESC';
+      const [rows] = await pool.query(query, params);
+      return res.json({ success: true, users: rows, collectors: rows, data: rows });
     } catch (error) {
       console.error('Error listando usuarios:', error);
       return res.status(500).json({ error: 'Error interno al listar usuarios' });

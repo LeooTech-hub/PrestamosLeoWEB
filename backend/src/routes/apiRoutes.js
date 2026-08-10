@@ -52,6 +52,7 @@ router.get('/trash', verifyToken, requireAdmin, loanController.getTrash);
 
 // Payments Routes
 router.get('/payments', verifyToken, loanController.getPayments);
+router.get('/payments/recent', verifyToken, loanController.getPayments);
 router.post('/payments', verifyToken, loanController.registerPayment);
 router.put('/payments/:id', verifyToken, loanController.updatePayment);
 router.delete('/payments/:id', verifyToken, requireAdmin, loanController.deletePayment);
@@ -67,12 +68,21 @@ router.delete('/expenses/:id', verifyToken, requireAdmin, loanController.deleteE
 // Operations & Analytics Routes
 router.get('/today-collections', verifyToken, loanController.getTodayCollections);
 router.get('/alerts', verifyToken, loanController.getAlerts);
+router.get('/loans/alerts', verifyToken, loanController.getAlerts);
 router.get('/dashboard/summary', verifyToken, loanController.getDashboardSummary);
 router.get('/reports/financial', verifyToken, loanController.getFinancialReport);
 
 // Admin Collector Management Routes
+// IMPORTANT: Static routes (/list, /stats) MUST be declared BEFORE dynamic (:id) routes
+// to prevent Express from matching 'list' as an :id parameter value.
+router.get('/admin/collectors/list', verifyToken, requireAdmin, loanController.getCollectorsList);
+router.get('/admin/collectors', verifyToken, requireAdmin, loanController.getCollectorsList);
 router.get('/admin/collectors/stats', verifyToken, requireAdmin, loanController.getCollectorStats);
 router.get('/admin/collectors/:id/activity', verifyToken, requireAdmin, loanController.getCollectorActivity);
+
+// Admin Portfolio Assignment Route
+router.put('/admin/assign-portfolio', verifyToken, requireAdmin, loanController.assignPortfolio);
+router.get('/admin/portfolio/filter', verifyToken, requireAdmin, loanController.getPortfolioByCollector);
 
 // Demo Data Seed Route
 router.post('/seed', verifyToken, loanController.seedDatabase);

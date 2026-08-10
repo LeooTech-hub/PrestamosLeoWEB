@@ -154,12 +154,12 @@ export default function App() {
         fetchSafe(`/reports/financial?period=${period}`, null),
       ]);
 
-      setClients(cList || []);
-      setLoans(lList || []);
-      setPayments(pList || []);
-      setSummary(sum || defaultDashboardSummary);
-      setTodayCollections(todayCol || []);
-      setAlerts(alertList || []);
+      setClients(Array.isArray(cList) ? cList : (cList?.clients || cList?.data || []));
+      setLoans(Array.isArray(lList) ? lList : (lList?.loans || lList?.data || []));
+      setPayments(Array.isArray(pList) ? pList : (pList?.payments || pList?.data || []));
+      setSummary(sum && typeof sum === 'object' ? sum : defaultDashboardSummary);
+      setTodayCollections(Array.isArray(todayCol) ? todayCol : (todayCol?.collections || todayCol?.todayCollections || todayCol?.data || []));
+      setAlerts(Array.isArray(alertList) ? alertList : (alertList?.alerts || alertList?.data || []));
       setFinancialReport(report);
     } catch (error) {
       console.error('Error cargando datos del backend:', error);
@@ -426,6 +426,7 @@ export default function App() {
                     onOpenUserManagement={() => setIsUserManagementOpen(true)}
                     onUpdatePayment={handleUpdatePayment}
                     onDeletePayment={handleDeletePayment}
+                    user={user}
                   />
                 </PrivateRoute>
               }
@@ -504,6 +505,8 @@ export default function App() {
                     onDeleteClient={handleDeleteClient}
                     onDeletePayment={handleDeletePayment}
                     onUpdatePayment={handleUpdatePayment}
+                    onAssignPortfolio={loadData}
+                    user={user}
                   />
                 </PrivateRoute>
               }

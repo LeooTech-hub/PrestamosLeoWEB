@@ -31,18 +31,18 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
     }
   };
 
-  const filteredLoans = loans.filter((loan) => {
-    if (loan.isArchived) return false;
-    if (filter === 'ALL' && (loan.status !== 'ACTIVE' && loan.status !== 'OVERDUE')) return false;
-    if (filter === 'ACTIVE' && loan.status !== 'ACTIVE') return false;
-    if (filter === 'OVERDUE' && loan.status !== 'OVERDUE') return false;
-    if (filter === 'PAID' && loan.status !== 'PAID') return false;
+  const filteredLoans = (loans || []).filter((loan) => {
+    if (loan?.isArchived) return false;
+    if (filter === 'ALL' && (loan?.status !== 'ACTIVE' && loan?.status !== 'OVERDUE')) return false;
+    if (filter === 'ACTIVE' && loan?.status !== 'ACTIVE') return false;
+    if (filter === 'OVERDUE' && loan?.status !== 'OVERDUE') return false;
+    if (filter === 'PAID' && loan?.status !== 'PAID') return false;
 
-    const term = searchTerm.toLowerCase();
+    const term = (searchTerm || '').toLowerCase();
     return (
-      (loan.clientName || '').toLowerCase().includes(term) ||
-      (loan.clientPhone || '').includes(term) ||
-      (loan.clientAddress || '').toLowerCase().includes(term)
+      (loan?.clientName || loan?.client_name || '').toLowerCase().includes(term) ||
+      (loan?.clientPhone || loan?.client_phone || '').includes(term) ||
+      (loan?.clientAddress || loan?.client_address || '').toLowerCase().includes(term)
     );
   });
 
@@ -74,7 +74,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                 : 'text-[#6E615A] hover:bg-[#FAF8F5]'
             }`}
           >
-            Todos ({loans.filter((l) => !l.isArchived && (l.status === 'ACTIVE' || l.status === 'OVERDUE')).length})
+            Todos ({(loans || []).filter((l) => !l?.isArchived && (l?.status === 'ACTIVE' || l?.status === 'OVERDUE')).length})
           </button>
 
           <button
@@ -85,7 +85,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                 : 'text-[#6E615A] hover:bg-[#FAF8F5]'
             }`}
           >
-            Vigentes ({loans.filter((l) => l.status === 'ACTIVE' && !l.isArchived).length})
+            Vigentes ({(loans || []).filter((l) => l?.status === 'ACTIVE' && !l?.isArchived).length})
           </button>
 
           <button
@@ -96,7 +96,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                 : 'text-[#6E615A] hover:bg-[#FAF8F5]'
             }`}
           >
-            En Mora ({loans.filter((l) => l.status === 'OVERDUE' && !l.isArchived).length})
+            En Mora ({(loans || []).filter((l) => l?.status === 'OVERDUE' && !l?.isArchived).length})
           </button>
 
           <button
@@ -107,7 +107,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                 : 'text-[#6E615A] hover:bg-[#FAF8F5]'
             }`}
           >
-            Cancelados ({loans.filter((l) => l.status === 'PAID' && !l.isArchived).length})
+            Cancelados ({(loans || []).filter((l) => l?.status === 'PAID' && !l?.isArchived).length})
           </button>
         </div>
 

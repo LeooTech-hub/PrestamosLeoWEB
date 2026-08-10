@@ -122,7 +122,7 @@ const loanController = {
   async getClients(req, res) {
     try {
       const includeArchived = req.query.archived === 'true' || req.query.includeArchived === 'true';
-      const isCobrador = req.user && req.user.role === 'COBRADOR';
+      const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
       const userId = req.user ? req.user.id : null;
       let rows = [];
 
@@ -304,6 +304,17 @@ const loanController = {
       );
       await connection.commit();
 
+      // Log audit
+      try {
+        const actUserId = req.user?.id || 'unknown';
+        const actUserName = req.user?.name || 'Usuario';
+        const clientIp = req.headers['x-forwarded-for'] || req.ip || req.connection?.remoteAddress || null;
+        await pool.execute(
+          `INSERT INTO activity_logs (user_id, user_name, action_type, description, amount, client_id, ip) VALUES (?, ?, 'CLIENTE_EDITADO', ?, 0, ?, ?)`,
+          [actUserId, actUserName, `Editó datos del cliente ID: ${id}`, id, clientIp]
+        );
+      } catch (_) {}
+
       return res.json({ success: true, message: 'Cliente actualizado' });
     } catch (error) {
       await connection.rollback();
@@ -445,7 +456,7 @@ const loanController = {
   // GET /api/loans
   async getLoans(req, res) {
     try {
-      const isCobrador = req.user && req.user.role === 'COBRADOR';
+      const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
       const userId = req.user ? req.user.id : null;
       let rows = [];
 
@@ -455,9 +466,9 @@ const loanController = {
             SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
             FROM loans l
             LEFT JOIN clients c ON l.client_id = c.id
-            WHERE (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR (l.assigned_to_user_id IS NULL AND l.created_by_user_id IS NULL))
+            WHERE (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?)
             ORDER BY l.created_at DESC
-          `, [userId, userId]);
+          `, [userId, userId, userId, userId]);
           rows = r;
         } catch {
           const [r] = await pool.execute(`
@@ -741,13 +752,38 @@ const loanController = {
   // GET /api/payments
   async getPayments(req, res) {
     try {
+      const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
+      const userId = req.user ? req.user.id : null;
       let rows = [];
-      try {
-        const [result] = await pool.query('SELECT * FROM payments ORDER BY id DESC');
-        rows = result;
-      } catch (_) {
-        const [result] = await pool.query('SELECT * FROM payments');
-        rows = result;
+
+      if (isCobrador && userId) {
+        try {
+          const [result] = await pool.query(
+            `SELECT p.* FROM payments p
+             WHERE (p.collected_by_user_id = ? OR p.collected_by = ?)
+             ORDER BY p.payment_date DESC, p.id DESC`,
+            [userId, userId]
+          );
+          rows = result;
+        } catch (_) {
+          try {
+            const [result] = await pool.query(
+              `SELECT p.* FROM payments p WHERE p.collected_by_user_id = ? ORDER BY p.payment_date DESC, p.id DESC`,
+              [userId]
+            );
+            rows = result;
+          } catch (__) {
+            rows = [];
+          }
+        }
+      } else {
+        try {
+          const [result] = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC, id DESC');
+          rows = result;
+        } catch (_) {
+          const [result] = await pool.query('SELECT * FROM payments');
+          rows = result;
+        }
       }
       return res.json(rows.map(mapRowToPayment));
     } catch (error) {
@@ -825,8 +861,8 @@ const loanController = {
 
       try {
         await connection.execute(
-          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
+          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes, collected_by_user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null, userId]
         );
       } catch (_) {
         try {
@@ -844,9 +880,10 @@ const loanController = {
       await connection.commit();
 
       try {
+        const clientIp = req.headers['x-forwarded-for'] || req.ip || req.connection?.remoteAddress || null;
         await pool.execute(
-          `INSERT INTO activity_logs (user_id, user_name, action_type, description, amount) VALUES (?, ?, 'PAGO_REGISTRADO', ?, ?)`,
-          [userId, userName, `Cobró S/. ${numericAmount.toFixed(2)} a ${loan.clientName}`, numericAmount]
+          `INSERT INTO activity_logs (user_id, user_name, action_type, description, amount, client_id, ip) VALUES (?, ?, 'PAGO_REGISTRADO', ?, ?, ?, ?)`,
+          [userId, userName, `Cobró S/. ${numericAmount.toFixed(2)} a ${loan.clientName}`, numericAmount, loan.clientId, clientIp]
         );
       } catch (_) { /* activity_log is optional, don't fail payment */ }
 
@@ -1269,26 +1306,42 @@ const loanController = {
   // GET /api/today-collections
   async getTodayCollections(req, res) {
     try {
-      const [rows] = await pool.query(`
-        SELECT l.*, 
-          c.name AS joined_client_name, 
-          c.alias AS joined_client_alias, 
-          c.phone AS joined_client_phone, 
-          c.address AS joined_client_address,
-          c.route_order AS joined_client_route_order
-        FROM loans l
-        LEFT JOIN clients c ON l.client_id = c.id
-        WHERE l.is_archived = 0 OR l.is_archived IS NULL
-        ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC
-      `);
+      const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
+      const userId = req.user ? req.user.id : null;
+      let rows;
+      const baseSelect = `SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address, c.route_order AS joined_client_route_order FROM loans l LEFT JOIN clients c ON l.client_id = c.id`;
+      if (isCobrador && userId) {
+        try {
+          [rows] = await pool.query(
+            `${baseSelect} WHERE (l.is_archived = 0 OR l.is_archived IS NULL) AND (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?) ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`,
+            [userId, userId, userId, userId]
+          );
+        } catch (_) {
+          [rows] = await pool.query(`${baseSelect} WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`);
+        }
+      } else {
+        [rows] = await pool.query(`${baseSelect} WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`);
+      }
       const loans = rows.map(mapRowToLoan);
       const activeLoans = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
 
       let pRows = [];
       try {
-        const [result] = await pool.query('SELECT * FROM payments');
-        pRows = result;
-      } catch (_) {}
+        if (isCobrador && userId && loans.length > 0) {
+          const loanIds = loans.map(l => l.id);
+          const placeholders = loanIds.map(() => '?').join(',');
+          const [result] = await pool.query(`SELECT * FROM payments WHERE loan_id IN (${placeholders})`, loanIds);
+          pRows = result;
+        } else {
+          const [result] = await pool.query('SELECT * FROM payments');
+          pRows = result;
+        }
+      } catch (_) {
+        try {
+          const [result] = await pool.query('SELECT * FROM payments');
+          pRows = result;
+        } catch (__) {}
+      }
       const payments = pRows.map(mapRowToPayment);
 
       const todayStr = new Date().toISOString().split('T')[0];
@@ -1315,12 +1368,32 @@ const loanController = {
   // GET /api/alerts
   async getAlerts(req, res) {
     try {
-      const [rows] = await pool.query(`
-        SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
-        FROM loans l
-        LEFT JOIN clients c ON l.client_id = c.id
-        WHERE l.is_archived = 0 OR l.is_archived IS NULL
-      `);
+      const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
+      const userId = req.user ? req.user.id : null;
+      let rows = [];
+
+      if (isCobrador && userId) {
+        try {
+          const [r] = await pool.query(`
+            SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
+            FROM loans l
+            LEFT JOIN clients c ON l.client_id = c.id
+            WHERE (l.is_archived = 0 OR l.is_archived IS NULL)
+              AND (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?)
+          `, [userId, userId, userId, userId]);
+          rows = r;
+        } catch (_) {
+          rows = [];
+        }
+      } else {
+        const [r] = await pool.query(`
+          SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
+          FROM loans l
+          LEFT JOIN clients c ON l.client_id = c.id
+          WHERE l.is_archived = 0 OR l.is_archived IS NULL
+        `);
+        rows = r;
+      }
       const loans = rows.map(mapRowToLoan);
       const activeLoans = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
       const todayStr = new Date().toISOString().split('T')[0];
@@ -1368,25 +1441,83 @@ const loanController = {
   // GET /api/dashboard/summary
   async getDashboardSummary(req, res) {
     try {
-      const [lRows] = await pool.query(`SELECT * FROM loans WHERE is_archived = 0 OR is_archived IS NULL`);
+      const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
+      const userId = req.user ? req.user.id : null;
+      let lRows = [];
+      if (isCobrador && userId) {
+        try {
+          [lRows] = await pool.query(
+            `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
+             FROM loans l
+             LEFT JOIN clients c ON l.client_id = c.id
+             WHERE (l.is_archived = 0 OR l.is_archived IS NULL)
+               AND (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?)
+             ORDER BY l.created_at DESC`,
+            [userId, userId, userId, userId]
+          );
+        } catch (_) {
+          [lRows] = await pool.query(
+            `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
+             FROM loans l
+             LEFT JOIN clients c ON l.client_id = c.id
+             WHERE l.is_archived = 0 OR l.is_archived IS NULL
+             ORDER BY l.created_at DESC`
+          );
+        }
+      } else {
+        [lRows] = await pool.query(
+          `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
+           FROM loans l
+           LEFT JOIN clients c ON l.client_id = c.id
+           WHERE l.is_archived = 0 OR l.is_archived IS NULL
+           ORDER BY l.created_at DESC`
+        );
+      }
       const loans = lRows.map(mapRowToLoan);
       const activeLoans = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
 
       let pRows = [];
       try {
-        const [result] = await pool.query('SELECT * FROM payments');
-        pRows = result;
-      } catch (_) {}
+        if (isCobrador && userId) {
+          try {
+            const [result] = await pool.query(
+              `SELECT p.* FROM payments p
+               WHERE p.collected_by_user_id = ? OR p.collected_by = ?
+               ORDER BY p.payment_date DESC, p.id DESC`,
+              [userId, userId]
+            );
+            pRows = result;
+          } catch (_) {
+            try {
+              const [result] = await pool.query(
+                `SELECT p.* FROM payments p WHERE p.collected_by_user_id = ? ORDER BY p.payment_date DESC, p.id DESC`,
+                [userId]
+              );
+              pRows = result;
+            } catch (__) {
+              pRows = [];
+            }
+          }
+        } else {
+          const [result] = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC, id DESC');
+          pRows = result;
+        }
+      } catch (_) {
+        pRows = [];
+      }
       const payments = pRows.map(mapRowToPayment);
 
       const todayStr = new Date().toISOString().split('T')[0];
 
-      const totalCapitalLent = loans.reduce((sum, l) => sum + l.capital, 0);
-      const totalEstimatedProfit = loans.reduce((sum, l) => sum + l.interestAmount, 0);
-      const collectedToday = payments.filter((p) => p.date === todayStr).reduce((sum, p) => sum + p.amount, 0);
+      const totalCapitalLent = loans.reduce((sum, l) => sum + (l.capital || 0), 0);
+      const totalEstimatedProfit = loans.reduce((sum, l) => sum + (l.interestAmount || 0), 0);
+      
+      const collectedToday = payments
+        .filter((p) => (p.date || '').split('T')[0] === todayStr)
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
 
       const todayCollections = activeLoans.map((loan) => {
-        const todayPayments = payments.filter((p) => p.loanId === loan.id && p.date === todayStr);
+        const todayPayments = payments.filter((p) => p.loanId === loan.id && (p.date || '').split('T')[0] === todayStr);
         const amountPaidToday = todayPayments.reduce((acc, curr) => acc + curr.amount, 0);
         return amountPaidToday >= loan.dailyPaymentAmount || loan.remainingAmount === 0;
       });
@@ -1398,6 +1529,9 @@ const loanController = {
 
       const overdueCount = loans.filter((l) => l.status === 'OVERDUE' && !l.isArchived).length;
 
+      const recentLoans = loans.slice(0, 10);
+      const recentPayments = payments.slice(0, 10);
+
       return res.json({
         totalCapitalLent,
         totalEstimatedProfit,
@@ -1407,6 +1541,8 @@ const loanController = {
         overdueCount,
         expiringSoonCount: 0,
         collectionProgressPercent,
+        recentLoans,
+        recentPayments,
       });
     } catch (error) {
       console.error('Error in getDashboardSummary:', error);
@@ -1419,6 +1555,8 @@ const loanController = {
         overdueCount: 0,
         expiringSoonCount: 0,
         collectionProgressPercent: 100,
+        recentLoans: [],
+        recentPayments: [],
       });
     }
   },
@@ -1733,6 +1871,146 @@ const loanController = {
     } catch (error) {
       console.error('Error in getCollectorActivity:', error);
       return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // GET /api/admin/collectors/list - List all collectors for portfolio filter
+  async getCollectorsList(req, res) {
+    try {
+      const { role } = req.query;
+      let sql = `SELECT id, name, email, role, created_at FROM users WHERE UPPER(role) IN ('ADMIN','COBRADOR')`;
+      let params = [];
+      if (role) {
+        sql = `SELECT id, name, email, role, created_at FROM users WHERE UPPER(role) = ?`;
+        params.push(String(role).toUpperCase());
+      }
+      sql += ` ORDER BY name ASC`;
+      const [rows] = await pool.query(sql, params);
+      return res.json({ success: true, collectors: rows, users: rows, data: rows });
+    } catch (error) {
+      console.error('Error in getCollectorsList:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // GET /api/admin/portfolio/filter?collectorId=X - Filter clients/loans by collector
+  async getPortfolioByCollector(req, res) {
+    try {
+      const { collectorId } = req.query;
+      let clientsQuery, loansQuery, params;
+
+      if (!collectorId || collectorId === 'ALL') {
+        // Return all active clients and loans
+        const [clientRows] = await pool.query(
+          `SELECT c.*, u.name AS assigned_to_name FROM clients c LEFT JOIN users u ON (c.assigned_to_user_id = u.id OR c.assigned_to = u.id) WHERE (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) ORDER BY c.route_order ASC, c.id DESC`
+        );
+        const [loanRows] = await pool.query(
+          `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order FROM loans l LEFT JOIN clients c ON l.client_id = c.id WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY l.created_at DESC`
+        );
+        return res.json({
+          success: true,
+          clients: clientRows.map(mapRowToClient),
+          loans: loanRows.map(mapRowToLoan),
+          collectorId: 'ALL'
+        });
+      }
+
+      const [clientRows] = await pool.query(
+        `SELECT c.*, u.name AS assigned_to_name FROM clients c LEFT JOIN users u ON (c.assigned_to_user_id = u.id OR c.assigned_to = u.id) WHERE (c.assigned_to_user_id = ? OR c.assigned_to = ?) AND (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) ORDER BY c.route_order ASC, c.id DESC`,
+        [collectorId, collectorId]
+      );
+      const [loanRows] = await pool.query(
+        `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order FROM loans l LEFT JOIN clients c ON l.client_id = c.id WHERE (l.assigned_to_user_id = ? OR l.assigned_collector_id = ?) AND (l.is_archived = 0 OR l.is_archived IS NULL) ORDER BY l.created_at DESC`,
+        [collectorId, collectorId]
+      );
+      return res.json({
+        success: true,
+        clients: clientRows.map(mapRowToClient),
+        loans: loanRows.map(mapRowToLoan),
+        collectorId
+      });
+    } catch (error) {
+      console.error('Error in getPortfolioByCollector:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // PUT /api/admin/assign-portfolio - Atomically assign clients and loans to a collector
+  async assignPortfolio(req, res) {
+    const connection = await pool.getConnection();
+    try {
+      const { clientIds = [], loanIds = [], collectorId } = req.body;
+
+      if ((!Array.isArray(clientIds) || clientIds.length === 0) &&
+          (!Array.isArray(loanIds) || loanIds.length === 0)) {
+        return res.status(400).json({ error: 'Debes proporcionar clientIds o loanIds' });
+      }
+
+      const assignedVal = collectorId && collectorId !== 'unassigned' ? String(collectorId) : null;
+
+      await connection.beginTransaction();
+
+      // Assign clients and cascade to their loans
+      for (const cid of clientIds) {
+        try {
+          await connection.execute(
+            `UPDATE clients SET assigned_to = ?, assigned_to_user_id = ? WHERE id = ?`,
+            [assignedVal, assignedVal, String(cid)]
+          );
+        } catch (_) {
+          await connection.execute(
+            `UPDATE clients SET assigned_to = ? WHERE id = ?`,
+            [assignedVal, String(cid)]
+          );
+        }
+        // Cascade to loans of this client
+        try {
+          await connection.execute(
+            `UPDATE loans SET assigned_to = ?, assigned_to_user_id = ?, assigned_collector_id = ? WHERE client_id = ?`,
+            [assignedVal, assignedVal, assignedVal, String(cid)]
+          );
+        } catch (_) {
+          try {
+            await connection.execute(
+              `UPDATE loans SET assigned_to = ?, assigned_to_user_id = ? WHERE client_id = ?`,
+              [assignedVal, assignedVal, String(cid)]
+            );
+          } catch (__) {}
+        }
+      }
+
+      // Assign specific loans directly
+      for (const lid of loanIds) {
+        try {
+          await connection.execute(
+            `UPDATE loans SET assigned_to = ?, assigned_to_user_id = ?, assigned_collector_id = ? WHERE id = ?`,
+            [assignedVal, assignedVal, assignedVal, String(lid)]
+          );
+        } catch (_) {
+          try {
+            await connection.execute(
+              `UPDATE loans SET assigned_to = ?, assigned_to_user_id = ? WHERE id = ?`,
+              [assignedVal, assignedVal, String(lid)]
+            );
+          } catch (__) {}
+        }
+      }
+
+      await connection.commit();
+
+      return res.json({
+        success: true,
+        message: `Cartera asignada exitosamente: ${clientIds.length} cliente(s) y ${loanIds.length} préstamo(s)`,
+        assignedClients: clientIds.length,
+        assignedLoans: loanIds.length,
+        collectorId: assignedVal
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error in assignPortfolio:', error);
+      return res.status(500).json({ error: error.message });
+    } finally {
+      connection.release();
     }
   },
 };

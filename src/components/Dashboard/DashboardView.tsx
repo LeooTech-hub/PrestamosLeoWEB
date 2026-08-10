@@ -73,12 +73,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <UserPlus className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#FFFFFF]" />
               <span>+ Crear Nuevo Préstamo</span>
             </button>
-            <button
-              onClick={onOpenUserManagement}
-              className="bg-stone-900 hover:bg-black text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm shadow-md transition-all active:scale-95"
-            >
-              👤 Gestionar Usuarios / Cobradores
-            </button>
+            {isAdmin && (
+              <button
+                onClick={onOpenUserManagement}
+                className="bg-stone-900 hover:bg-black text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm shadow-md transition-all active:scale-95"
+              >
+                👤 Gestionar Usuarios / Cobradores
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('dailyRoute')}
               className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#2C221E] dark:text-[#1C1917] hover:bg-[#FAF8F5] text-xs font-semibold shadow-sm active:scale-95 transition-all"

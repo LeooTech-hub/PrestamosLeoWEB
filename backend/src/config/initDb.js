@@ -56,6 +56,13 @@ export async function initDb() {
     await safeAddColumn('loans', 'created_by_user_id', 'VARCHAR(255) NULL');
     await safeAddColumn('loans', 'assigned_to', 'VARCHAR(255) NULL');
     await safeAddColumn('loans', 'created_by', 'VARCHAR(255) NULL');
+    // Ensure assigned_collector_id on loans for specific loan-level collector assignment
+    await safeAddColumn('loans', 'assigned_collector_id', 'VARCHAR(255) NULL');
+    // Ensure collected_by_user_id on payments for audit trail
+    await safeAddColumn('payments', 'collected_by_user_id', 'VARCHAR(255) NULL');
+    // Ensure activity_logs has client_id and ip columns
+    await safeAddColumn('activity_logs', 'client_id', 'VARCHAR(255) NULL');
+    await safeAddColumn('activity_logs', 'ip', 'VARCHAR(64) NULL');
     
     // Migrate: add role column to users table if not present
     await safeAddColumn('users', 'role', "VARCHAR(20) NOT NULL DEFAULT 'COBRADOR'");
@@ -159,7 +166,7 @@ export async function initDb() {
       console.log('✅ Usuario por defecto creado: admin@prestamosleo.com / admin123');
     }
 
-    console.log('✅ Tablas y columnas (alias, route_order, late_fee, activity_logs) inicializadas correctamente en TiDB Cloud.');
+    console.log('✅ Tablas y columnas (portfolio, audit, activity_logs) inicializadas correctamente en TiDB Cloud.');
   } catch (error) {
     console.error('❌ Error al inicializar la base de datos:', error.message);
   }

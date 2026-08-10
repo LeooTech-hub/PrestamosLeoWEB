@@ -84,11 +84,15 @@ export function AssignCollectorModal({
             >
               <option value="">-- Seleccionar Cobrador --</option>
               <option value="unassigned">🚫 Sin Asignar (Quitar Cobrador)</option>
-              {collectors.map((c) => (
-                <option key={c.id} value={c.id}>
-                  👤 {c.name} ({c.email}) {c.role === 'ADMIN' ? '[ADMIN]' : '[COBRADOR]'}
-                </option>
-              ))}
+              {Array.isArray(collectors) && collectors.length > 0 ? (
+                collectors.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    👤 {c.name} ({c.email}) {c.role === 'ADMIN' ? '[ADMIN]' : '[COBRADOR]'}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>No hay cobradores cargados</option>
+              )}
             </select>
           </div>
 

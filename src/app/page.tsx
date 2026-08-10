@@ -337,12 +337,14 @@ export default function Home() {
                 👥 Panel Cobradores
               </button>
             )}
-            <button 
-              onClick={() => setIsUserManagementOpen(true)} 
-              className="bg-black text-white px-4 py-2 rounded-xl font-bold text-sm ml-2"
-            >
-              👥 Gestionar Usuarios (Jhair)
-            </button>
+            {isAdmin && (
+              <button 
+                onClick={() => setIsUserManagementOpen(true)} 
+                className="bg-black text-white px-4 py-2 rounded-xl font-bold text-sm ml-2"
+              >
+                👥 Gestionar Usuarios (Jhair)
+              </button>
+            )}
           </div>
         </div>
 

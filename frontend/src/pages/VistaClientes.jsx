@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
 import { SmartDeleteModal } from '../components/SmartDeleteModal';
@@ -6,6 +6,8 @@ import { EditClientModal } from '../components/EditClientModal';
 import { EditLoanModal } from '../components/EditLoanModal';
 import { EditPaymentModal } from '../components/EditPaymentModal';
 import { PaymentReceiptModal } from '../components/PaymentReceiptModal';
+import { AssignCollectorModal } from '../components/AssignCollectorModal';
+import api from '../api';
 import {
   Users,
   Search,
@@ -21,6 +23,10 @@ import {
   History,
   Pencil,
   Receipt,
+  UserCheck,
+  CheckSquare,
+  Square,
+  Filter,
 } from 'lucide-react';
 
 export function VistaClientes({
@@ -32,7 +38,10 @@ export function VistaClientes({
   onDeleteClient,
   onDeletePayment,
   onUpdatePayment,
+  onAssignPortfolio,
+  user,
 }) {
+  const isAdmin = user && String(user.role || '').toUpperCase() === 'ADMIN';
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'UP_TO_DATE', 'OVERDUE', 'PAID'
@@ -46,14 +55,55 @@ export function VistaClientes({
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
   const [selectedPaymentForReceipt, setSelectedPaymentForReceipt] = useState(null);
 
+  // Portfolio assignment state (ADMIN only)
+  const [selectedClientIds, setSelectedClientIds] = useState([]);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [collectors, setCollectors] = useState([]);
+  const [collectorFilter, setCollectorFilter] = useState('ALL');
+  const [isSelectMode, setIsSelectMode] = useState(false);
+
+  // Load collectors list for ADMIN
+  useEffect(() => {
+    if (!isAdmin) return;
+    api.get('/admin/collectors/list')
+      .then(res => {
+        const list = res.data?.collectors || res.data?.users || (Array.isArray(res.data) ? res.data : []);
+        setCollectors(list);
+      })
+      .catch((err) => {
+        console.error('Error al cargar cobradores:', err);
+        setCollectors([]);
+      });
+  }, [isAdmin]);
+
+  const toggleSelectClient = (clientId) => {
+    setSelectedClientIds(prev =>
+      prev.includes(clientId) ? prev.filter(id => id !== clientId) : [...prev, clientId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedClientIds.length === (filteredClients || []).length) {
+      setSelectedClientIds([]);
+    } else {
+      setSelectedClientIds((filteredClients || []).map(c => c?.id).filter(Boolean));
+    }
+  };
+
+  const handleAssignSuccess = async () => {
+    setSelectedClientIds([]);
+    setIsSelectMode(false);
+    if (onAssignPortfolio) await onAssignPortfolio();
+  };
+
   const handleDeletePaymentClick = async (payment) => {
     if (!onDeletePayment) return;
-    const confirmMsg = `¿Deseas anular este pago de ${formatCurrency(payment.amount)}?`;
+    const confirmMsg = `¿Deseas anular este pago de ${formatCurrency(payment?.amount)}?`;
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      setDeletingPaymentId(payment.id);
-      await onDeletePayment(payment.id);
+      setDeletingPaymentId(payment?.id);
+      await onDeletePayment(payment?.id);
     } catch (err) {
       console.error('Error al anular pago:', err);
       alert(err.response?.data?.error || err.message || 'Error al anular el pago');
@@ -68,16 +118,16 @@ export function VistaClientes({
     let overdue = 0;
     let paid = 0;
 
-    clients.forEach((c) => {
+    (clients || []).forEach((c) => {
       all++;
-      const cLoans = loans.filter((l) => l.clientId === c.id && !l.isArchived);
-      const hasOverdue = cLoans.some((l) => l.status === 'OVERDUE');
-      const hasActive = cLoans.some((l) => l.status === 'ACTIVE');
+      const cLoans = (loans || []).filter((l) => (l?.clientId === c?.id || l?.client_id === c?.id) && !l?.isArchived);
+      const hasOverdue = cLoans.some((l) => l?.status === 'OVERDUE');
+      const hasActive = cLoans.some((l) => l?.status === 'ACTIVE');
       if (hasOverdue) {
         overdue++;
       } else if (hasActive) {
         upToDate++;
-      } else if (cLoans.length > 0 && cLoans.every((l) => l.status === 'PAID')) {
+      } else if (cLoans.length > 0 && cLoans.every((l) => l?.status === 'PAID')) {
         paid++;
       }
     });
@@ -85,27 +135,36 @@ export function VistaClientes({
     return { all, upToDate, overdue, paid };
   }, [clients, loans]);
 
-  const filteredClients = clients.filter((client) => {
-    const term = searchTerm.toLowerCase().trim();
+  // Apply collector filter (client-side, from already-filtered list by backend)
+  const collectorFilteredClients = React.useMemo(() => {
+    if (!isAdmin || collectorFilter === 'ALL') return (clients || []);
+    if (collectorFilter === 'UNASSIGNED') {
+      return (clients || []).filter(c => !c?.assignedTo && !c?.assigned_to && !c?.assigned_to_user_id);
+    }
+    return (clients || []).filter(c => c?.assignedTo === collectorFilter || c?.assigned_to === collectorFilter || c?.assigned_to_user_id === collectorFilter);
+  }, [clients, isAdmin, collectorFilter]);
+
+  const filteredClients = (collectorFilteredClients || []).filter((client) => {
+    const term = (searchTerm || '').toLowerCase().trim();
     const matchesSearch =
       !term ||
-      (client.name || '').toLowerCase().includes(term) ||
-      (client.alias || '').toLowerCase().includes(term) ||
-      (client.phone || '').includes(term) ||
-      (client.address || '').toLowerCase().includes(term) ||
-      (client.identification && client.identification.toLowerCase().includes(term));
+      (client?.name || '').toLowerCase().includes(term) ||
+      (client?.alias || '').toLowerCase().includes(term) ||
+      (client?.phone || '').includes(term) ||
+      (client?.address || '').toLowerCase().includes(term) ||
+      (client?.identification && String(client.identification).toLowerCase().includes(term));
 
     if (!matchesSearch) return false;
 
-    const cLoans = loans.filter((l) => l.clientId === client.id && !l.isArchived);
+    const cLoans = (loans || []).filter((l) => (l?.clientId === client?.id || l?.client_id === client?.id) && !l?.isArchived);
     if (statusFilter === 'UP_TO_DATE') {
-      const hasActive = cLoans.some((l) => l.status === 'ACTIVE');
-      const hasOverdue = cLoans.some((l) => l.status === 'OVERDUE');
+      const hasActive = cLoans.some((l) => l?.status === 'ACTIVE');
+      const hasOverdue = cLoans.some((l) => l?.status === 'OVERDUE');
       return hasActive && !hasOverdue;
     } else if (statusFilter === 'OVERDUE') {
-      return cLoans.some((l) => l.status === 'OVERDUE');
+      return cLoans.some((l) => l?.status === 'OVERDUE');
     } else if (statusFilter === 'PAID') {
-      return cLoans.length > 0 && cLoans.every((l) => l.status === 'PAID');
+      return cLoans.length > 0 && cLoans.every((l) => l?.status === 'PAID');
     }
 
     return true;
@@ -116,11 +175,13 @@ export function VistaClientes({
     setIsDetailModalOpen(true);
   };
 
-  const activeSelectedClient = selectedClient ? (clients.find((c) => c.id === selectedClient.id) || selectedClient) : null;
-  const clientLoans = activeSelectedClient ? loans.filter((l) => l.clientId === activeSelectedClient.id) : [];
-  const clientPayments = activeSelectedClient ? payments.filter((p) => p.clientId === activeSelectedClient.id) : [];
-  const activeLoans = clientLoans.filter((l) => l.status !== 'PAID' && !l.isArchived);
-  const paidLoans = clientLoans.filter((l) => l.status === 'PAID' && !l.isArchived);
+  const activeSelectedClient = selectedClient ? ((clients || []).find((c) => c?.id === selectedClient?.id) || selectedClient) : null;
+  const clientLoans = activeSelectedClient ? (loans || []).filter((l) => l?.clientId === activeSelectedClient?.id || l?.client_id === activeSelectedClient?.id) : [];
+  const clientPayments = activeSelectedClient ? (payments || []).filter((p) => p?.clientId === activeSelectedClient?.id || p?.client_id === activeSelectedClient?.id) : [];
+  const activeLoans = clientLoans.filter((l) => l?.status !== 'PAID' && !l?.isArchived);
+  const paidLoans = clientLoans.filter((l) => l?.status === 'PAID' && !l?.isArchived);
+
+  // collectorFilteredClients is defined above filteredClients
 
   return (
     <div className="space-y-6">
@@ -140,14 +201,88 @@ export function VistaClientes({
           </div>
         </div>
 
-        <button
-          onClick={() => navigate('/nuevo-cliente')}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl terracotta-gradient text-white text-xs font-extrabold shadow-sm hover:brightness-110 active:scale-95 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Registrar Nuevo Cliente</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {isAdmin && (
+            <>
+              {isSelectMode ? (
+                <>
+                  <button
+                    onClick={() => { setIsSelectMode(false); setSelectedClientIds([]); }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-[#E6DCD2] text-[#6E615A] text-xs font-bold hover:bg-stone-100 transition-all"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Cancelar</span>
+                  </button>
+                  <button
+                    onClick={() => setIsAssignModalOpen(true)}
+                    disabled={selectedClientIds.length === 0}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#2D7A5D] disabled:opacity-50 text-white text-xs font-bold shadow-sm hover:brightness-110 transition-all"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>Asignar ({selectedClientIds.length})</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setIsSelectMode(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-[#D96B27]/40 bg-[#FDF3ED] text-[#D96B27] text-xs font-bold hover:bg-[#FDEBD8] transition-all"
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span>Asignar Cartera</span>
+                </button>
+              )}
+            </>
+          )}
+          <button
+            onClick={() => navigate('/nuevo-cliente')}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl terracotta-gradient text-white text-xs font-extrabold shadow-sm hover:brightness-110 active:scale-95 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Registrar Nuevo Cliente</span>
+          </button>
+        </div>
       </div>
+
+      {/* Admin Portfolio Filter Bar */}
+      {isAdmin && (
+        <div className="flex flex-wrap items-center gap-2 bg-white p-3 rounded-2xl border border-[#E6DCD2] warm-shadow">
+          <Filter className="w-4 h-4 text-[#D96B27] shrink-0" />
+          <span className="text-xs font-bold text-[#6E615A] mr-1">Ver Cartera de:</span>
+          <button
+            onClick={() => setCollectorFilter('ALL')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+              collectorFilter === 'ALL'
+                ? 'terracotta-gradient text-white border-[#D96B27]'
+                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#FDF3ED]'
+            }`}
+          >
+            Todos ({clients.length})
+          </button>
+          <button
+            onClick={() => setCollectorFilter('UNASSIGNED')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+              collectorFilter === 'UNASSIGNED'
+                ? 'bg-[#6E615A] text-white border-[#6E615A]'
+                : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            Sin Asignar
+          </button>
+          {collectors.map(col => (
+            <button
+              key={col.id}
+              onClick={() => setCollectorFilter(col.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                collectorFilter === col.id
+                  ? 'bg-[#2D7A5D] text-white border-[#2D7A5D]'
+                  : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#EEF6F2] hover:text-[#2D7A5D]'
+              }`}
+            >
+              👤 {col.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Search Bar & Advanced Filter Chips */}
       <div className="space-y-3">
@@ -164,6 +299,16 @@ export function VistaClientes({
 
         {/* Filter Chips */}
         <div className="flex flex-wrap items-center gap-2">
+          {isSelectMode && isAdmin && (
+            <button
+              onClick={toggleSelectAll}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border bg-[#FDF3ED] text-[#D96B27] border-[#D96B27]/40 hover:bg-[#FDEBD8]"
+            >
+              {selectedClientIds.length === filteredClients.length && filteredClients.length > 0
+                ? <><CheckSquare className="w-3.5 h-3.5" /> Deseleccionar todo</>
+                : <><Square className="w-3.5 h-3.5" /> Seleccionar todo ({filteredClients.length})</>}
+            </button>
+          )}
           <button
             onClick={() => setStatusFilter('ALL')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
@@ -230,14 +375,29 @@ export function VistaClientes({
             const currentActive = currentLoans.filter((l) => l.status !== 'PAID');
             const totalRemaining = currentActive.reduce((sum, l) => sum + (l.remainingAmount || 0), 0);
             const hasOverdue = currentActive.some((l) => l.status === 'OVERDUE');
+            const isChecked = selectedClientIds.includes(client.id);
 
             return (
               <div
                 key={client.id}
-                className="bg-white rounded-3xl p-5 border border-[#E6DCD2] warm-shadow hover:border-[#D96B27]/40 transition-all flex flex-col justify-between"
+                className={`bg-white rounded-3xl p-5 border warm-shadow hover:border-[#D96B27]/40 transition-all flex flex-col justify-between relative ${
+                  isSelectMode && isChecked ? 'border-[#D96B27] ring-2 ring-[#D96B27]/30' : 'border-[#E6DCD2]'
+                }`}
               >
+                {/* Checkbox overlay for select mode */}
+                {isSelectMode && isAdmin && (
+                  <button
+                    onClick={() => toggleSelectClient(client.id)}
+                    className="absolute top-3 left-3 z-10 w-6 h-6 flex items-center justify-center rounded-lg transition-all"
+                    title={isChecked ? 'Deseleccionar' : 'Seleccionar'}
+                  >
+                    {isChecked
+                      ? <CheckSquare className="w-5 h-5 text-[#D96B27]" />
+                      : <Square className="w-5 h-5 text-[#B5A49A] hover:text-[#D96B27]" />}
+                  </button>
+                )}
                 <div>
-                  <div className="flex items-start justify-between gap-2 border-b border-[#E6DCD2]/60 pb-3 mb-3">
+                  <div className={`flex items-start justify-between gap-2 border-b border-[#E6DCD2]/60 pb-3 mb-3 ${isSelectMode && isAdmin ? 'pl-7' : ''}`}>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-[#FDF3ED] text-[#D96B27] font-black flex items-center justify-center text-base border border-[#D96B27]/20">
                         {client.name ? client.name.charAt(0) : 'C'}
@@ -295,6 +455,16 @@ export function VistaClientes({
                         DNI: <strong className="text-[#2C221E]">{client.identification}</strong>
                       </div>
                     )}
+                    {/* Assigned collector badge (ADMIN view) */}
+                    {isAdmin && client.assignedToName && (
+                      <div className="flex items-center gap-1 text-[11px] text-[#2D7A5D] font-semibold mt-1">
+                        <UserCheck className="w-3 h-3" />
+                        <span>{client.assignedToName}</span>
+                      </div>
+                    )}
+                    {isAdmin && !client.assignedTo && (
+                      <div className="text-[11px] text-[#B5A49A] italic mt-1">Sin cobrador asignado</div>
+                    )}
                   </div>
                 </div>
 
@@ -346,12 +516,12 @@ export function VistaClientes({
             <div className="flex items-start justify-between border-b border-[#E6DCD2] pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-[#FDF3ED] text-[#D96B27] font-black flex items-center justify-center text-lg border border-[#D96B27]/20">
-                  {selectedClient.name.charAt(0)}
+                  {selectedClient?.name ? selectedClient.name.charAt(0) : 'C'}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg sm:text-xl font-extrabold text-[#2C221E]">
-                      {selectedClient.name}
+                      {selectedClient?.name || 'Cliente'}
                     </h3>
                     <button
                       onClick={() => setIsEditClientOpen(true)}
@@ -364,9 +534,9 @@ export function VistaClientes({
                   <div className="flex flex-wrap items-center gap-3 text-xs text-[#6E615A] mt-0.5">
                     <span className="flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
-                      {selectedClient.phone}
+                      {selectedClient?.phone || 'Sin teléfono'}
                     </span>
-                    {selectedClient.identification && (
+                    {selectedClient?.identification && (
                       <span className="flex items-center gap-1">
                         <User className="w-3.5 h-3.5 text-[#E89D4F]" />
                         DNI: {selectedClient.identification}
@@ -654,6 +824,15 @@ export function VistaClientes({
         payment={selectedPaymentForReceipt?.payment || null}
         client={activeSelectedClient}
         loan={selectedPaymentForReceipt?.loan || null}
+      />
+
+      {/* Assign Collector Modal (ADMIN only) */}
+      <AssignCollectorModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        selectedClientIds={selectedClientIds}
+        collectors={collectors}
+        onAssignSuccess={handleAssignSuccess}
       />
     </div>
   );

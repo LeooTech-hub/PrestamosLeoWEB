@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// En desarrollo, usar VITE_API_BASE_URL si existe, o por defecto la URL directa del backend (http://localhost:5000/api).
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL,
   timeout: 25000,
   headers: {
     'Content-Type': 'application/json',
@@ -28,7 +31,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor de respuestas: captura 401 (Unauthorized)
+// Interceptor de respuestas: captura 401 (Unauthorized) y errores de red
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -44,6 +47,12 @@ api.interceptors.response.use(
         window.dispatchEvent(new Event('auth:unauthorized'));
       }
     }
+
+    // Error de red (ERR_CONNECTION_REFUSED): el backend no está disponible
+    if (!error.response && error.code === 'ERR_NETWORK') {
+      console.error('[API] Error de conexión: el servidor backend no está disponible.', error.config?.url);
+    }
+
     return Promise.reject(error);
   }
 );

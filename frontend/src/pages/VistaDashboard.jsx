@@ -22,10 +22,14 @@ export function VistaDashboard({
   onUpdatePayment,
   onDeletePayment,
   onOpenUserManagement,
+  user,
 }) {
   const navigate = useNavigate();
   const [editingPayment, setEditingPayment] = useState(null);
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
+
+  const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = String(currentUser?.role || '').toUpperCase() === 'ADMIN';
 
   const handleDeletePaymentClick = async (payment) => {
     if (!onDeletePayment) return;
@@ -67,13 +71,15 @@ export function VistaDashboard({
             <Plus className="w-4 h-4" />
             <span>Crear Nuevo Préstamo</span>
           </button>
-          <button 
-            type="button" 
-            onClick={onOpenUserManagement} 
-            className="bg-stone-900 text-white px-4 py-2 rounded-xl font-bold text-sm ml-2 z-50 cursor-pointer flex items-center gap-2 shadow-md hover:bg-black transition-all"
-          >
-            👤 Gestionar Usuarios / Crear Cobrador
-          </button>
+          {isAdmin && (
+            <button 
+              type="button" 
+              onClick={onOpenUserManagement} 
+              className="bg-stone-900 text-white px-4 py-2 rounded-xl font-bold text-sm ml-2 z-50 cursor-pointer flex items-center gap-2 shadow-md hover:bg-black transition-all"
+            >
+              👤 Gestionar Usuarios / Crear Cobrador
+            </button>
+          )}
         </div>
       </div>
 
@@ -239,56 +245,62 @@ export function VistaDashboard({
           </div>
 
           <div className="space-y-2">
-            {recentPayments.slice(0, 4).map((payment) => (
-              <div
-                key={payment.id}
-                className="p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/60 flex items-center justify-between text-xs"
-              >
-                <div>
-                  <strong className="text-[#2C221E] block font-bold">
-                    {payment.clientName}
-                  </strong>
-                  <span className="text-[#6E615A]">
-                    Día {payment.dayNumber} • {payment.notes || 'Abono'}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <strong className="text-[#2D7A5D] font-extrabold block text-sm">
-                      +{formatCurrency(payment.amount)}
+            {!recentPayments || recentPayments.length === 0 ? (
+              <div className="p-6 text-center text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C]">
+                No hay cobros registrados hoy
+              </div>
+            ) : (
+              recentPayments.slice(0, 4).map((payment) => (
+                <div
+                  key={payment.id}
+                  className="p-3 bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C] flex items-center justify-between text-xs"
+                >
+                  <div>
+                    <strong className="text-[#2C221E] dark:text-[#F3F4F6] block font-bold">
+                      {payment.clientName}
                     </strong>
-                    <span className="text-[10px] text-[#6E615A]">
-                      {formatDatePE(payment.date)}
+                    <span className="text-[#6E615A] dark:text-[#E5E7EB]">
+                      Día {payment.dayNumber} • {payment.notes || 'Abono'}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    {onUpdatePayment && (
-                      <button
-                        type="button"
-                        onClick={() => setEditingPayment(payment)}
-                        className="p-1 rounded-lg text-[#6E615A] hover:text-[#D96B27] hover:bg-white border border-transparent hover:border-[#E6DCD2] transition-all cursor-pointer"
-                        title="Editar Pago"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    {onDeletePayment && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePaymentClick(payment)}
-                        disabled={deletingPaymentId === payment.id}
-                        className="p-1 rounded-lg text-[#A89B92] hover:text-[#DC2626] hover:bg-[#FDF2F0] border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
-                        title="Anular Pago"
-                      >
-                        <Trash2 className={`w-3.5 h-3.5 ${deletingPaymentId === payment.id ? 'animate-spin' : ''}`} />
-                      </button>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <strong className="text-[#2D7A5D] dark:text-[#3D9970] font-extrabold block text-sm">
+                        +{formatCurrency(payment.amount)}
+                      </strong>
+                      <span className="text-[10px] text-[#6E615A] dark:text-[#E5E7EB]">
+                        {formatDatePE(payment.date)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {onUpdatePayment && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingPayment(payment)}
+                          className="p-1 rounded-lg text-[#6E615A] hover:text-[#D96B27] hover:bg-white border border-transparent hover:border-[#E6DCD2] transition-all cursor-pointer"
+                          title="Editar Pago"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {onDeletePayment && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePaymentClick(payment)}
+                          disabled={deletingPaymentId === payment.id}
+                          className="p-1 rounded-lg text-[#A89B92] hover:text-[#DC2626] hover:bg-[#FDF2F0] border border-transparent hover:border-[#DC2626]/20 transition-all cursor-pointer disabled:opacity-50"
+                          title="Anular Pago"
+                        >
+                          <Trash2 className={`w-3.5 h-3.5 ${deletingPaymentId === payment.id ? 'animate-spin' : ''}`} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

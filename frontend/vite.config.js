@@ -12,5 +12,14 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    proxy: {
+      // Proxea todas las peticiones /api/* al backend Node.js en puerto 5000
+      // Esto elimina ERR_CONNECTION_REFUSED en desarrollo sin necesitar CORS extra
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });

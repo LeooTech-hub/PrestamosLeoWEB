@@ -8,20 +8,21 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment, onRe
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLoan, setSelectedLoan] = useState(null);
 
-  const pendingCount = todayCollections.filter((c) => !c.isPaidToday).length;
-  const paidCount = todayCollections.filter((c) => c.isPaidToday).length;
-  const totalTargetToday = todayCollections.reduce((sum, c) => sum + (c.loan?.dailyPaymentAmount || 0), 0);
-  const totalCollectedToday = todayCollections.reduce((sum, c) => sum + (c.amountPaidToday || 0), 0);
+  const collections = todayCollections || [];
+  const pendingCount = collections.filter((c) => !c?.isPaidToday).length;
+  const paidCount = collections.filter((c) => c?.isPaidToday).length;
+  const totalTargetToday = collections.reduce((sum, c) => sum + (c?.loan?.dailyPaymentAmount || 0), 0);
+  const totalCollectedToday = collections.reduce((sum, c) => sum + (c?.amountPaidToday || 0), 0);
 
-  const filteredCollections = todayCollections.filter((c) => {
-    if (filter === 'PENDING' && c.isPaidToday) return false;
-    if (filter === 'PAID' && !c.isPaidToday) return false;
+  const filteredCollections = collections.filter((c) => {
+    if (filter === 'PENDING' && c?.isPaidToday) return false;
+    if (filter === 'PAID' && !c?.isPaidToday) return false;
 
-    const term = searchTerm.toLowerCase();
-    const clientName = c.loan?.clientName || '';
-    const clientAlias = c.loan?.clientAlias || '';
-    const clientPhone = c.loan?.clientPhone || '';
-    const clientAddress = c.loan?.clientAddress || '';
+    const term = (searchTerm || '').toLowerCase();
+    const clientName = c?.loan?.clientName || c?.loan?.client_name || '';
+    const clientAlias = c?.loan?.clientAlias || c?.loan?.client_alias || '';
+    const clientPhone = c?.loan?.clientPhone || c?.loan?.client_phone || '';
+    const clientAddress = c?.loan?.clientAddress || c?.loan?.client_address || '';
 
     return (
       clientName.toLowerCase().includes(term) ||
