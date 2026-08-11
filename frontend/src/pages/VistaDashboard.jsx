@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
+import { formatCurrency, formatDatePE, formatDueDate } from '../utils/loanHelpers';
 import {
   TrendingUp,
   Users,
@@ -207,10 +207,10 @@ export function VistaDashboard({
             {recentLoans.slice(0, 4).map((loan) => (
               <div
                 key={loan.id}
-                className="p-3 bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C] flex items-center justify-between text-xs transition-colors duration-300"
+                className="p-3 bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C] flex items-center justify-between text-xs transition-colors duration-300 gap-2"
               >
-                <div>
-                  <strong className="text-[#2C221E] dark:text-[#F3F4F6] block font-bold">
+                <div className="min-w-0 flex-1">
+                  <strong className="text-[#2C221E] dark:text-[#F3F4F6] block font-bold truncate">
                     {loan.clientName}
                   </strong>
                   <span className="text-[#6E615A] dark:text-[#E5E7EB]">
@@ -218,20 +218,20 @@ export function VistaDashboard({
                   </span>
                 </div>
 
-                <div className="text-right">
+                <div className="flex flex-col items-end text-right shrink-0">
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border block mb-1 ${
+                    className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] font-bold rounded-full border mb-1 shrink-0 ${
                       loan.status === 'OVERDUE'
                         ? 'bg-[#FDF2F0] dark:bg-[#3D2522] text-[#C84B31] dark:text-[#E57373] border-[#C84B31]/30'
                         : loan.status === 'PAID'
-                        ? 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30'
-                        : 'bg-[#FDF3ED] text-[#D96B27] border-[#D96B27]/30'
+                        ? 'bg-[#EEF6F2] dark:bg-[#1E2D27] text-[#2D7A5D] dark:text-[#3D9970] border-[#2D7A5D]/30'
+                        : 'bg-[#FDF3ED] dark:bg-[#2C221E] text-[#D96B27] dark:text-[#E07A5F] border-[#D96B27]/30'
                     }`}
                   >
                     {loan.status === 'OVERDUE' ? 'En Mora' : loan.status === 'PAID' ? 'Cancelado' : 'Vigente'}
                   </span>
-                  <span className="text-[10px] text-[#6E615A]">
-                    Vence: {formatDatePE(loan.dueDate)}
+                  <span className="text-[10px] text-[#6E615A] dark:text-[#E5E7EB] font-medium whitespace-nowrap">
+                    {formatDueDate(loan.dueDate || loan.due_date || loan.vencimiento)}
                   </span>
                 </div>
               </div>

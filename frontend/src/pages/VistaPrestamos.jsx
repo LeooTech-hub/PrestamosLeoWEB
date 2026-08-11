@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatCurrency, formatDatePE, getDaysDifferenceInfo, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
+import { formatCurrency, formatDatePE, formatDueDate, getDaysDifferenceInfo, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
 import { PaymentModal } from '../components/PaymentModal';
 import { EditLoanModal } from '../components/EditLoanModal';
 import { SmartDeleteModal } from '../components/SmartDeleteModal';
@@ -201,8 +201,8 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
                       {daysInfo.label}
                     </span>
 
-                    <span className="text-[10px] font-semibold text-[#6E615A]">
-                      Vence: {formatDatePE(loan.dueDate)}
+                    <span className="text-[10px] font-semibold text-[#6E615A] dark:text-[#E5E7EB] whitespace-nowrap">
+                      {formatDueDate(loan.dueDate || loan.due_date || loan.vencimiento)}
                     </span>
                   </div>
 

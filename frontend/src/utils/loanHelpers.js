@@ -32,6 +32,22 @@ export function formatDatePE(dateStr) {
   return dateStr;
 }
 
+export const formatDueDate = (dateStr) => {
+  if (!dateStr) return '';
+  // Si viene en formato ISO o Date string, extraer solo YYYY-MM-DD
+  const cleanDate = dateStr.toString().split('T')[0];
+  const parts = cleanDate.split('-');
+  if (parts.length === 3) {
+    return `Vence: ${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'Vence: --';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `Vence: ${day}/${month}/${year}`;
+};
+
 export function getDaysDifferenceInfo(dueDateStr) {
   if (!dueDateStr) return { label: 'Sin fecha', color: 'GRAY', diffDays: 0 };
 

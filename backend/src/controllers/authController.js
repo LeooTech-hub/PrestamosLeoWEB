@@ -11,22 +11,36 @@ export const authController = {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ error: 'Correo o contraseña incorrectos' });
+        return res.status(400).json({ message: 'Correo o contraseña incorrectos', error: 'Correo o contraseña incorrectos' });
       }
 
       const normalizedEmail = String(email).trim().toLowerCase();
 
-      const [users] = await pool.query('SELECT * FROM users WHERE LOWER(email) = ?', [normalizedEmail]);
+      let users = [];
+      try {
+        const [rows] = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [normalizedEmail]);
+        users = rows || [];
+      } catch (dbErr) {
+        console.error('[LOGIN ERROR DB]:', dbErr);
+        const [rows] = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [normalizedEmail]);
+        users = rows || [];
+      }
 
       if (!users || users.length === 0) {
-        return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+        return res.status(401).json({ message: 'Correo o contraseña incorrectos', error: 'Correo o contraseña incorrectos' });
       }
 
       const user = users[0];
-      const isMatch = await bcrypt.compare(String(password), user.password_hash);
+      const passwordToCompare = user.password_hash || user.password;
+
+      if (!passwordToCompare) {
+        return res.status(401).json({ message: 'Correo o contraseña incorrectos', error: 'Correo o contraseña incorrectos' });
+      }
+
+      const isMatch = await bcrypt.compare(String(password), passwordToCompare);
 
       if (!isMatch) {
-        return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+        return res.status(401).json({ message: 'Correo o contraseña incorrectos', error: 'Correo o contraseña incorrectos' });
       }
 
       const secret = process.env.JWT_SECRET || 'prestamos_leo_jwt_secret_key_2026_super_secure';
@@ -47,8 +61,8 @@ export const authController = {
         },
       });
     } catch (error) {
-      console.error('Error en login:', error);
-      return res.status(500).json({ error: 'Error interno del servidor en inicio de sesión' });
+      console.error('[LOGIN ERROR]:', error);
+      return res.status(401).json({ message: 'Correo o contraseña incorrectos', error: error.message || 'Correo o contraseña incorrectos' });
     }
   },
 
