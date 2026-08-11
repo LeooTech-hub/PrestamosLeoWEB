@@ -14,6 +14,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
 
   const [capital, setCapital] = useState(500);
   const [paymentDays, setPaymentDays] = useState(20);
+  const [interestRate, setInterestRate] = useState(20);
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split('T')[0]
   );
@@ -68,7 +69,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
     }
   };
 
-  const calculated = calculate20PercentLoan(capital || 0, paymentDays || 20);
+  const calculated = calculateCustomLoan(capital || 0, paymentDays || 20, interestRate);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,7 +85,11 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
         clientAddress,
         clientIdentification,
         capital: capNum,
+        amount: capNum,
+        interest_rate: Number(interestRate) || 20,
+        interestRate: Number(interestRate) || 20,
         paymentDays,
+        days: paymentDays,
         startDate,
         notes,
       });
@@ -264,29 +269,67 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
               />
             </div>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#6E615A] mb-1">
+                Interés / Comisión (%):
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1 shrink-0">
+                  {[10, 15, 20].map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => setInterestRate(rate)}
+                      className={`px-2 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                        Number(interestRate) === rate
+                          ? 'terracotta-gradient text-white border-[#D96B27]'
+                          : 'bg-[#FAF8F5] text-[#6E615A] border-[#E6DCD2] hover:bg-[#FDF3ED]'
+                      }`}
+                    >
+                      {rate}%
+                    </button>
+                  ))}
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="any"
+                    value={interestRate ?? ''}
+                    onChange={(e) => setInterestRate(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="20"
+                    className="w-full px-3 py-1.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+                  />
+                  <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#6E615A]">%</span>
+                </div>
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-[#6E615A] mb-1">
-              Días de Pago Acordados:
-            </label>
-            <input
-              type="number"
-              required
-              min="1"
-              max="365"
-              value={paymentDays}
-              onChange={(e) => {
-                const val = e.target.value;
-                setPaymentDays(val === '' ? '' : Math.min(365, Math.max(1, parseInt(val, 10) || 1)));
-              }}
-              placeholder="Número de días (1 - 365)"
-              className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
-            />
+            <div>
+              <label className="block text-xs font-bold text-[#6E615A] mb-1">
+                Días de Pago Acordados:
+              </label>
+              <input
+                type="number"
+                required
+                min="1"
+                max="365"
+                value={paymentDays}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPaymentDays(val === '' ? '' : Math.min(365, Math.max(1, parseInt(val, 10) || 1)));
+                }}
+                placeholder="Número de días (1 - 365)"
+                className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
+              />
+            </div>
           </div>
 
           <div className="p-3 bg-[#FDF3ED] rounded-2xl border border-[#D96B27]/20 text-xs flex items-center justify-between">
             <div>
-              <span className="text-[#6E615A] block">Total a Cobrar (+20%):</span>
+              <span className="text-[#6E615A] block">Total a Cobrar (+{interestRate || 20}%):</span>
               <strong className="text-[#2C221E] text-sm font-extrabold">
                 {formatCurrency(calculated.totalToPay)}
               </strong>

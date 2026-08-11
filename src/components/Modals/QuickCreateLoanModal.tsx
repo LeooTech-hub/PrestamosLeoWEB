@@ -33,6 +33,7 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
   // Loan condition states
   const [capital, setCapital] = useState<number>(500);
   const [paymentDaysInput, setPaymentDaysInput] = useState<string>('20');
+  const [interestRate, setInterestRate] = useState<number>(20);
   const [startDate, setStartDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -64,7 +65,7 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
   };
 
   const dueDate = computeDueDate();
-  const breakdown = calculate20PercentLoan(capital, parsedPaymentDays);
+  const breakdown = calculate20PercentLoan(capital, parsedPaymentDays, interestRate);
   const daysPresets = [10, 15, 20, 30];
   const capitalPresets = [100, 200, 500, 1000, 1500, 2000];
 
@@ -95,8 +96,13 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
         clientAddress: selectedClient.address,
         clientIdentification: selectedClient.identification,
         capital,
+        amount: capital,
+        interest_rate: interestRate,
+        interestRate: interestRate,
         paymentDays: parsedPaymentDays,
+        days: parsedPaymentDays,
         startDate,
+        dueDate,
         notes: notes.trim(),
       });
 
@@ -231,9 +237,43 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
                 <DollarSign className="w-4 h-4 text-[#D96B27] dark:text-[#E07A5F]" />
                 2. Condiciones del Préstamo (S/.)
               </span>
-              <span className="text-[11px] font-bold text-[#D96B27] dark:text-[#E07A5F] bg-[#FDF3ED] dark:bg-[#E07A5F]/15 px-2 py-0.5 rounded-full">
-                20% Interés
-              </span>
+            </div>
+            {/* Custom Interest Rate */}
+            <div>
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
+                Interés / Comisión (%):
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1 shrink-0">
+                  {[10, 15, 20].map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => setInterestRate(rate)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-extrabold transition-all border ${
+                        interestRate === rate
+                          ? 'terracotta-gradient text-white border-transparent'
+                          : 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E]'
+                      }`}
+                    >
+                      {rate}%
+                    </button>
+                  ))}
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="any"
+                    value={interestRate ?? ''}
+                    onChange={(e) => setInterestRate(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full px-3 py-1.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs font-bold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                    placeholder="20"
+                  />
+                  <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#6E615A] dark:text-[#C2B29F]">%</span>
+                </div>
+              </div>
             </div>
 
             {/* Presets Soles */}

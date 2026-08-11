@@ -143,6 +143,8 @@ export async function initDb() {
 
     // Asegurar columnas adicionales en clients
     await safeAddColumn('clients', 'alias', 'VARCHAR(100) NULL');
+    await safeAddColumn('clients', 'dni', 'VARCHAR(50) NULL');
+    await safeAddColumn('clients', 'documento', 'VARCHAR(50) NULL');
     await safeAddColumn('clients', 'route_order', 'INT DEFAULT 0');
     await safeAddColumn('clients', 'assigned_to_user_id', 'VARCHAR(255) NULL');
     await safeAddColumn('clients', 'created_by_user_id', 'VARCHAR(255) NULL');
@@ -161,8 +163,10 @@ export async function initDb() {
     await safeAddColumn('loans', 'total_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'payment_days', 'INT DEFAULT 20');
     await safeAddColumn('loans', 'days_agreed', 'INT NULL');
+    await safeAddColumn('loans', 'days', 'INT DEFAULT 20');
     await safeAddColumn('loans', 'daily_payment_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'daily_payment', 'DECIMAL(10,2) DEFAULT 0.00');
+    await safeAddColumn('loans', 'daily_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'paid_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'remaining_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'paid_days_count', 'INT DEFAULT 0');

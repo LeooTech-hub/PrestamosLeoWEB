@@ -41,6 +41,7 @@ const defaultDashboardSummary: DashboardSummary = {
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [userRole, setUserRole] = useState<'ADMIN' | 'COBRADOR'>('COBRADOR');
+  const isAdmin = userRole === 'ADMIN';
   const [isUserManagementOpen, setIsUserManagementOpen] = useState<boolean>(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -310,29 +311,31 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:px-6">
-        {/* Banner Naranja PANEL DE PRÉSTAMOS directamente en page.tsx */}
-        <div className="bg-gradient-to-r from-[#D96B27] via-[#C25A19] to-[#2C221E] dark:from-[#B85324] dark:via-[#9C431B] dark:to-[#26221F] text-white rounded-2xl p-4 sm:p-6 shadow-md mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl uppercase font-extrabold tracking-wide text-white">
-              PANEL DE PRÉSTAMOS
-            </h2>
-            <p className="text-xs sm:text-sm text-white/90">
-              Control de préstamos del 20% en Soles (S/.) por días de pago.
-            </p>
+      {/* Main Container */}
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Banner with Quick Action button */}
+        <div className="mb-6 p-4 rounded-3xl terracotta-gradient text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center font-bold">
+              💰
+            </div>
+            <div>
+              <h2 className="font-extrabold text-base sm:text-lg">Sistema de Gestión PrestamosLeoWEB</h2>
+              <p className="text-xs text-white/80">Control integral de préstamos, cobros diarios y rutas en Soles (S/.)</p>
+            </div>
           </div>
+
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setIsQuickCreateLoanOpen(true)}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all"
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer"
             >
               + Crear Nuevo Préstamo
             </button>
             {isAdmin && (
               <button
-                onClick={() => setIsCollectorModalOpen(true)}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all"
+                onClick={() => setShowCollectors(true)}
+                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer"
               >
                 👥 Panel Cobradores
               </button>

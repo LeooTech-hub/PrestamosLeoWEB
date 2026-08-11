@@ -4,6 +4,8 @@ export interface Client {
   alias?: string;
   phone: string;
   address: string;
+  dni?: string;
+  documento?: string;
   identification?: string;
   notes?: string;
   status: 'ACTIVE' | 'ARCHIVED';
@@ -81,8 +83,13 @@ export interface NewClientLoanFormData {
   clientAddress: string;
   clientIdentification?: string;
   capital: number;
+  amount?: number;
+  interest_rate?: number;
+  interestRate?: number;
   paymentDays: number;
+  days?: number;
   startDate: string;
+  dueDate?: string;
   notes?: string;
 }
 

@@ -48,6 +48,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
   const [capital, setCapital] = useState(500);
   const [paymentDays, setPaymentDays] = useState(20);
+  const [interestRate, setInterestRate] = useState(20);
   const initialStartDate = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(() => addDaysToDateStr(initialStartDate, 20));
@@ -161,7 +162,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
     }
   };
 
-  const calculated = calculate20PercentLoan(capital || 0, paymentDays || 20);
+  const calculated = calculate20PercentLoan(capital || 0, paymentDays || 20, interestRate);
   const isClientLocked = Boolean(selectedClientId);
 
   const handleSubmit = async (e) => {
@@ -180,7 +181,11 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
         clientAddress,
         clientIdentification,
         capital: capNum,
+        amount: capNum,
+        interest_rate: Number(interestRate) || 20,
+        interestRate: Number(interestRate) || 20,
         paymentDays: Number(paymentDays) || 20,
+        days: Number(paymentDays) || 20,
         startDate,
         dueDate: endDate,
         notes,
@@ -434,6 +439,43 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1">
+                  Interés / Comisión (%):
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1 shrink-0">
+                    {[10, 15, 20].map((rate) => (
+                      <button
+                        key={rate}
+                        type="button"
+                        onClick={() => setInterestRate(rate)}
+                        className={`px-2 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                          Number(interestRate) === rate
+                            ? 'terracotta-gradient text-white border-[#D96B27]'
+                            : 'bg-[#FAF8F5] dark:bg-[#24211E] text-[#6E615A] dark:text-[#E5E7EB] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#FDF3ED]'
+                        }`}
+                      >
+                        {rate}%
+                      </button>
+                    ))}
+                  </div>
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="any"
+                      value={interestRate ?? ''}
+                      onChange={(e) => setInterestRate(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="20"
+                      className="w-full px-3 py-1.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-xs font-bold text-[#2C221E] dark:text-[#F3F4F6] focus:outline-none focus:border-[#D96B27]"
+                    />
+                    <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#6E615A]">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1">
                   Días:
                 </label>
                 <input
@@ -502,7 +544,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
               </div>
 
               <div className="flex justify-between py-1">
-                <span className="text-[#6E615A] dark:text-[#E5E7EB]">Interés (20% Fijo):</span>
+                <span className="text-[#6E615A] dark:text-[#E5E7EB]">Interés ({calculated.interestRate}%):</span>
                 <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(calculated.interestAmount)}</strong>
               </div>
 

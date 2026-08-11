@@ -1,19 +1,35 @@
-export function calculate20PercentLoan(capital, paymentDays) {
+export const formatDate = (dateStr) => {
+  if (!dateStr) return '--';
+  const cleanStr = dateStr.toString().split('T')[0].split(' ')[0];
+  const parts = cleanStr.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '--';
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+};
+
+export function calculateCustomLoan(capital, paymentDays, interestRate = 20) {
   const cap = Number(capital) || 0;
-  const interestRate = 20;
-  const interestAmount = Number((cap * 0.20).toFixed(2));
+  const rate = interestRate !== undefined && interestRate !== '' && !isNaN(Number(interestRate))
+    ? Number(interestRate)
+    : 20;
+  const interestAmount = Number((cap * (rate / 100)).toFixed(2));
   const totalToPay = Number((cap + interestAmount).toFixed(2));
   const days = paymentDays && paymentDays > 0 ? Number(paymentDays) : 20;
-  const dailyPaymentAmount = Math.ceil(totalToPay / days);
+  const dailyPaymentAmount = Math.ceil(totalToPay / (days || 1));
 
   return {
     capital: cap,
-    interestRate,
+    interestRate: rate,
     interestAmount,
     totalToPay,
     paymentDays: days,
     dailyPaymentAmount,
   };
+}
+
+export function calculate20PercentLoan(capital, paymentDays, interestRate = 20) {
+  return calculateCustomLoan(capital, paymentDays, interestRate);
 }
 
 export function formatCurrency(amount) {
@@ -24,12 +40,7 @@ export function formatCurrency(amount) {
 }
 
 export function formatDatePE(dateStr) {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-  return dateStr;
+  return formatDate(dateStr);
 }
 
 export const formatDueDate = (dateStr) => {

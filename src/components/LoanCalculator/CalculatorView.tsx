@@ -38,6 +38,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 
   const [capital, setCapital] = useState<number>(500); // S/. 500 default
   const [paymentDaysInput, setPaymentDaysInput] = useState<string>('20'); // Free string input
+  const [interestRate, setInterestRate] = useState<number>(20);
   const [startDate, setStartDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -64,7 +65,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
   const dueDate = computeDueDate();
 
   // Calculation breakdown
-  const breakdown = calculate20PercentLoan(capital, parsedPaymentDays);
+  const breakdown = calculate20PercentLoan(capital, parsedPaymentDays, interestRate);
 
   const handleClientSelect = (clientId: string) => {
     setSelectedClientId(clientId);
@@ -90,12 +91,12 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
     e.preventDefault();
 
     if (!clientName.trim()) {
-      alert('Por favor ingrese el nombre del cliente');
+      alert('Por favor ingresa o selecciona un cliente');
       return;
     }
 
     if (!capital || capital <= 0) {
-      alert('Por favor ingrese un monto de capital válido');
+      alert('Por favor ingresa un monto válido');
       return;
     }
 
@@ -115,8 +116,13 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
         clientAddress: clientAddress.trim(),
         clientIdentification: clientIdentification.trim(),
         capital,
+        amount: capital,
+        interest_rate: interestRate,
+        interestRate: interestRate,
         paymentDays: parsedPaymentDays,
+        days: parsedPaymentDays,
         startDate,
+        dueDate,
         notes: notes.trim(),
       });
 
@@ -351,6 +357,44 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                   className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl font-black text-lg text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40 focus:border-[#D96B27] dark:focus:border-[#E07A5F]"
                   required
                 />
+              </div>
+            </div>
+
+            {/* Custom Interest Rate */}
+            <div>
+              <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1.5">
+                Interés / Comisión (%):
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1.5 shrink-0">
+                  {[10, 15, 20].map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => setInterestRate(rate)}
+                      className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all border ${
+                        interestRate === rate
+                          ? 'terracotta-gradient text-white border-transparent shadow-xs'
+                          : 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E]'
+                      }`}
+                    >
+                      {rate}%
+                    </button>
+                  ))}
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="any"
+                    value={interestRate ?? ''}
+                    onChange={(e) => setInterestRate(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-sm font-bold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+                    placeholder="20"
+                  />
+                  <span className="absolute right-3 top-2 text-xs font-bold text-[#6E615A] dark:text-[#C2B29F]">%</span>
+                </div>
               </div>
             </div>
 

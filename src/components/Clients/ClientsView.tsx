@@ -291,6 +291,13 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     </div>
                   )}
 
+                  {/* Client DNI */}
+                  {(client.dni || client.documento || client.identification) && (
+                    <div className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
+                      DNI: <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{client.dni || client.documento || client.identification}</strong>
+                    </div>
+                  )}
+
                   {/* Loans Summary Row */}
                   <div className="grid grid-cols-2 gap-2 mt-3 bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E] text-xs">
                     <div>

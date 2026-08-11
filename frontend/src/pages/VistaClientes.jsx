@@ -450,9 +450,9 @@ export function VistaClientes({
                       <span className="line-clamp-1">{client.address || 'Sin dirección'}</span>
                     </div>
 
-                    {client.identification && (
+                    {(client.dni || client.documento || client.identification) && (
                       <div className="text-[11px] text-[#6E615A]">
-                        DNI: <strong className="text-[#2C221E]">{client.identification}</strong>
+                        DNI: <strong className="text-[#2C221E]">{client.dni || client.documento || client.identification}</strong>
                       </div>
                     )}
                     {/* Assigned collector badge (ADMIN view) */}

@@ -1,5 +1,6 @@
 import express from 'express';
 import loanController from '../controllers/loanController.js';
+import clientController from '../controllers/clientController.js';
 import paymentController from '../controllers/paymentController.js';
 import reniecController from '../controllers/reniecController.js';
 import { authController } from '../controllers/authController.js';
@@ -33,7 +34,7 @@ router.delete('/users/:id', verifyToken, requireAdmin, userController.deleteUser
 router.get('/reniec/:dni', verifyToken, reniecController.getDniInfo);
 
 // Clients Routes
-router.get('/clients', verifyToken, loanController.getClients);
+router.get('/clients', verifyToken, clientController.getClients);
 router.post('/clients', verifyToken, loanController.createClient);
 router.put('/clients/assign', verifyToken, requireAdmin, loanController.assignClients);
 router.put('/clients/reorder', verifyToken, loanController.updateRouteOrders);
