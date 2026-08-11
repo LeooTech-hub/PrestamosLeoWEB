@@ -67,7 +67,46 @@ export const getClients = async (req, res) => {
   }
 };
 
-export const createClient = loanController.createClient.bind(loanController);
+export const createClient = async (req, res) => {
+  try {
+    const name = req.body.name || req.body.nombre || '';
+    const alias = req.body.alias || req.body.apodo || '';
+    const phone = req.body.phone || req.body.telefono || '';
+    const dni = req.body.dni || req.body.documento || '';
+    const address = req.body.address || req.body.direccion || '';
+    const notes = req.body.notes || req.body.observaciones || '';
+    const assigned_to_user_id = req.body.assigned_to_user_id || req.body.assignedTo || req.user?.id || null;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'El nombre es obligatorio' });
+    }
+
+    const query = `
+      INSERT INTO clients (name, alias, phone, dni, address, notes, assigned_to_user_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `;
+
+    const values = [
+      name.trim(),
+      alias.trim(),
+      phone.trim(),
+      dni.trim(),
+      address.trim(),
+      notes.trim(),
+      assigned_to_user_id
+    ];
+
+    const result = await pool.query(query, values);
+    const newClient = result.rows[0];
+
+    return res.status(201).json(newClient);
+  } catch (error) {
+    console.error('[ERROR POST /api/clients]:', error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 export const updateClient = loanController.updateClient.bind(loanController);
 export const deleteClient = loanController.deleteClient.bind(loanController);
 

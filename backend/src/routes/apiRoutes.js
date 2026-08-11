@@ -35,7 +35,7 @@ router.get('/reniec/:dni', verifyToken, reniecController.getDniInfo);
 
 // Clients Routes
 router.get('/clients', verifyToken, clientController.getClients);
-router.post('/clients', verifyToken, loanController.createClient);
+router.post('/clients', verifyToken, clientController.createClient);
 router.put('/clients/assign', verifyToken, requireAdmin, loanController.assignClients);
 router.put('/clients/reorder', verifyToken, loanController.updateRouteOrders);
 router.put('/clients/:id', verifyToken, loanController.updateClient);

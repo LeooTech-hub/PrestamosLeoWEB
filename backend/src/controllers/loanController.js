@@ -261,47 +261,40 @@ const loanController = {
   // POST /api/clients
   async createClient(req, res) {
     try {
-      const { name, alias, phone, address, identification, notes, routeOrder } = req.body || {};
-      const id = generateUUID();
-      const createdAt = new Date().toISOString();
-      const userId = req.user ? req.user.id : null;
-      const assignedId = resolveAssignedUserId(req);
+      const name = req.body.name || req.body.nombre || '';
+      const alias = req.body.alias || req.body.apodo || '';
+      const phone = req.body.phone || req.body.telefono || '';
+      const dni = req.body.dni || req.body.documento || '';
+      const address = req.body.address || req.body.direccion || '';
+      const notes = req.body.notes || req.body.observaciones || '';
+      const assigned_to_user_id = req.body.assigned_to_user_id || req.body.assignedTo || req.user?.id || null;
 
-      try {
-        await pool.query(
-          `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order, assigned_to_user_id, assigned_to, created_by_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-          [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0, assignedId, assignedId, userId]
-        );
-      } catch (_) {
-        try {
-          await pool.query(
-            `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order, assigned_to_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-            [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0, assignedId]
-          );
-        } catch (__) {
-          await pool.query(
-            `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status, assigned_to_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [id, name?.trim() || 'Sin Nombre', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', assignedId]
-          );
-        }
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'El nombre es obligatorio' });
       }
 
-      return res.status(201).json({
-        id,
-        name: name?.trim(),
-        alias: alias?.trim() || undefined,
-        phone: phone?.trim(),
-        address: address?.trim(),
-        identification: identification?.trim() || undefined,
-        notes: notes?.trim() || undefined,
-        createdAt,
-        status: 'ACTIVE',
-        routeOrder: Number(routeOrder) || 0,
-        assignedToUserId: assignedId,
-        assigned_to_user_id: assignedId
-      });
+      const query = `
+        INSERT INTO clients (name, alias, phone, dni, address, notes, assigned_to_user_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+
+      const values = [
+        name.trim(),
+        alias.trim(),
+        phone.trim(),
+        dni.trim(),
+        address.trim(),
+        notes.trim(),
+        assigned_to_user_id
+      ];
+
+      const result = await pool.query(query, values);
+      const newClient = result.rows[0];
+
+      return res.status(201).json(newClient);
     } catch (error) {
-      console.error('Error in createClient:', error);
+      console.error('[ERROR POST /api/clients]:', error);
       return res.status(500).json({ error: error.message });
     }
   },
