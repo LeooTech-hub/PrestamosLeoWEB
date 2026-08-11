@@ -1,7 +1,5 @@
 import express from 'express';
 import loanController from '../controllers/loanController.js';
-import clientController from '../controllers/clientController.js';
-import paymentController from '../controllers/paymentController.js';
 import reniecController from '../controllers/reniecController.js';
 import { authController } from '../controllers/authController.js';
 import { userController } from '../controllers/userController.js';
@@ -9,85 +7,80 @@ import { verifyToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+// Helper para evitar que Express crashee si un controlador es undefined
+const safe = (handler) => handler || ((req, res) => res.status(501).json({ error: 'Ruta no implementada' }));
+
 // ==========================================
 // PUBLIC AUTH ROUTES
 // ==========================================
-router.post('/auth/login', authController.login);
-router.post('/auth/forgot-password', authController.forgotPassword);
-router.post('/auth/reset-password', authController.resetPassword);
+router.post('/auth/login', safe(authController?.login));
+router.post('/auth/forgot-password', safe(authController?.forgotPassword));
+router.post('/auth/reset-password', safe(authController?.resetPassword));
 
 // ==========================================
-// PROTECTED ROUTES (Middleware verifyToken)
+// PROTECTED ROUTES
 // ==========================================
+router.get('/auth/me', verifyToken, safe(authController?.me));
 
-// User verification endpoint
-router.get('/auth/me', verifyToken, authController.me);
+// USER MANAGEMENT
+router.get('/users', verifyToken, requireAdmin, safe(userController?.listUsers));
+router.post('/users', verifyToken, requireAdmin, safe(userController?.createUser));
+router.delete('/users/:id', verifyToken, requireAdmin, safe(userController?.deleteUser));
 
-// ==========================================
-// USER MANAGEMENT ROUTES (ADMIN only)
-// ==========================================
-router.get('/users', verifyToken, requireAdmin, userController.listUsers);
-router.post('/users', verifyToken, requireAdmin, userController.createUser);
-router.delete('/users/:id', verifyToken, requireAdmin, userController.deleteUser);
+// RENIEC
+router.get('/reniec/:dni', verifyToken, safe(reniecController?.getDniInfo));
 
-// RENIEC Route
-router.get('/reniec/:dni', verifyToken, reniecController.getDniInfo);
+// CLIENTS
+router.get('/clients', verifyToken, safe(loanController?.getClients));
+router.post('/clients', verifyToken, safe(loanController?.createClient));
+router.put('/clients/assign', verifyToken, requireAdmin, safe(loanController?.assignClients));
+router.put('/clients/reorder', verifyToken, safe(loanController?.updateRouteOrders));
+router.put('/clients/:id', verifyToken, safe(loanController?.updateClient));
+router.put('/clients/:id/restore', verifyToken, safe(loanController?.restoreClient));
+router.delete('/clients/:id', verifyToken, requireAdmin, safe(loanController?.deleteClient));
 
-// Clients Routes
-router.get('/clients', verifyToken, clientController.getClients);
-router.post('/clients', verifyToken, clientController.createClient);
-router.put('/clients/assign', verifyToken, requireAdmin, loanController.assignClients);
-router.put('/clients/reorder', verifyToken, loanController.updateRouteOrders);
-router.put('/clients/:id', verifyToken, loanController.updateClient);
-router.put('/clients/:id/restore', verifyToken, loanController.restoreClient);
-router.delete('/clients/:id', verifyToken, requireAdmin, loanController.deleteClient);
+// LOANS
+router.get('/loans', verifyToken, safe(loanController?.getLoans));
+router.post('/loans', verifyToken, safe(loanController?.createClientAndLoan));
+router.put('/loans/:id', verifyToken, safe(loanController?.updateLoan));
+router.put('/loans/:id/restore', verifyToken, safe(loanController?.restoreLoan));
+router.delete('/loans/:id', verifyToken, requireAdmin, safe(loanController?.deleteLoan));
 
-// Loans Routes
-router.get('/loans', verifyToken, loanController.getLoans);
-router.post('/loans', verifyToken, loanController.createClientAndLoan);
-router.put('/loans/:id', verifyToken, loanController.updateLoan);
-router.put('/loans/:id/restore', verifyToken, loanController.restoreLoan);
-router.delete('/loans/:id', verifyToken, requireAdmin, loanController.deleteLoan);
+// TRASH
+router.get('/trash', verifyToken, requireAdmin, safe(loanController?.getTrash));
 
-// Trash Bin Route (ADMIN only)
-router.get('/trash', verifyToken, requireAdmin, loanController.getTrash);
+// PAYMENTS
+router.get('/payments', verifyToken, safe(loanController?.getPayments));
+router.get('/payments/recent', verifyToken, safe(loanController?.getPayments));
+router.get('/payments/history', verifyToken, safe(loanController?.getPaymentHistory));
+router.post('/payments', verifyToken, safe(loanController?.registerPayment));
+router.put('/payments/:id', verifyToken, safe(loanController?.updatePayment));
+router.delete('/payments/:id', verifyToken, requireAdmin, safe(loanController?.deletePayment));
+router.post('/payments/revert', verifyToken, safe(loanController?.revertLastPayment));
+router.post('/loans/:id/revert-payment', verifyToken, safe(loanController?.revertLastPayment));
 
-// Payments Routes
-router.get('/payments', verifyToken, paymentController.getPayments);
-router.get('/payments/recent', verifyToken, paymentController.getPayments);
-router.get('/payments/history', verifyToken, paymentController.getPaymentHistory);
-router.post('/payments', verifyToken, paymentController.registerPayment);
-router.put('/payments/:id', verifyToken, paymentController.updatePayment);
-router.delete('/payments/:id', verifyToken, requireAdmin, paymentController.deletePayment);
-router.post('/payments/revert', verifyToken, paymentController.revertLastPayment);
-router.post('/loans/:id/revert-payment', verifyToken, paymentController.revertLastPayment);
+// EXPENSES
+router.get('/expenses', verifyToken, safe(loanController?.getExpenses));
+router.post('/expenses', verifyToken, safe(loanController?.addExpense));
+router.put('/expenses/:id', verifyToken, safe(loanController?.updateExpense));
+router.delete('/expenses/:id', verifyToken, requireAdmin, safe(loanController?.deleteExpense));
 
-// Expenses Routes
-router.get('/expenses', verifyToken, loanController.getExpenses);
-router.post('/expenses', verifyToken, loanController.addExpense);
-router.put('/expenses/:id', verifyToken, loanController.updateExpense);
-router.delete('/expenses/:id', verifyToken, requireAdmin, loanController.deleteExpense);
+// OPERATIONS
+router.get('/today-collections', verifyToken, safe(loanController?.getTodayCollections));
+router.get('/alerts', verifyToken, safe(loanController?.getAlerts));
+router.get('/loans/alerts', verifyToken, safe(loanController?.getAlerts));
+router.get('/dashboard/summary', verifyToken, safe(loanController?.getDashboardSummary));
+router.get('/reports/financial', verifyToken, safe(loanController?.getFinancialReport));
 
-// Operations & Analytics Routes
-router.get('/today-collections', verifyToken, loanController.getTodayCollections);
-router.get('/alerts', verifyToken, loanController.getAlerts);
-router.get('/loans/alerts', verifyToken, loanController.getAlerts);
-router.get('/dashboard/summary', verifyToken, loanController.getDashboardSummary);
-router.get('/reports/financial', verifyToken, loanController.getFinancialReport);
+// COLLECTORS & PORTFOLIO
+router.get('/admin/collectors/list', verifyToken, requireAdmin, safe(loanController?.getCollectorsList));
+router.get('/admin/collectors', verifyToken, requireAdmin, safe(loanController?.getCollectorsList));
+router.get('/admin/collectors/stats', verifyToken, requireAdmin, safe(loanController?.getCollectorStats));
+router.get('/admin/collectors/:id/activity', verifyToken, requireAdmin, safe(loanController?.getCollectorActivity));
+router.put('/admin/assign-portfolio', verifyToken, requireAdmin, safe(loanController?.assignPortfolio));
+router.get('/admin/portfolio/filter', verifyToken, requireAdmin, safe(loanController?.getPortfolioByCollector));
 
-// Admin Collector Management Routes
-// IMPORTANT: Static routes (/list, /stats) MUST be declared BEFORE dynamic (:id) routes
-// to prevent Express from matching 'list' as an :id parameter value.
-router.get('/admin/collectors/list', verifyToken, requireAdmin, loanController.getCollectorsList);
-router.get('/admin/collectors', verifyToken, requireAdmin, loanController.getCollectorsList);
-router.get('/admin/collectors/stats', verifyToken, requireAdmin, loanController.getCollectorStats);
-router.get('/admin/collectors/:id/activity', verifyToken, requireAdmin, loanController.getCollectorActivity);
-
-// Admin Portfolio Assignment Route
-router.put('/admin/assign-portfolio', verifyToken, requireAdmin, loanController.assignPortfolio);
-router.get('/admin/portfolio/filter', verifyToken, requireAdmin, loanController.getPortfolioByCollector);
-
-// Demo Data Seed Route
-router.post('/seed', verifyToken, loanController.seedDatabase);
+// SEED
+router.post('/seed', verifyToken, safe(loanController?.seedDatabase));
 
 export default router;

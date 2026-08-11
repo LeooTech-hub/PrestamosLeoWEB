@@ -81,7 +81,8 @@ function mapRowToLoan(row) {
 
   return {
     id: String(row.id || ''),
-    clientId: String(row.client_id || ''),
+    clientId: String(row.client_id || row.clientId || ''), // Convertido a string estricto
+    client_id: String(row.client_id || row.clientId || ''), // Mantenido para compatibilidad con el frontend
     clientName,
     clientAlias: clientAlias ? String(clientAlias) : undefined,
     clientPhone,
@@ -467,70 +468,56 @@ const loanController = {
   // GET /api/loans
   async getLoans(req, res) {
     try {
-      const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
-      const isTodos = req.query.filter === 'TODOS' || req.query.assignedTo === 'TODOS';
-      const userId = req.user ? req.user.id : null;
+      const clientIdFilter = req.query.clientId || req.query.client_id;
       const statusFilter = req.query.status;
       const searchFilter = req.query.search;
-      let rows = [];
+      const params = [];
+      const conditions = [];
 
-      const baseQuery = `
-        SELECT l.*, 
-               COALESCE(c.name, l.client_name, 'Cliente') AS client_name,
-               c.alias AS joined_client_alias,
-               COALESCE(c.phone, l.client_phone) AS joined_client_phone,
-               COALESCE(c.address, l.client_address) AS joined_client_address,
-               c.route_order AS joined_client_route_order,
-               COALESCE(u.name, 'Admin') AS collector_name
+      // Forzamos el JOIN con la tabla 'clients' convirtiendo client_id a BIGINT/TEXT de forma segura
+      let queryStr = `
+        SELECT l.id,
+               l.client_id,
+               l.amount,
+               l.total_amount,
+               l.daily_amount,
+               l.days,
+               l.remaining_days,
+               l.interest_rate,
+               l.status,
+               l.assigned_to_user_id,
+               l.start_date,
+               l.created_at,
+               COALESCE(c.name, 'Cliente sin Nombre') AS client_name,
+               COALESCE(c.phone, '') AS client_phone,
+               COALESCE(c.address, '') AS client_address,
+               c.alias AS client_alias
         FROM loans l
-        LEFT JOIN clients c ON (l.client_id = c.id)
-        LEFT JOIN users u ON (l.assigned_to_user_id = u.id OR l.assigned_to = u.id)
+        LEFT JOIN clients c ON l.client_id::text = c.id::text
       `;
 
-      if (isCobrador && userId && !isTodos) {
-        try {
-          const { rows: r } = await pool.query(`
-            ${baseQuery}
-            WHERE (l.assigned_to_user_id = $1 OR l.created_by_user_id = $2 OR l.assigned_to = $3 OR l.created_by = $4)
-            ORDER BY l.created_at DESC
-          `, [userId, userId, userId, userId]);
-          rows = r || [];
-        } catch (error) {
-          console.error("[ERROR GET /api/loans COBRADOR]:", error);
-          const { rows: r } = await pool.query(`${baseQuery} ORDER BY l.created_at DESC`);
-          rows = r || [];
-        }
-      } else {
-        try {
-          let queryStr = `${baseQuery}`;
-          const params = [];
-          const conditions = [];
-
-          if (statusFilter && statusFilter !== 'ALL' && statusFilter !== 'TODOS') {
-            conditions.push(`l.status = $${params.length + 1}`);
-            params.push(statusFilter);
-          }
-
-          if (searchFilter && searchFilter.trim() !== '') {
-            conditions.push(`(l.client_name LIKE $${params.length + 1} OR c.name LIKE $${params.length + 2})`);
-            params.push(`%${searchFilter.trim()}%`, `%${searchFilter.trim()}%`);
-          }
-
-          if (conditions.length > 0) {
-            queryStr += ` WHERE ` + conditions.join(' AND ');
-          }
-
-          queryStr += ` ORDER BY l.created_at DESC`;
-
-          const { rows: r } = await pool.query(queryStr, params);
-          rows = r || [];
-        } catch (error) {
-          console.error("[ERROR GET /api/loans ADMIN]:", error);
-          const { rows: r } = await pool.query(`${baseQuery} ORDER BY l.created_at DESC`);
-          rows = r || [];
-        }
+      if (clientIdFilter) {
+        conditions.push(`l.client_id::text = $${params.length + 1}`);
+        params.push(String(clientIdFilter));
       }
 
+      if (statusFilter && statusFilter !== 'ALL' && statusFilter !== 'TODOS') {
+        conditions.push(`l.status = $${params.length + 1}`);
+        params.push(statusFilter);
+      }
+
+      if (searchFilter && searchFilter.trim() !== '') {
+        conditions.push(`(c.name ILIKE $${params.length + 1} OR c.alias ILIKE $${params.length + 2})`);
+        params.push(`%${searchFilter.trim()}%`, `%${searchFilter.trim()}%`);
+      }
+
+      if (conditions.length > 0) {
+        queryStr += ` WHERE ` + conditions.join(' AND ');
+      }
+
+      queryStr += ` ORDER BY l.created_at DESC`;
+
+      const { rows } = await pool.query(queryStr, params);
       return res.json((rows || []).map(mapRowToLoan));
     } catch (error) {
       console.error("[ERROR GET /api/loans]:", error);
@@ -544,39 +531,55 @@ const loanController = {
     try {
       await client.query('BEGIN');
 
-      let finalClientId = req.body.client_id || req.body.clientId || req.body.cliente_id;
-
-      const clientName = 
-        req.body.name || req.body.nombre || req.body.client_name || req.body.clientName || 'Sin Nombre';
-      const clientAlias = req.body.alias || req.body.apodo || '';
-      const clientPhone = req.body.phone || req.body.telefono || '';
-      const clientDni = req.body.dni || req.body.documento || '';
-      const clientAddress = req.body.address || req.body.direccion || '';
-      const clientNotes = req.body.notes || req.body.observaciones || '';
-
-      if (!finalClientId || String(finalClientId).startsWith('cli_')) {
-        const insertClientQuery = `
-          INSERT INTO clients (name, alias, phone, dni, address, notes, assigned_to_user_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
-          RETURNING id
-        `;
-        const clientValues = [
-          clientName, clientAlias, clientPhone, clientDni, clientAddress, clientNotes,
-          req.body.assigned_to_user_id || req.user?.id || null
-        ];
-        const clientRes = await client.query(insertClientQuery, clientValues);
-        finalClientId = clientRes.rows[0].id;
+      // 1. Obtener o validar el ID del cliente
+      let rawClientId = req.body.client_id || req.body.clientId;
+      if (typeof rawClientId === 'object' && rawClientId !== null) {
+        rawClientId = rawClientId.id;
       }
 
-      const finalAmount = Number(req.body.amount ?? req.body.monto ?? req.body.loan_amount ?? 0);
-      const finalTotalAmount = Number(req.body.total_amount ?? req.body.totalAmount ?? (finalAmount * 1.2));
-      const finalDays = Number(req.body.days ?? req.body.dias ?? req.body.total_days ?? 24);
-      const finalDailyAmount = Number(req.body.daily_amount ?? req.body.dailyAmount ?? req.body.cuota ?? (finalTotalAmount / finalDays));
-      const finalRemainingDays = Number(req.body.remaining_days ?? req.body.remainingDays ?? finalDays);
-      const finalInterest = Number(req.body.interest_rate ?? req.body.interestRate ?? 20);
-      const finalStatus = req.body.status || 'ACTIVE';
-      const startDate = req.body.start_date || new Date();
+      let finalClientId = (rawClientId && String(rawClientId) !== '[object Object]') ? String(rawClientId) : null;
+      const clientName = (req.body.name || req.body.nombre || req.body.client_name || 'Cliente').trim();
 
+      // Si no hay ID de cliente, lo buscamos o creamos en la tabla clients
+      if (!finalClientId || finalClientId.startsWith('cli_')) {
+        const existingClientRes = await client.query(
+          `SELECT id FROM clients WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1`,
+          [clientName]
+        );
+
+        if (existingClientRes.rows.length > 0) {
+          finalClientId = existingClientRes.rows[0].id;
+        } else {
+          const insertClientQuery = `
+            INSERT INTO clients (name, alias, phone, dni, address, notes, assigned_to_user_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+          `;
+          const clientRes = await client.query(insertClientQuery, [
+            clientName,
+            req.body.alias || req.body.apodo || '',
+            req.body.phone || req.body.telefono || '',
+            req.body.dni || req.body.documento || '',
+            req.body.address || req.body.direccion || '',
+            req.body.notes || req.body.observaciones || '',
+            req.body.assigned_to_user_id || req.user?.id || null
+          ]);
+          finalClientId = clientRes.rows[0].id;
+        }
+      }
+
+      // 2. Extraer valores para la tabla loans según sus columnas exactas en Supabase
+      const amount = Number(req.body.amount ?? req.body.monto ?? 150);
+      const interestRate = Number(req.body.interest_rate ?? req.body.interestRate ?? 20);
+      const totalAmount = Number(req.body.total_amount ?? req.body.totalAmount ?? (amount + (amount * (interestRate / 100))));
+      const days = Number(req.body.days ?? req.body.dias ?? 20);
+      const dailyAmount = Number(req.body.daily_amount ?? req.body.dailyAmount ?? Math.round(totalAmount / (days || 1)));
+      const remainingDays = Number(req.body.remaining_days ?? req.body.remainingDays ?? days);
+      const status = req.body.status || 'ACTIVE';
+      const assignedToUserId = req.body.assigned_to_user_id || req.user?.id || null;
+      const startDate = req.body.start_date || new Date().toISOString().split('T')[0];
+
+      // 3. Insertar solo en las columnas reales de la tabla loans
       const insertLoanQuery = `
         INSERT INTO loans (
           client_id, amount, total_amount, daily_amount, days, remaining_days,
@@ -586,20 +589,23 @@ const loanController = {
         RETURNING *
       `;
 
-      const loanValues = [
-        finalClientId, finalAmount, finalTotalAmount, finalDailyAmount,
-        finalDays, finalRemainingDays, finalInterest, finalStatus,
-        req.body.assigned_to_user_id || req.user?.id || null, startDate
-      ];
-
-      const loanRes = await client.query(insertLoanQuery, loanValues);
+      const loanRes = await client.query(insertLoanQuery, [
+        finalClientId, amount, totalAmount, dailyAmount,
+        days, remainingDays, interestRate, status,
+        assignedToUserId, startDate
+      ]);
 
       await client.query('COMMIT');
-      return res.status(201).json({ ...loanRes.rows[0], client_name: clientName });
+
+      // Devolvemos la respuesta agregando el nombre del cliente para renderizado inmediato
+      return res.status(201).json({
+        ...loanRes.rows[0],
+        client_name: clientName
+      });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('[ERROR POST /api/loans CRÍTICO]:', error);
-      return res.status(500).json({ error: 'Error al registrar cliente y préstamo', details: error.message });
+      console.error('[ERROR POST /api/loans]:', error);
+      return res.status(500).json({ error: 'Error al registrar préstamo', details: error.message });
     } finally {
       client.release();
     }
@@ -607,64 +613,72 @@ const loanController = {
 
   // PUT /api/loans/:id
   async updateLoan(req, res) {
-    const { id } = req.params;
     const client = await pool.connect();
-
     try {
+      const { id } = req.params;
+      const b = req.body || {};
+
+      // 1. Fetch existing loan
+      const resLoan = await client.query(`SELECT * FROM loans WHERE id = $1`, [id]);
+      if (resLoan.rows.length === 0) {
+        return res.status(404).json({ error: 'Préstamo no encontrado' });
+      }
+      const existing = resLoan.rows[0];
+
+      // Mapeo de variables camelCase a snake_case y validación contra null/undefined
+      const amount = b.amount ?? b.monto ?? b.capital ?? existing.amount;
+      const interestRate = b.interest_rate ?? b.interestRate ?? existing.interest_rate;
+      const totalAmount = b.total_amount ?? b.totalAmount ?? existing.total_amount;
+      const days = b.days ?? b.payment_days ?? b.paymentDays ?? existing.days;
+      const dailyAmount = b.daily_amount ?? b.dailyAmount ?? b.dailyPaymentAmount ?? existing.daily_amount;
+      const remainingDays = b.remaining_days ?? b.remainingDays ?? existing.remaining_days;
+      const status = b.status ?? existing.status;
+      const startDate = b.start_date ?? b.startDate ?? existing.start_date;
+      const dueDate = b.due_date ?? b.dueDate ?? existing.due_date;
+      const assignedToUserId = b.assigned_to_user_id ?? b.assignedToUserId ?? b.assignedTo ?? existing.assigned_to_user_id ?? existing.assigned_to;
+      const clientName = b.client_name ?? b.clientName ?? existing.client_name;
+      const clientPhone = b.client_phone ?? b.clientPhone ?? existing.client_phone;
+      const clientAddress = b.client_address ?? b.clientAddress ?? existing.client_address;
+
+      // Logs detallados antes del UPDATE
+      console.log(`[UPDATE LOAN] ID: ${id}`);
+      console.log(`[UPDATE LOAN] Payload recibido:`, b);
+      console.log(`[UPDATE LOAN] Valores procesados -> amount: ${amount}, status: ${status}, assignedToUserId: ${assignedToUserId}, clientName: ${clientName}`);
+
       await client.query('BEGIN');
-
-      const finalAmount = Number(req.body.amount ?? req.body.monto ?? req.body.capital ?? 0);
-      const finalTotalAmount = Number(req.body.total_amount ?? req.body.totalAmount ?? req.body.monto_total ?? (finalAmount * 1.2));
-      const finalDays = Number(req.body.days ?? req.body.dias ?? req.body.total_days ?? 24);
-      const finalDailyAmount = Number(req.body.daily_amount ?? req.body.dailyAmount ?? req.body.cuota ?? (finalTotalAmount / finalDays));
-      const finalRemainingDays = Number(req.body.remaining_days ?? req.body.remainingDays ?? finalDays);
-      const finalInterest = Number(req.body.interest_rate ?? req.body.interestRate ?? 20);
-      const finalStatus = req.body.status || req.body.estado || 'ACTIVE';
-
+      
       const updateLoanQuery = `
-        UPDATE loans
-        SET amount = $1, total_amount = $2, daily_amount = $3, days = $4,
-            remaining_days = $5, interest_rate = $6, status = $7
-        WHERE id = $8
-        RETURNING client_id
+        UPDATE loans SET 
+          amount = COALESCE($1, amount),
+          interest_rate = COALESCE($2, interest_rate),
+          total_amount = COALESCE($3, total_amount),
+          days = COALESCE($4, days),
+          daily_amount = COALESCE($5, daily_amount),
+          remaining_days = COALESCE($6, remaining_days),
+          status = COALESCE($7, status),
+          start_date = COALESCE($8, start_date),
+          due_date = COALESCE($9, due_date),
+          assigned_to_user_id = COALESCE($10, assigned_to_user_id),
+          assigned_to = COALESCE($10, assigned_to),
+          client_name = COALESCE($11, client_name),
+          client_phone = COALESCE($12, client_phone),
+          client_address = COALESCE($13, client_address)
+        WHERE id = $14
+        RETURNING *
       `;
-      const loanValues = [
-        finalAmount, finalTotalAmount, finalDailyAmount, finalDays,
-        finalRemainingDays, finalInterest, finalStatus, id
+      const values = [
+        amount, interestRate, totalAmount, days, dailyAmount, remainingDays,
+        status, startDate, dueDate, assignedToUserId, clientName, clientPhone, clientAddress, id
       ];
-
-      const loanRes = await client.query(updateLoanQuery, loanValues);
-
-      if (loanRes.rowCount === 0) {
-        throw new Error("Préstamo no encontrado");
-      }
-
-      const clientId = loanRes.rows[0].client_id;
-      const clientName = req.body.name || req.body.nombre || req.body.client_name;
-
-      if (clientName && clientId) {
-        const clientAlias = req.body.alias || req.body.apodo || '';
-        const clientPhone = req.body.phone || req.body.telefono || '';
-        const clientDni = req.body.dni || req.body.documento || '';
-        const clientAddress = req.body.address || req.body.direccion || '';
-        const clientNotes = req.body.notes || req.body.observaciones || '';
-
-        const updateClientQuery = `
-          UPDATE clients
-          SET name = $1, alias = $2, phone = $3, dni = $4, address = $5, notes = $6
-          WHERE id = $7
-        `;
-        await client.query(updateClientQuery, [
-          clientName, clientAlias, clientPhone, clientDni, clientAddress, clientNotes, clientId
-        ]);
-      }
-
+      
+      const updated = await client.query(updateLoanQuery, values);
       await client.query('COMMIT');
-      return res.status(200).json({ message: 'Préstamo y cliente actualizados correctamente' });
+      
+      return res.json({ success: true, message: 'Préstamo actualizado', loan: updated.rows[0] });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('[ERROR PUT /api/loans CRÍTICO]:', error);
-      return res.status(500).json({ error: 'Error al actualizar el préstamo', details: error.message });
+      console.error('[ERROR PUT /api/loans/:id]:', error);
+      return res.status(500).json({ error: error.message });
     } finally {
       client.release();
     }
@@ -1095,6 +1109,7 @@ const loanController = {
       const { id } = req.params;
       const { amount, date, notes } = req.body;
 
+      // 1. Verificar si existe el pago
       const resPay = await client.query(`SELECT * FROM payments WHERE id = $1`, [id]);
       if (resPay.rows.length === 0) {
         return res.status(404).json({ error: 'Pago no encontrado' });
@@ -1103,6 +1118,7 @@ const loanController = {
       const existingPayment = mapRowToPayment(resPay.rows[0]);
       const loanId = existingPayment.loanId;
 
+      // 2. Verificar si existe el préstamo asociado
       const resLoan = await client.query(`SELECT * FROM loans WHERE id = $1`, [loanId]);
       if (resLoan.rows.length === 0) {
         return res.status(404).json({ error: 'Préstamo asociado no encontrado' });
@@ -1110,9 +1126,9 @@ const loanController = {
 
       const loan = mapRowToLoan(resLoan.rows[0]);
 
-      const newAmount = amount !== undefined ? Number(amount) : existingPayment.amount;
-      const newDate = date || existingPayment.date;
-      const newNotes = notes !== undefined ? notes : existingPayment.notes;
+      const newAmount = (amount !== undefined && amount !== null) ? Number(amount) : existingPayment.amount;
+      const newDate = (date !== undefined && date !== null) ? date : existingPayment.date;
+      const newNotes = (notes !== undefined && notes !== null) ? notes : existingPayment.notes;
 
       if (isNaN(newAmount) || newAmount <= 0) {
         return res.status(400).json({ error: 'El monto del abono debe ser mayor a 0' });
@@ -1120,18 +1136,31 @@ const loanController = {
 
       await client.query('BEGIN');
 
+      // Logs detallados antes del UPDATE
+      console.log(`[UPDATE PAYMENT] ID: ${id}`);
+      console.log(`[UPDATE PAYMENT] Payload recibido:`, req.body);
+      console.log(`[UPDATE PAYMENT] Valores a actualizar -> amount: ${newAmount}, date: ${newDate}, notes: ${newNotes}`);
+
+      // 3. UPDATE seguro compatible con Supabase (vía COALESCE para evitar sobrescribir con null)
+      const updatePaymentQuery = `
+        UPDATE payments 
+        SET amount = COALESCE($1, amount), 
+            date = COALESCE($2, date), 
+            notes = COALESCE($3, notes)
+        WHERE id = $4
+      `;
+      
       try {
+        await client.query(updatePaymentQuery, [newAmount, newDate, newNotes || null, id]);
+      } catch (err) {
+        // Fallback directo por si la columna en DB es 'payment_date' en lugar de 'date'
         await client.query(
-          `UPDATE payments SET amount = $1, payment_date = $2, notes = $3 WHERE id = $4`,
-          [newAmount, newDate, newNotes || null, id]
-        );
-      } catch (_) {
-        await client.query(
-          `UPDATE payments SET amount = $1, date = $2, notes = $3 WHERE id = $4`,
+          `UPDATE payments SET amount = COALESCE($1, amount), payment_date = COALESCE($2, payment_date), notes = COALESCE($3, notes) WHERE id = $4`,
           [newAmount, newDate, newNotes || null, id]
         );
       }
 
+      // 4. Recalcular pagos actualizados verdaderos
       const remRes = await client.query(`SELECT * FROM payments WHERE loan_id = $1`, [loanId]);
       const remainingPayments = remRes.rows.map(mapRowToPayment);
 
@@ -1160,6 +1189,7 @@ const loanController = {
         newLastPaymentDate = remainingPayments[0].date;
       }
 
+      // 5. Actualizar préstamo con los valores reales
       await client.query(
         `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id = $6`,
         [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, loanId]
@@ -1175,7 +1205,7 @@ const loanController = {
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error in updatePayment:', error);
+      console.error('[ERROR PUT /api/payments]:', error);
       return res.status(500).json({ error: error.message });
     } finally {
       client.release();
