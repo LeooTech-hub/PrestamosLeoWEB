@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// En desarrollo, usar VITE_API_BASE_URL si existe, o por defecto la URL directa del backend (http://localhost:5000/api).
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// En desarrollo o producción, usar VITE_API_URL o VITE_API_BASE_URL si existen, o por defecto la URL directa del backend (http://localhost:5000/api).
+const baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL,

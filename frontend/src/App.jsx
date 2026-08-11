@@ -18,6 +18,7 @@ import { VistaPrestamos } from './pages/VistaPrestamos';
 import { VistaNuevoCliente } from './pages/VistaNuevoCliente';
 import { VistaReportes } from './pages/VistaReportes';
 import { VistaClientes } from './pages/VistaClientes';
+import { VistaCobros } from './pages/VistaCobros';
 
 const defaultDashboardSummary = {
   totalCapitalLent: 0,
@@ -426,6 +427,7 @@ export default function App() {
                     onOpenUserManagement={() => setIsUserManagementOpen(true)}
                     onUpdatePayment={handleUpdatePayment}
                     onDeletePayment={handleDeletePayment}
+                    onRefreshData={loadData}
                     user={user}
                   />
                 </PrivateRoute>
@@ -488,6 +490,20 @@ export default function App() {
                       onDeleteExpense={handleDeleteExpense}
                     />
                   )}
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/cobros"
+              element={
+                <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
+                  <VistaCobros
+                    user={user}
+                    onUpdatePayment={handleUpdatePayment}
+                    onDeletePayment={handleDeletePayment}
+                    onRefreshData={loadData}
+                  />
                 </PrivateRoute>
               }
             />

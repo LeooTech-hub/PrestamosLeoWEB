@@ -92,7 +92,7 @@ const gracefulShutdown = async (signal) => {
   server.close(async () => {
     try {
       await pool.end();
-      console.log('Conexiones de TiDB Cloud cerradas limpiamente.');
+      console.log('Conexiones de PostgreSQL/Supabase cerradas limpiamente.');
       process.exit(0);
     } catch (err) {
       console.error('Error cerrando el pool de conexiones:', err);

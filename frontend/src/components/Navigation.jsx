@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Route, CreditCard, UserPlus, BarChart3, Users } from 'lucide-react';
+import { LayoutDashboard, Route, CreditCard, UserPlus, BarChart3, Users, Receipt } from 'lucide-react';
 
 export function Navigation({ pendingCountToday = 0, overdueCount = 0, onOpenUserManagement, user }) {
   const isAdmin = !user?.role || user?.role === 'ADMIN';
@@ -24,6 +24,12 @@ export function Navigation({ pendingCountToday = 0, overdueCount = 0, onOpenUser
       label: 'Préstamos',
       icon: CreditCard,
       badge: overdueCount > 0 ? overdueCount : undefined,
+      roles: ['ADMIN', 'COBRADOR'],
+    },
+    {
+      to: '/cobros',
+      label: 'Cobros',
+      icon: Receipt,
       roles: ['ADMIN', 'COBRADOR'],
     },
     {
@@ -54,7 +60,7 @@ export function Navigation({ pendingCountToday = 0, overdueCount = 0, onOpenUser
   ];
 
   const tabs = allTabs.filter(tab => isAdmin || tab.roles.includes('COBRADOR'));
-  const gridClass = tabs.length === 7 ? 'grid-cols-7' : tabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5';
+  const gridClass = tabs.length >= 8 ? 'grid-cols-8' : tabs.length === 7 ? 'grid-cols-7' : tabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5';
 
   return (
     <>

@@ -329,20 +329,12 @@ export default function Home() {
             >
               + Crear Nuevo Préstamo
             </button>
-            {userRole === 'ADMIN' && (
+            {isAdmin && (
               <button
-                onClick={() => setShowCollectors(true)}
+                onClick={() => setIsCollectorModalOpen(true)}
                 className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all"
               >
                 👥 Panel Cobradores
-              </button>
-            )}
-            {isAdmin && (
-              <button 
-                onClick={() => setIsUserManagementOpen(true)} 
-                className="bg-black text-white px-4 py-2 rounded-xl font-bold text-sm ml-2"
-              >
-                👥 Gestionar Usuarios (Jhair)
               </button>
             )}
           </div>

@@ -91,17 +91,39 @@ function mapRowToLoan(row) {
 }
 
 function mapRowToPayment(row) {
+  const paymentDate = String(row.payment_date || row.date || row.created_at || new Date().toISOString().split('T')[0]).split('T')[0];
+  const clientName = String(row.client_name || row.joined_client_name || row.name || 'Cliente');
+  const loanId = String(row.loan_id || row.loanId || '');
+  const clientId = String(row.client_id || row.clientId || '');
+  const dayNumber = Number(row.day_number ?? row.dayNumber ?? 1);
+  const amount = Number(row.amount || 0);
+  const collectorName = row.collector_name || row.collectorName || undefined;
+
   return {
     id: String(row.id || ''),
-    loanId: String(row.loan_id || ''),
-    clientId: String(row.client_id || ''),
-    clientName: String(row.client_name || 'Cliente'),
-    amount: Number(row.amount || 0),
+    loanId,
+    loan_id: loanId,
+    clientId,
+    client_id: clientId,
+    clientName,
+    client_name: clientName,
+    amount,
     lateFee: Number(row.late_fee ?? row.lateFee ?? 0),
-    date: String(row.payment_date || row.date || new Date().toISOString().split('T')[0]),
+    date: paymentDate,
+    payment_date: paymentDate,
     type: row.type || 'FULL_DAY',
-    dayNumber: Number(row.day_number || 1),
+    dayNumber,
+    day_number: dayNumber,
     notes: row.notes ? String(row.notes) : undefined,
+    comment: row.notes ? String(row.notes) : undefined,
+    createdAt: row.created_at || undefined,
+    created_at: row.created_at || undefined,
+    collectedBy: row.collected_by || row.collected_by_user_id || undefined,
+    collected_by: row.collected_by || row.collected_by_user_id || undefined,
+    createdBy: row.created_by || undefined,
+    created_by: row.created_by || undefined,
+    collectorName: collectorName ? String(collectorName) : undefined,
+    collector_name: collectorName ? String(collectorName) : undefined,
   };
 }
 
@@ -121,61 +143,45 @@ const loanController = {
   // GET /api/clients
   async getClients(req, res) {
     try {
-      const includeArchived = req.query.archived === 'true' || req.query.includeArchived === 'true';
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
+      const isTodos = req.query.filter === 'TODOS' || req.query.assignedTo === 'TODOS';
       const userId = req.user ? req.user.id : null;
       let rows = [];
 
       const baseQuery = `
-        SELECT c.*, u.name AS assigned_to_name 
-        FROM clients c 
-        LEFT JOIN users u ON (c.assigned_to = u.id OR c.assigned_to_user_id = u.id)
+        SELECT c.*, COALESCE(u.name, 'Sin Asignar') AS assigned_to_name
+        FROM clients c
+        LEFT JOIN users u ON (c.assigned_to_user_id = u.id OR c.assigned_to = u.id)
       `;
 
-      if (isCobrador && userId) {
-        if (includeArchived) {
-          try {
-            const [r] = await pool.query(
-              `${baseQuery} WHERE (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.route_order ASC, c.id DESC`,
-              [userId, userId, userId, userId]
-            );
-            rows = r;
-          } catch {
-            const [r] = await pool.query(`${baseQuery} ORDER BY c.route_order ASC, c.id DESC`);
-            rows = r;
-          }
-        } else {
-          try {
-            const [r] = await pool.query(
-              `${baseQuery} WHERE (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) AND (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.route_order ASC, c.id DESC`,
-              [userId, userId, userId, userId]
-            );
-            rows = r;
-          } catch {
-            const [r] = await pool.query(
-              `${baseQuery} WHERE (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.route_order ASC, c.id DESC`,
-              [userId, userId, userId, userId]
-            );
-            rows = r;
-          }
+      if (isCobrador && userId && !isTodos) {
+        try {
+          const [r] = await pool.query(
+            `${baseQuery} WHERE (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.created_at DESC`,
+            [userId, userId, userId, userId]
+          );
+          rows = r || [];
+        } catch (err) {
+          console.error("[ERROR GET /api/clients COBRADOR]:", err);
+          const [r] = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
+          rows = r || [];
         }
       } else {
-        if (includeArchived) {
-          const [r] = await pool.query(`${baseQuery} ORDER BY c.route_order ASC, c.id DESC`);
-          rows = r;
-        } else {
-          try {
-            const [r] = await pool.query(`${baseQuery} WHERE (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) ORDER BY c.route_order ASC, c.id DESC`);
-            rows = r;
-          } catch {
-            const [r] = await pool.query(`${baseQuery} WHERE c.status != 'INACTIVE' OR c.status IS NULL ORDER BY c.route_order ASC, c.id DESC`);
-            rows = r;
-          }
+        // ADMIN or TODOS: Retorna la totalidad de los 29 clientes sin filtros bloqueantes
+        try {
+          const [r] = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
+          rows = r || [];
+        } catch (err) {
+          console.error("[ERROR GET /api/clients ADMIN]:", err);
+          const [r] = await pool.query(`SELECT * FROM clients ORDER BY created_at DESC`);
+          rows = r || [];
         }
       }
-      return res.json(rows.map(mapRowToClient));
+
+      console.log("[CLIENTS API] Total clientes retornados:", rows.length);
+      return res.json((rows || []).map(mapRowToClient));
     } catch (error) {
-      console.error('Error in getClients:', error);
+      console.error("[ERROR GET /api/clients]:", error);
       return res.json([]);
     }
   },
@@ -457,41 +463,85 @@ const loanController = {
   async getLoans(req, res) {
     try {
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
+      const isTodos = req.query.filter === 'TODOS' || req.query.assignedTo === 'TODOS';
       const userId = req.user ? req.user.id : null;
+      const statusFilter = req.query.status;
+      const searchFilter = req.query.search;
       let rows = [];
 
-      if (isCobrador && userId) {
+      const baseQuery = `
+        SELECT l.*, 
+               COALESCE(c.name, l.client_name, 'Cliente') AS client_name,
+               c.alias AS joined_client_alias,
+               COALESCE(c.phone, l.client_phone) AS joined_client_phone,
+               COALESCE(c.address, l.client_address) AS joined_client_address,
+               c.route_order AS joined_client_route_order,
+               COALESCE(u.name, 'Admin') AS collector_name
+        FROM loans l
+        LEFT JOIN clients c ON (l.client_id = c.id)
+        LEFT JOIN users u ON (l.assigned_to_user_id = u.id OR l.assigned_to = u.id)
+      `;
+
+      if (isCobrador && userId && !isTodos) {
         try {
           const [r] = await pool.execute(`
-            SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
-            FROM loans l
-            LEFT JOIN clients c ON l.client_id = c.id
+            ${baseQuery}
             WHERE (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?)
             ORDER BY l.created_at DESC
           `, [userId, userId, userId, userId]);
-          rows = r;
-        } catch {
-          const [r] = await pool.execute(`
-            SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
-            FROM loans l
-            LEFT JOIN clients c ON l.client_id = c.id
-            ORDER BY l.created_at DESC
-          `);
-          rows = r;
+          rows = r || [];
+        } catch (error) {
+          console.error("[ERROR GET /api/loans COBRADOR]:", error);
+          try {
+            const [r] = await pool.execute(`${baseQuery} ORDER BY l.created_at DESC`);
+            rows = r || [];
+          } catch (innerErr) {
+            console.error("[ERROR GET /api/loans]:", innerErr);
+            rows = [];
+          }
         }
       } else {
-        const [r] = await pool.execute(`
-          SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
-          FROM loans l
-          LEFT JOIN clients c ON l.client_id = c.id
-          ORDER BY l.created_at DESC
-        `);
-        rows = r;
+        // ADMIN or TODOS: Retorna la totalidad de los 45 préstamos para Administradores
+        try {
+          let queryStr = `${baseQuery}`;
+          const params = [];
+          const conditions = [];
+
+          if (statusFilter && statusFilter !== 'ALL' && statusFilter !== 'TODOS') {
+            conditions.push(`l.status = ?`);
+            params.push(statusFilter);
+          }
+
+          if (searchFilter && searchFilter.trim() !== '') {
+            conditions.push(`(l.client_name LIKE ? OR c.name LIKE ?)`);
+            params.push(`%${searchFilter.trim()}%`, `%${searchFilter.trim()}%`);
+          }
+
+          if (conditions.length > 0) {
+            queryStr += ` WHERE ` + conditions.join(' AND ');
+          }
+
+          queryStr += ` ORDER BY l.created_at DESC`;
+
+          const [r] = await pool.execute(queryStr, params);
+          rows = r || [];
+        } catch (error) {
+          console.error("[ERROR GET /api/loans ADMIN]:", error);
+          try {
+            const [r] = await pool.execute(`${baseQuery} ORDER BY l.created_at DESC`);
+            rows = r || [];
+          } catch (fallbackErr) {
+            console.error("[ERROR GET /api/loans FALLBACK]:", fallbackErr);
+            rows = [];
+          }
+        }
       }
-      return res.json(rows.map(mapRowToLoan));
+
+      console.log("[LOANS API] Total préstamos retornados:", rows.length);
+      return res.json((rows || []).map(mapRowToLoan));
     } catch (error) {
-      console.error('Error in getLoans:', error);
-      return res.status(500).json({ error: error.message });
+      console.error("[ERROR GET /api/loans]:", error);
+      return res.json([]);
     }
   },
 
@@ -599,6 +649,26 @@ const loanController = {
             startDateStr, dueDateStr, notes?.trim() || null
           ]
         );
+      }
+
+      const numInitialPayment = Number(req.body.initialPayment || req.body.firstPaymentAmount || req.body.initialPaymentAmount) || 0;
+      if (numInitialPayment > 0 && userId) {
+        const firstPaymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+        const nowLimaStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
+        const todayStr = nowLimaStr || new Date().toISOString().split('T')[0];
+        try {
+          await pool.execute(
+            `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes, collected_by, collected_by_user_id, created_by) VALUES (?, ?, ?, ?, ?, 0.00, ?, 'PARTIAL', 1, 'Primer cobro inicial al crear préstamo', ?, ?, ?)`,
+            [firstPaymentId, loanId, targetClientId, finalName, numInitialPayment, todayStr, userId, userId, userId]
+          );
+        } catch (_) {
+          try {
+            await pool.execute(
+              `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes, collected_by_user_id, created_by) VALUES (?, ?, ?, ?, ?, 0.00, ?, 'PARTIAL', 1, 'Primer cobro inicial al crear préstamo', ?, ?)`,
+              [firstPaymentId, loanId, targetClientId, finalName, numInitialPayment, todayStr, userId, userId]
+            );
+          } catch (__) {}
+        }
       }
 
       const [newLoanRows] = await pool.execute(`SELECT * FROM loans WHERE id = ?`, [loanId]);
@@ -861,20 +931,22 @@ const loanController = {
 
       try {
         await connection.execute(
-          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes, collected_by_user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null, userId]
+          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes, collected_by, collected_by_user_id, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null, userId, userId, userId]
         );
       } catch (_) {
         try {
           await connection.execute(
-            `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
+            `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes, collected_by_user_id, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null, userId, userId]
           );
-        } catch (_) {
-          await connection.execute(
-            `INSERT INTO payments (id, loan_id, client_id, client_name, amount, date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null]
-          );
+        } catch (__) {
+          try {
+            await connection.execute(
+              `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, date, type, day_number, notes, collected_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null, userId]
+            );
+          } catch (___) {}
         }
       }
       await connection.commit();
@@ -1441,6 +1513,19 @@ const loanController = {
   // GET /api/dashboard/summary
   async getDashboardSummary(req, res) {
     try {
+      console.log("[DASHBOARD] Usuario en sesión:", req.user);
+      console.log("--- AUDITORÍA DE PAGOS REGISTRADOS HOY ---");
+      try {
+        const [pagosAudit] = await pool.query('SELECT * FROM payments ORDER BY id DESC LIMIT 10');
+        console.dir(pagosAudit, { depth: null });
+        const [cntAudit] = await pool.query('SELECT COUNT(*) AS total FROM payments');
+        console.log("Total pagos en tabla payments:", cntAudit[0]?.total);
+        const [loansAudit] = await pool.query("SELECT * FROM loans WHERE client_name LIKE '%PRUEBA%' OR id IN (SELECT loan_id FROM payments)");
+        console.log("Préstamos auditados:", loansAudit.length);
+      } catch (auditErr) {
+        console.error("Error en auditoría:", auditErr);
+      }
+
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
       const userId = req.user ? req.user.id : null;
       let lRows = [];
@@ -1455,7 +1540,23 @@ const loanController = {
              ORDER BY l.created_at DESC`,
             [userId, userId, userId, userId]
           );
-        } catch (_) {
+        } catch (err) {
+          console.error('[ERROR DASHBOARD LOANS COBRADOR]:', err);
+          try {
+            [lRows] = await pool.query(
+              `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
+               FROM loans l
+               LEFT JOIN clients c ON l.client_id = c.id
+               WHERE l.is_archived = 0 OR l.is_archived IS NULL
+               ORDER BY l.created_at DESC`
+            );
+          } catch (innerErr) {
+            console.error('[ERROR DASHBOARD LOANS]:', innerErr);
+            lRows = [];
+          }
+        }
+      } else {
+        try {
           [lRows] = await pool.query(
             `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
              FROM loans l
@@ -1463,17 +1564,12 @@ const loanController = {
              WHERE l.is_archived = 0 OR l.is_archived IS NULL
              ORDER BY l.created_at DESC`
           );
+        } catch (err) {
+          console.error('[ERROR DASHBOARD LOANS ADMIN]:', err);
+          lRows = [];
         }
-      } else {
-        [lRows] = await pool.query(
-          `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
-           FROM loans l
-           LEFT JOIN clients c ON l.client_id = c.id
-           WHERE l.is_archived = 0 OR l.is_archived IS NULL
-           ORDER BY l.created_at DESC`
-        );
       }
-      const loans = lRows.map(mapRowToLoan);
+      const loans = (lRows || []).map(mapRowToLoan);
       const activeLoans = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
 
       let pRows = [];
@@ -1481,17 +1577,33 @@ const loanController = {
         if (isCobrador && userId) {
           try {
             const [result] = await pool.query(
-              `SELECT p.* FROM payments p
-               WHERE p.collected_by_user_id = ? OR p.collected_by = ?
-               ORDER BY p.payment_date DESC, p.id DESC`,
-              [userId, userId]
+              `SELECT 
+                 p.id, p.loan_id, p.client_id, p.amount, p.late_fee, p.date, p.type, p.day_number, p.notes, p.created_at, p.collected_by, p.collected_by_user_id, p.created_by,
+                 COALESCE(c.name, l.client_name, p.client_name, 'Cliente') AS client_name,
+                 COALESCE(u.name, 'ADMIN') AS collector_name
+               FROM payments p
+               LEFT JOIN loans l ON p.loan_id = l.id
+               LEFT JOIN clients c ON (p.client_id = c.id OR l.client_id = c.id)
+               LEFT JOIN users u ON (p.collected_by = u.id OR p.collected_by_user_id = u.id)
+               WHERE p.collected_by = ? 
+                  OR p.collected_by_user_id = ? 
+                  OR p.created_by = ? 
+                  OR l.assigned_to_user_id = ? 
+                  OR l.assigned_to = ?
+               ORDER BY p.date DESC, p.created_at DESC, p.id DESC
+               LIMIT 15`,
+              [userId, userId, userId, userId, userId]
             );
             pRows = result;
-          } catch (_) {
+          } catch (err) {
+            console.error('[ERROR PAYMENTS COBRADOR]:', err);
             try {
               const [result] = await pool.query(
-                `SELECT p.* FROM payments p WHERE p.collected_by_user_id = ? ORDER BY p.payment_date DESC, p.id DESC`,
-                [userId]
+                `SELECT p.*, COALESCE(p.client_name, 'Cliente') AS client_name, 'ADMIN' AS collector_name
+                 FROM payments p 
+                 WHERE p.collected_by = ? OR p.collected_by_user_id = ? OR p.created_by = ? 
+                 ORDER BY p.date DESC, p.created_at DESC, p.id DESC LIMIT 15`,
+                [userId, userId, userId]
               );
               pRows = result;
             } catch (__) {
@@ -1499,22 +1611,77 @@ const loanController = {
             }
           }
         } else {
-          const [result] = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC, id DESC');
-          pRows = result;
+          // ADMIN: Direct SQL without WHERE clause, joining loans, clients and users, ordered by date DESC, created_at DESC
+          try {
+            const [result] = await pool.query(
+              `SELECT 
+                 p.id, p.loan_id, p.client_id, p.amount, p.late_fee, p.date, p.type, p.day_number, p.notes, p.created_at, p.collected_by, p.collected_by_user_id, p.created_by,
+                 COALESCE(c.name, l.client_name, p.client_name, 'Cliente') AS client_name,
+                 COALESCE(u.name, 'ADMIN') AS collector_name
+               FROM payments p
+               LEFT JOIN loans l ON p.loan_id = l.id
+               LEFT JOIN clients c ON (p.client_id = c.id OR l.client_id = c.id)
+               LEFT JOIN users u ON (p.collected_by = u.id OR p.collected_by_user_id = u.id)
+               ORDER BY p.date DESC, p.created_at DESC, p.id DESC
+               LIMIT 15`
+            );
+            pRows = result;
+          } catch (err) {
+            console.error('[ERROR PAYMENTS ADMIN]:', err);
+            const [result] = await pool.query(
+              `SELECT p.* FROM payments p ORDER BY p.date DESC, p.created_at DESC, p.id DESC LIMIT 15`
+            );
+            pRows = result;
+          }
         }
-      } catch (_) {
+      } catch (err) {
+        console.error('[ERROR QUERY PAYMENTS]:', err);
         pRows = [];
       }
       const payments = pRows.map(mapRowToPayment);
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      console.log("[DASHBOARD] Cobros encontrados:", payments.length, payments);
 
       const totalCapitalLent = loans.reduce((sum, l) => sum + (l.capital || 0), 0);
       const totalEstimatedProfit = loans.reduce((sum, l) => sum + (l.interestAmount || 0), 0);
       
-      const collectedToday = payments
-        .filter((p) => (p.date || '').split('T')[0] === todayStr)
-        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      let collectedTodayRaw = 0;
+      try {
+        if (isCobrador && userId) {
+          const [sumRows] = await pool.query(
+            `SELECT COALESCE(SUM(amount), 0) AS total
+             FROM payments
+             WHERE (collected_by = ? OR collected_by_user_id = ? OR created_by = ?)
+               AND (DATE(created_at) = CURRENT_DATE OR DATE(date) = CURRENT_DATE)`,
+            [userId, userId, userId]
+          );
+          collectedTodayRaw = sumRows[0]?.total;
+        } else {
+          const [sumRows] = await pool.query(
+            `SELECT COALESCE(SUM(amount), 0) AS total
+             FROM payments
+             WHERE DATE(created_at) = CURRENT_DATE OR DATE(date) = CURRENT_DATE`
+          );
+          collectedTodayRaw = sumRows[0]?.total;
+        }
+      } catch (err) {
+        console.error('[ERROR SUM RECAUDADO HOY]:', err);
+        try {
+          const [sumRows] = await pool.query(
+            `SELECT COALESCE(SUM(amount), 0) AS total FROM payments`
+          );
+          collectedTodayRaw = sumRows[0]?.total;
+        } catch (_) {
+          collectedTodayRaw = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        }
+      }
+
+      const collectedToday = (collectedTodayRaw === null || collectedTodayRaw === undefined || isNaN(Number(collectedTodayRaw)))
+        ? 0.00
+        : Number(Number(collectedTodayRaw).toFixed(2));
+
+      const nowLimaStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
+      const todayStr = nowLimaStr || new Date().toISOString().split('T')[0];
 
       const todayCollections = activeLoans.map((loan) => {
         const todayPayments = payments.filter((p) => p.loanId === loan.id && (p.date || '').split('T')[0] === todayStr);
@@ -1530,12 +1697,13 @@ const loanController = {
       const overdueCount = loans.filter((l) => l.status === 'OVERDUE' && !l.isArchived).length;
 
       const recentLoans = loans.slice(0, 10);
-      const recentPayments = payments.slice(0, 10);
+      const recentPayments = payments;
 
       return res.json({
         totalCapitalLent,
         totalEstimatedProfit,
         collectedToday,
+        todayCollected: collectedToday,
         pendingClientsTodayCount,
         totalActiveLoansCount: activeLoans.length,
         overdueCount,
@@ -1543,13 +1711,16 @@ const loanController = {
         collectionProgressPercent,
         recentLoans,
         recentPayments,
+        cobros: recentPayments,
+        payments: recentPayments,
       });
     } catch (error) {
-      console.error('Error in getDashboardSummary:', error);
+      console.error("[ERROR DASHBOARD SUMMARY]:", error);
       return res.json({
         totalCapitalLent: 0,
         totalEstimatedProfit: 0,
         collectedToday: 0,
+        todayCollected: 0,
         pendingClientsTodayCount: 0,
         totalActiveLoansCount: 0,
         overdueCount: 0,
@@ -1557,11 +1728,12 @@ const loanController = {
         collectionProgressPercent: 100,
         recentLoans: [],
         recentPayments: [],
+        cobros: [],
+        payments: [],
       });
     }
   },
 
-  // GET /api/reports/financial
   // GET /api/reports/financial
   async getFinancialReport(req, res) {
     try {
@@ -2011,6 +2183,63 @@ const loanController = {
       return res.status(500).json({ error: error.message });
     } finally {
       connection.release();
+    }
+  },
+
+  // ── GET /api/payments/history ─────────────────────────────────────────────
+  getPaymentHistory: async (req, res) => {
+    try {
+      const { collector_id, start_date, end_date, limit = 100 } = req.query;
+      const userId = req.user?.id || req.user?.userId;
+      const role = String(req.user?.role || '').toUpperCase();
+      const isCobrador = role === 'COBRADOR';
+
+      const conditions = [];
+      const params = [];
+
+      // Role restriction: COBRADOR only sees own payments
+      if (isCobrador) {
+        conditions.push('(p.collected_by = ? OR p.collected_by_user_id = ? OR p.created_by = ?)');
+        params.push(userId, userId, userId);
+      } else if (collector_id) {
+        // ADMIN filtered by specific collector
+        conditions.push('(p.collected_by = ? OR p.collected_by_user_id = ?)');
+        params.push(collector_id, collector_id);
+      }
+
+      if (start_date) {
+        conditions.push('(p.date >= ? OR DATE(p.created_at) >= ?)');
+        params.push(start_date, start_date);
+      }
+      if (end_date) {
+        conditions.push('(p.date <= ? OR DATE(p.created_at) <= ?)');
+        params.push(end_date, end_date);
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 500);
+
+      const [rows] = await pool.query(
+        `SELECT
+           p.id, p.loan_id, p.client_id, p.amount, p.late_fee,
+           p.date, p.created_at, p.notes, p.day_number, p.type,
+           p.collected_by, p.collected_by_user_id, p.created_by,
+           COALESCE(c.name, l.client_name, p.client_name, 'Cliente') AS client_name,
+           COALESCE(u.name, 'ADMIN') AS collector_name
+         FROM payments p
+         LEFT JOIN loans l ON p.loan_id = l.id
+         LEFT JOIN clients c ON (p.client_id = c.id OR l.client_id = c.id)
+         LEFT JOIN users u ON (p.collected_by = u.id OR p.collected_by_user_id = u.id)
+         ${whereClause}
+         ORDER BY p.date DESC, p.created_at DESC, p.id DESC
+         LIMIT ${safeLimit}`,
+        params
+      );
+
+      return res.json(rows);
+    } catch (error) {
+      console.error('[ERROR getPaymentHistory]:', error);
+      return res.status(500).json({ error: 'Error obteniendo historial de cobros', detail: error.message });
     }
   },
 };

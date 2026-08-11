@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
 import {
@@ -22,11 +22,18 @@ export function VistaDashboard({
   onUpdatePayment,
   onDeletePayment,
   onOpenUserManagement,
+  onRefreshData,
   user,
 }) {
   const navigate = useNavigate();
   const [editingPayment, setEditingPayment] = useState(null);
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
+
+  useEffect(() => {
+    if (onRefreshData) {
+      onRefreshData();
+    }
+  }, [user?.id, user?.role]);
 
   const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = String(currentUser?.role || '').toUpperCase() === 'ADMIN';
@@ -45,6 +52,17 @@ export function VistaDashboard({
     } finally {
       setDeletingPaymentId(null);
     }
+  };
+
+  const formatDateWithTime = (dateStr, createdAtStr) => {
+    const str = createdAtStr || dateStr;
+    if (!str) return '';
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return dateStr || '';
+    const day = d.getDate();
+    const month = d.toLocaleString('es-ES', { month: 'long' });
+    const time = d.toLocaleString('es-ES', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${day} ${month} || ${time.toLowerCase()}`;
   };
 
   return (
@@ -71,15 +89,6 @@ export function VistaDashboard({
             <Plus className="w-4 h-4" />
             <span>Crear Nuevo Préstamo</span>
           </button>
-          {isAdmin && (
-            <button 
-              type="button" 
-              onClick={onOpenUserManagement} 
-              className="bg-stone-900 text-white px-4 py-2 rounded-xl font-bold text-sm ml-2 z-50 cursor-pointer flex items-center gap-2 shadow-md hover:bg-black transition-all"
-            >
-              👤 Gestionar Usuarios / Crear Cobrador
-            </button>
-          )}
         </div>
       </div>
 
@@ -245,22 +254,40 @@ export function VistaDashboard({
           </div>
 
           <div className="space-y-2">
-            {!recentPayments || recentPayments.length === 0 ? (
-              <div className="p-6 text-center text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C]">
-                No hay cobros registrados hoy
-              </div>
-            ) : (
-              recentPayments.slice(0, 4).map((payment) => (
+            {(() => {
+              const rawPayments = summary?.recentPayments || summary?.cobros || summary?.payments || summary?.recent_payments || recentPayments || [];
+              const sortedPayments = [...rawPayments].sort((a, b) => {
+                const dateA = new Date(a?.createdAt || a?.created_at || a?.payment_date || a?.date || 0).getTime();
+                const dateB = new Date(b?.createdAt || b?.created_at || b?.payment_date || b?.date || 0).getTime();
+                if (dateB !== dateA) return dateB - dateA;
+                const idA = String(a?.id || '');
+                const idB = String(b?.id || '');
+                return idB.localeCompare(idA, undefined, { numeric: true });
+              });
+
+              if (!sortedPayments || sortedPayments.length === 0) {
+                return (
+                  <div className="p-6 text-center text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C]">
+                    No hay cobros registrados hoy
+                  </div>
+                );
+              }
+              return sortedPayments.slice(0, 5).map((payment) => (
                 <div
-                  key={payment.id}
+                  key={payment.id || `pay_${Math.random()}`}
                   className="p-3 bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C] flex items-center justify-between text-xs"
                 >
                   <div>
                     <strong className="text-[#2C221E] dark:text-[#F3F4F6] block font-bold">
-                      {payment.clientName}
+                      {payment.clientName || payment.client_name || payment.name || 'Cliente'}
                     </strong>
-                    <span className="text-[#6E615A] dark:text-[#E5E7EB]">
-                      Día {payment.dayNumber} • {payment.notes || 'Abono'}
+                    <span className="text-[#6E615A] dark:text-[#E5E7EB] flex items-center gap-1 flex-wrap">
+                      <span>Día {payment.dayNumber ?? payment.day_number ?? 1} • {payment.notes || payment.comment || 'Pago registrado'}</span>
+                      {isAdmin && (payment.collectorName || payment.collector_name) && (
+                        <span className="px-1.5 py-0.5 text-[9px] bg-[#E89D4F]/20 text-[#D96B27] rounded-md font-bold border border-[#E89D4F]/30">
+                          👤 {payment.collectorName || payment.collector_name}
+                        </span>
+                      )}
                     </span>
                   </div>
 
@@ -270,7 +297,7 @@ export function VistaDashboard({
                         +{formatCurrency(payment.amount)}
                       </strong>
                       <span className="text-[10px] text-[#6E615A] dark:text-[#E5E7EB]">
-                        {formatDatePE(payment.date)}
+                        {formatDateWithTime(payment.date || payment.payment_date, payment.createdAt || payment.created_at)}
                       </span>
                     </div>
 
@@ -299,8 +326,8 @@ export function VistaDashboard({
                     </div>
                   </div>
                 </div>
-              ))
-            )}
+              ));
+            })()}
           </div>
         </div>
       </div>

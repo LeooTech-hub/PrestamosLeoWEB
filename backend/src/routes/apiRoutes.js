@@ -53,6 +53,7 @@ router.get('/trash', verifyToken, requireAdmin, loanController.getTrash);
 // Payments Routes
 router.get('/payments', verifyToken, loanController.getPayments);
 router.get('/payments/recent', verifyToken, loanController.getPayments);
+router.get('/payments/history', verifyToken, loanController.getPaymentHistory);
 router.post('/payments', verifyToken, loanController.registerPayment);
 router.put('/payments/:id', verifyToken, loanController.updatePayment);
 router.delete('/payments/:id', verifyToken, requireAdmin, loanController.deletePayment);
