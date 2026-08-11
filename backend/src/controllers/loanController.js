@@ -823,42 +823,22 @@ const loanController = {
   async getPayments(req, res) {
     try {
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
-      const userId = req.user ? req.user.id : null;
-      let rows = [];
+      if (isCobrador) {
+        return res.status(403).json({ error: 'Acceso denegado: Los usuarios con rol COBRADOR no tienen permiso para consultar el historial general de cobros.' });
+      }
 
-      if (isCobrador && userId) {
-        try {
-          const [result] = await pool.query(
-            `SELECT p.* FROM payments p
-             WHERE (p.collected_by_user_id = ? OR p.collected_by = ?)
-             ORDER BY p.payment_date DESC, p.id DESC`,
-            [userId, userId]
-          );
-          rows = result;
-        } catch (_) {
-          try {
-            const [result] = await pool.query(
-              `SELECT p.* FROM payments p WHERE p.collected_by_user_id = ? ORDER BY p.payment_date DESC, p.id DESC`,
-              [userId]
-            );
-            rows = result;
-          } catch (__) {
-            rows = [];
-          }
-        }
-      } else {
-        try {
-          const [result] = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC, id DESC');
-          rows = result;
-        } catch (_) {
-          const [result] = await pool.query('SELECT * FROM payments');
-          rows = result;
-        }
+      let rows = [];
+      try {
+        const [result] = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC, id DESC');
+        rows = result;
+      } catch (_) {
+        const [result] = await pool.query('SELECT * FROM payments');
+        rows = result;
       }
       return res.json(rows.map(mapRowToPayment));
     } catch (error) {
       console.error('Error in getPayments:', error);
-      return res.json([]);
+      return res.status(500).json({ error: error.message });
     }
   },
 

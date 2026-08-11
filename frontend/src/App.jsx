@@ -498,12 +498,16 @@ export default function App() {
               path="/cobros"
               element={
                 <PrivateRoute token={token} user={user} onLoginSuccess={handleLoginSuccess}>
-                  <VistaCobros
-                    user={user}
-                    onUpdatePayment={handleUpdatePayment}
-                    onDeletePayment={handleDeletePayment}
-                    onRefreshData={loadData}
-                  />
+                  {user?.role === 'ADMIN' ? (
+                    <VistaCobros
+                      user={user}
+                      onUpdatePayment={handleUpdatePayment}
+                      onDeletePayment={handleDeletePayment}
+                      onRefreshData={loadData}
+                    />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )}
                 </PrivateRoute>
               }
             />

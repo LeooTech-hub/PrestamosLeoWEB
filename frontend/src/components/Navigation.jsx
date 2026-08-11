@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Route, CreditCard, UserPlus, BarChart3, Users, Receipt } from 'lucide-react';
 
 export function Navigation({ pendingCountToday = 0, overdueCount = 0, onOpenUserManagement, user }) {
-  const isAdmin = !user?.role || user?.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN';
 
   const allTabs = [
     {
@@ -30,7 +30,7 @@ export function Navigation({ pendingCountToday = 0, overdueCount = 0, onOpenUser
       to: '/cobros',
       label: 'Cobros',
       icon: Receipt,
-      roles: ['ADMIN', 'COBRADOR'],
+      roles: ['ADMIN'],
     },
     {
       to: '/nuevo-cliente',
@@ -59,7 +59,12 @@ export function Navigation({ pendingCountToday = 0, overdueCount = 0, onOpenUser
     },
   ];
 
-  const tabs = allTabs.filter(tab => isAdmin || tab.roles.includes('COBRADOR'));
+  const tabs = allTabs.filter(tab => {
+    if (tab.to === '/cobros') {
+      return user?.role === 'ADMIN';
+    }
+    return isAdmin || !user?.role || tab.roles.includes('COBRADOR');
+  });
   const gridClass = tabs.length >= 8 ? 'grid-cols-8' : tabs.length === 7 ? 'grid-cols-7' : tabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5';
 
   return (

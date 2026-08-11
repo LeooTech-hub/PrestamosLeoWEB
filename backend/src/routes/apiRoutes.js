@@ -1,5 +1,6 @@
 import express from 'express';
 import loanController from '../controllers/loanController.js';
+import paymentController from '../controllers/paymentController.js';
 import reniecController from '../controllers/reniecController.js';
 import { authController } from '../controllers/authController.js';
 import { userController } from '../controllers/userController.js';
@@ -51,14 +52,14 @@ router.delete('/loans/:id', verifyToken, requireAdmin, loanController.deleteLoan
 router.get('/trash', verifyToken, requireAdmin, loanController.getTrash);
 
 // Payments Routes
-router.get('/payments', verifyToken, loanController.getPayments);
-router.get('/payments/recent', verifyToken, loanController.getPayments);
-router.get('/payments/history', verifyToken, loanController.getPaymentHistory);
-router.post('/payments', verifyToken, loanController.registerPayment);
-router.put('/payments/:id', verifyToken, loanController.updatePayment);
-router.delete('/payments/:id', verifyToken, requireAdmin, loanController.deletePayment);
-router.post('/payments/revert', verifyToken, loanController.revertLastPayment);
-router.post('/loans/:id/revert-payment', verifyToken, loanController.revertLastPayment);
+router.get('/payments', verifyToken, paymentController.getPayments);
+router.get('/payments/recent', verifyToken, paymentController.getPayments);
+router.get('/payments/history', verifyToken, paymentController.getPaymentHistory);
+router.post('/payments', verifyToken, paymentController.registerPayment);
+router.put('/payments/:id', verifyToken, paymentController.updatePayment);
+router.delete('/payments/:id', verifyToken, requireAdmin, paymentController.deletePayment);
+router.post('/payments/revert', verifyToken, paymentController.revertLastPayment);
+router.post('/loans/:id/revert-payment', verifyToken, paymentController.revertLastPayment);
 
 // Expenses Routes
 router.get('/expenses', verifyToken, loanController.getExpenses);
