@@ -18,11 +18,11 @@ export const authController = {
 
       let users = [];
       try {
-        const [rows] = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [normalizedEmail]);
+        const { rows } = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [normalizedEmail]);
         users = rows || [];
       } catch (dbErr) {
         console.error('[LOGIN ERROR DB]:', dbErr);
-        const [rows] = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [normalizedEmail]);
+        const { rows } = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [normalizedEmail]);
         users = rows || [];
       }
 
@@ -76,7 +76,7 @@ export const authController = {
       }
 
       const normalizedEmail = String(email).trim().toLowerCase();
-      const [users] = await pool.query('SELECT * FROM users WHERE LOWER(email) = ?', [normalizedEmail]);
+      const { rows: users } = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
 
       if (!users || users.length === 0) {
         // Response generic success message to prevent user enumeration
@@ -92,7 +92,7 @@ export const authController = {
       const expiresFormatted = expires.toISOString().slice(0, 19).replace('T', ' ');
 
       await pool.query(
-        'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?',
+        'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
         [resetToken, expiresFormatted, user.id]
       );
 
@@ -131,8 +131,8 @@ export const authController = {
 
       const nowFormatted = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-      const [users] = await pool.query(
-        'SELECT * FROM users WHERE reset_token = ? AND reset_token_expires > ?',
+      const { rows: users } = await pool.query(
+        'SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires > $2',
         [token, nowFormatted]
       );
 
@@ -144,7 +144,7 @@ export const authController = {
       const newHash = await bcrypt.hash(String(targetPassword), 10);
 
       await pool.query(
-        'UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?',
+        'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
         [newHash, user.id]
       );
 
@@ -167,7 +167,7 @@ export const authController = {
         return res.status(401).json({ error: 'No autorizado' });
       }
 
-      const [users] = await pool.query('SELECT id, name, email, role, created_at FROM users WHERE id = ?', [userId]);
+      const { rows: users } = await pool.query('SELECT id, name, email, role, created_at FROM users WHERE id = $1', [userId]);
 
       if (!users || users.length === 0) {
         return res.status(404).json({ error: 'Usuario no encontrado' });

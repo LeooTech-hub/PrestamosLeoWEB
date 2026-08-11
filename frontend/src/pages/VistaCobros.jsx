@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
-import { Pencil, Trash2, Receipt, Calendar, Filter, ChevronDown, Search } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Pencil, Trash2, Receipt, Calendar, Filter, ChevronDown, Search, User } from "lucide-react";
 import api from "../api";
 import { formatCurrency } from "../utils/loanHelpers";
 import { EditPaymentModal } from "../components/EditPaymentModal";
@@ -100,30 +100,34 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
     if (onRefreshData) onRefreshData();
   };
 
-  const collectorBadgeClass = (name) =>
-    String(name || "").toUpperCase() === "ADMIN"
-      ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
-      : "bg-[#E89D4F]/10 text-[#D96B27] border-[#E89D4F]/30";
-
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#D96B27] via-[#E89D4F] to-[#C25A19] rounded-2xl p-5 text-white shadow-lg">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <Receipt className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-extrabold tracking-tight leading-tight">Historial General de Cobros</h2>
-              <p className="text-white/80 text-xs mt-0.5">{isAdmin ? "Vista completa de todas las transacciones" : "Tus cobros registrados"}</p>
-            </div>
+      {/* 1. Encabezado Superior con Estilo Unificado */}
+      <div className="bg-white dark:bg-[#18181B] border border-[#E6DCD2] dark:border-[#27272A] rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl terracotta-gradient flex items-center justify-center text-white font-black text-xl shadow-xs shrink-0">
+            <Receipt className="w-6 h-6" />
           </div>
-          <div className="text-right">
-            <p className="text-white/70 text-[10px] font-semibold uppercase tracking-widest">Total filtrado</p>
-            <p className="text-2xl font-extrabold tracking-tight">+{formatCurrency(totalRecaudado)}</p>
-            <p className="text-white/70 text-[10px] mt-0.5">{filtered.length} cobros</p>
+          <div>
+            <h2 className="text-xl font-extrabold text-[#2C221E] dark:text-[#F3F4F6] tracking-tight leading-tight">
+              HISTORIAL DE COBROS
+            </h2>
+            <p className="text-[#6E615A] dark:text-[#C2B29F] text-xs mt-0.5">
+              {isAdmin ? "Vista completa de todas las transacciones" : "Tus cobros registrados"}
+            </p>
           </div>
+        </div>
+
+        <div className="flex flex-col items-end text-right w-full sm:w-auto">
+          <span className="text-[10px] font-bold text-[#6E615A] dark:text-[#C2B29F] uppercase tracking-widest mb-1">
+            Total Cobrado
+          </span>
+          <span className="bg-[#FFF3EB] text-[#D95D39] border border-[#FAD7C0] dark:bg-[#2C221E] dark:text-[#E07A5F] dark:border-[#D96B27]/40 px-4 py-1.5 rounded-full font-extrabold text-xl tracking-tight shadow-xs">
+            +{formatCurrency(totalRecaudado)}
+          </span>
+          <span className="text-[11px] font-medium text-[#6E615A] dark:text-[#C2B29F] mt-1">
+            {filtered.length} {filtered.length === 1 ? "cobro" : "cobros"}
+          </span>
         </div>
       </div>
 
@@ -131,7 +135,7 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
       <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] p-4 shadow-sm space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] font-semibold text-[#6E615A] dark:text-[#C2B29F] uppercase tracking-wide flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" /> Período rápido:
+            <Calendar className="w-3.5 h-3.5 text-[#D96B27]" /> Período rápido:
           </span>
           {[{ label: "Hoy", mode: "today" }, { label: "Esta Semana", mode: "week" }, { label: "Este Mes", mode: "month" }].map(({ label, mode }) => (
             <button key={mode} type="button" onClick={() => setQuickFilter(mode)}
@@ -176,56 +180,66 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
         </div>
       </div>
 
-      {/* Content */}
+      {/* 2. Tarjetas / Filas de Cobros con Vida y Color */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-16 space-y-3">
+        <div className="flex flex-col items-center justify-center py-16 space-y-3 bg-white dark:bg-[#18181B] rounded-2xl border border-[#E6DCD2] dark:border-[#27272A] shadow-sm">
           <div className="w-9 h-9 border-4 border-[#D96B27] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-semibold text-[#6E615A]">Cargando historial de cobros…</p>
+          <p className="text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F]">Cargando historial de cobros…</p>
         </div>
       ) : error ? (
-        <div className="p-6 text-center bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-800">
+        <div className="p-6 text-center bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-800">
           <p className="text-sm font-semibold text-red-600 dark:text-red-400">{error}</p>
-          <button type="button" onClick={fetchHistory} className="mt-3 px-4 py-1.5 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all">Reintentar</button>
+          <button type="button" onClick={fetchHistory} className="mt-3 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all cursor-pointer">Reintentar</button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="p-10 text-center bg-white dark:bg-[#1E1E1E] rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C]">
-          <Receipt className="w-10 h-10 text-[#E6DCD2] mx-auto mb-3" />
+        <div className="p-10 text-center bg-white dark:bg-[#18181B] rounded-2xl border border-[#E6DCD2] dark:border-[#27272A] shadow-sm">
+          <Receipt className="w-10 h-10 text-[#E6DCD2] dark:text-[#27272A] mx-auto mb-3" />
           <p className="text-sm font-semibold text-[#6E615A] dark:text-[#C2B29F]">Sin cobros en el período seleccionado</p>
-          <p className="text-xs text-[#9A8A84] mt-1">Prueba con otro rango de fechas o elimina el filtro de cobrador.</p>
+          <p className="text-xs text-[#9A8A84] dark:text-[#6E615A] mt-1">Prueba con otro rango de fechas o elimina el filtro de cobrador.</p>
         </div>
       ) : (
-        <div className="space-y-2.5">
-          <div className="hidden md:grid grid-cols-[2fr_1.5fr_1fr_1fr_1.5fr_80px] gap-3 px-4 py-2 bg-[#FAF8F5] dark:bg-[#24211E] rounded-xl border border-[#E6DCD2] dark:border-[#332F2C]">
+        <div className="space-y-3">
+          <div className="hidden md:grid grid-cols-[2fr_1.5fr_1fr_1fr_1.5fr_80px] gap-3 px-4 py-2 bg-[#FAF8F5] dark:bg-[#18181B] rounded-xl border border-[#E6DCD2] dark:border-[#27272A]">
             {["Cliente", "Fecha y Hora", "Día", "Monto", "Cobrador", ""].map(h => (
               <span key={h} className="text-[10px] font-bold text-[#6E615A] dark:text-[#C2B29F] uppercase tracking-widest">{h}</span>
             ))}
           </div>
 
           {filtered.map(p => (
-            <div key={p.id} className="group bg-white dark:bg-[#1E1E1E] rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] px-4 py-3 hover:border-[#E89D4F]/50 hover:shadow-sm transition-all">
+            <div
+              key={p.id}
+              className="bg-white dark:bg-[#18181B] border border-[#E6DCD2] dark:border-[#27272A] rounded-2xl p-4 shadow-sm hover:border-[#E89D4F]/50 transition-all group"
+            >
               {/* Mobile */}
               <div className="md:hidden flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-[#2C221E] dark:text-[#F3F4F6] truncate">{p.client_name || "Cliente"}</p>
-                  <p className="text-[11px] text-[#6E615A] dark:text-[#C2B29F] mt-0.5">Día {p.day_number ?? 1} • {p.notes || "Pago registrado"}</p>
-                  <p className="text-[11px] text-[#9A8A84] mt-0.5">{formatDateWithTime(p.date, p.created_at)}</p>
-                  <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[9px] font-bold border ${collectorBadgeClass(p.collector_name)}`}>
-                    👤 {p.collector_name || "ADMIN"}
-                  </span>
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <p className="font-extrabold text-sm text-[#2C221E] dark:text-[#F3F4F6] truncate">{p.client_name || "Cliente"}</p>
+                  <p className="text-xs text-[#6E615A] dark:text-[#C2B29F]">{p.notes || "Pago registrado"}</p>
+                  <p className="text-xs text-[#9A8A84] dark:text-[#6E615A]">{formatDateWithTime(p.date, p.created_at)}</p>
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                    <span className="bg-[#FFF3EB] text-[#D95D39] border border-[#FAD7C0] dark:bg-[#2C221E] dark:text-[#E07A5F] dark:border-[#D96B27]/40 px-3 py-1 rounded-full text-xs font-bold">
+                      Día {p.day_number ?? 1}
+                    </span>
+                    <span className="bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] dark:bg-[#1E2D27] dark:text-[#3D9970] dark:border-[#2D7A5D]/40 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1">
+                      <User className="w-3 h-3 shrink-0" />
+                      {p.collector_name || "ADMIN"}
+                    </span>
+                  </div>
                 </div>
+
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <span className="text-base font-extrabold text-[#2D7A5D] dark:text-[#3D9970]">+{formatCurrency(p.amount)}</span>
+                  <span className="text-[#059669] dark:text-[#3D9970] font-black text-xl">+{formatCurrency(p.amount)}</span>
                   {isAdmin && (
                     <div className="flex gap-1">
                       {onUpdatePayment && (
                         <button type="button" onClick={() => setEditingPayment(p)}
-                          className="p-1 rounded-lg text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FDF3ED] border border-transparent hover:border-[#E6DCD2] transition-all" title="Editar">
+                          className="p-1.5 rounded-lg text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] hover:bg-[#FDF3ED] border border-transparent hover:border-[#E6DCD2] transition-all cursor-pointer" title="Editar">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                       )}
                       {onDeletePayment && (
                         <button type="button" onClick={() => handleDelete(p)} disabled={deletingId === p.id}
-                          className="p-1 rounded-lg text-[#6E615A] hover:text-[#C84B31] hover:bg-red-50 border border-transparent hover:border-red-200 transition-all disabled:opacity-50" title="Anular">
+                          className="p-1.5 rounded-lg text-[#6E615A] dark:text-[#C2B29F] hover:text-[#C84B31] hover:bg-red-50 dark:hover:bg-red-950/40 transition-all cursor-pointer disabled:opacity-50" title="Anular">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
@@ -237,31 +251,32 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
               {/* Desktop */}
               <div className="hidden md:grid grid-cols-[2fr_1.5fr_1fr_1fr_1.5fr_80px] gap-3 items-center">
                 <div className="min-w-0">
-                  <p className="font-bold text-sm text-[#2C221E] dark:text-[#F3F4F6] truncate">{p.client_name || "Cliente"}</p>
-                  <p className="text-[11px] text-[#9A8A84] truncate">{p.notes || "Pago registrado"}</p>
+                  <p className="font-extrabold text-sm text-[#2C221E] dark:text-[#F3F4F6] truncate">{p.client_name || "Cliente"}</p>
+                  <p className="text-xs text-[#9A8A84] dark:text-[#6E615A] truncate">{p.notes || "Pago registrado"}</p>
                 </div>
                 <div className="text-xs text-[#6E615A] dark:text-[#C2B29F] font-medium">{formatDateWithTime(p.date, p.created_at)}</div>
                 <div>
-                  <span className="text-xs font-semibold bg-[#FAF8F5] dark:bg-[#24211E] text-[#6E615A] dark:text-[#C2B29F] px-2 py-0.5 rounded-lg border border-[#E6DCD2] dark:border-[#332F2C]">
+                  <span className="bg-[#FFF3EB] text-[#D95D39] border border-[#FAD7C0] dark:bg-[#2C221E] dark:text-[#E07A5F] dark:border-[#D96B27]/40 px-3 py-1 rounded-full text-xs font-bold inline-block">
                     Día {p.day_number ?? 1}
                   </span>
                 </div>
-                <div className="font-extrabold text-[#2D7A5D] dark:text-[#3D9970] text-sm">+{formatCurrency(p.amount)}</div>
+                <div className="text-[#059669] dark:text-[#3D9970] font-black text-xl">+{formatCurrency(p.amount)}</div>
                 <div>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold border ${collectorBadgeClass(p.collector_name)}`}>
-                    👤 {p.collector_name || "ADMIN"}
+                  <span className="bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] dark:bg-[#1E2D27] dark:text-[#3D9970] dark:border-[#2D7A5D]/40 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1">
+                    <User className="w-3 h-3 shrink-0" />
+                    {p.collector_name || "ADMIN"}
                   </span>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                   {isAdmin && onUpdatePayment && (
                     <button type="button" onClick={() => setEditingPayment(p)}
-                      className="p-1 rounded-lg text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FDF3ED] border border-transparent hover:border-[#E6DCD2] transition-all" title="Editar pago">
+                      className="p-1.5 rounded-lg text-[#6E615A] dark:text-[#C2B29F] hover:text-[#D96B27] hover:bg-[#FDF3ED] border border-transparent hover:border-[#E6DCD2] transition-all cursor-pointer" title="Editar pago">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                   )}
                   {isAdmin && onDeletePayment && (
                     <button type="button" onClick={() => handleDelete(p)} disabled={deletingId === p.id}
-                      className="p-1 rounded-lg text-[#6E615A] hover:text-[#C84B31] hover:bg-red-50 border border-transparent hover:border-red-200 transition-all disabled:opacity-50" title="Anular pago">
+                      className="p-1.5 rounded-lg text-[#6E615A] dark:text-[#C2B29F] hover:text-[#C84B31] hover:bg-red-50 dark:hover:bg-red-950/40 transition-all cursor-pointer disabled:opacity-50" title="Anular pago">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -270,15 +285,21 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
             </div>
           ))}
 
-          <div className="flex items-center justify-between px-4 py-3 bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C]">
+          <div className="flex items-center justify-between px-5 py-4 bg-white dark:bg-[#18181B] rounded-2xl border border-[#E6DCD2] dark:border-[#27272A] shadow-sm">
             <span className="text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F]">{filtered.length} cobro{filtered.length !== 1 ? "s" : ""} mostrado{filtered.length !== 1 ? "s" : ""}</span>
-            <span className="text-sm font-extrabold text-[#2D7A5D] dark:text-[#3D9970]">Total: +{formatCurrency(totalRecaudado)}</span>
+            <span className="text-lg font-black text-[#059669] dark:text-[#3D9970]">Total: +{formatCurrency(totalRecaudado)}</span>
           </div>
         </div>
       )}
 
       {editingPayment && (
-        <EditPaymentModal payment={editingPayment} onSave={handleEditSave} onClose={() => setEditingPayment(null)} />
+        <EditPaymentModal
+          payment={editingPayment}
+          isOpen={!!editingPayment}
+          onClose={() => setEditingPayment(null)}
+          onConfirmEditPayment={handleEditSave}
+          onSave={handleEditSave}
+        />
       )}
     </div>
   );

@@ -205,7 +205,7 @@ export async function initDb() {
     );
 
     // ── Seed: Verificar si la tabla users está vacía e insertar admin inicial ──
-    const [rows] = await pool.query('SELECT COUNT(*) AS count FROM users');
+    const { rows } = await pool.query('SELECT COUNT(*) AS count FROM users');
     const userCount = Number(rows[0]?.count ?? 0);
 
     if (userCount === 0) {

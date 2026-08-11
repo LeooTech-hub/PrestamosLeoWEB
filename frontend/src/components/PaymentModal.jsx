@@ -137,7 +137,7 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
                       : 'bg-[#FAF8F5] text-[#2C221E] border-[#E6DCD2]'
                   }`}
                 >
-                  Día Completo ({formatCurrency(loan.dailyPaymentAmount)})
+                  Día ({formatCurrency(loan.dailyPaymentAmount)})
                 </button>
 
                 <button
@@ -149,7 +149,7 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
                       : 'bg-[#FAF8F5] text-[#2C221E] border-[#E6DCD2]'
                   }`}
                 >
-                  Liquidación Total ({formatCurrency(loan.remainingAmount)})
+                  Liquidación ({formatCurrency(loan.remainingAmount)})
                 </button>
               </div>
 
@@ -166,7 +166,7 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
 
             <div>
               <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                Mora / Interés por Mora (S/.) <span className="text-[10px] text-[#6E615A] font-normal">(Opcional)</span>:
+                Mora <span className="text-[10px] text-[#6E615A] font-normal">(Opcional)</span>:
               </label>
               <input
                 type="number"

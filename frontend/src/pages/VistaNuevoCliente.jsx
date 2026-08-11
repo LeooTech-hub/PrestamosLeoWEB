@@ -46,7 +46,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   const [isSearchingDni, setIsSearchingDni] = useState(false);
   const [dniStatusText, setDniStatusText] = useState('');
 
-  const [capital, setCapital] = useState(500);
+  const [capital, setCapital] = useState();
   const [paymentDays, setPaymentDays] = useState(20);
   const [interestRate, setInterestRate] = useState(20);
   const initialStartDate = new Date().toISOString().split('T')[0];
@@ -259,7 +259,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                  Nombre Completo del Cliente:
+                  Nombre y Apellidos:
                 </label>
                 <input
                   type="text"
@@ -267,7 +267,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                   disabled={isClientLocked}
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  placeholder=""
+                  placeholder="Leonardo Rodriguez Rodriguez"
                   className={`w-full px-3 py-2.5 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
                     isClientLocked
                       ? 'bg-[#FAF8F5] border-[#E6DCD2] text-[#6E615A] cursor-not-allowed opacity-85'
@@ -278,14 +278,14 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
               <div>
                 <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                  Apodo / Alias (Opcional):
+                  Apodo (Opcional):
                 </label>
                 <input
                   type="text"
                   disabled={isClientLocked}
                   value={clientAlias}
                   onChange={(e) => setClientAlias(e.target.value)}
-                  placeholder=""
+                  placeholder="Lud"
                   className={`w-full px-3 py-2.5 border rounded-2xl text-xs font-semibold focus:outline-none transition-all ${
                     isClientLocked
                       ? 'bg-[#FAF8F5] border-[#E6DCD2] text-[#6E615A] cursor-not-allowed opacity-85'
@@ -414,7 +414,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                   step="any"
                   value={capital || ''}
                   onChange={(e) => setCapital(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="500"
+                  placeholder=""
                   className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-sm font-extrabold text-[#2C221E] dark:text-[#F3F4F6] focus:outline-none focus:border-[#D96B27]"
                 />
               </div>
@@ -439,7 +439,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1">
-                  Interés / Comisión (%):
+                  Interés (%):
                 </label>
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1 shrink-0">
@@ -485,7 +485,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                   max="365"
                   value={paymentDays}
                   onChange={(e) => handlePaymentDaysChange(e.target.value)}
-                  placeholder="Número de días (1 - 365)"
+                  placeholder=""
                   className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs font-bold text-[#2C221E] dark:text-[#F3F4F6] focus:outline-none focus:border-[#D96B27]"
                 />
               </div>

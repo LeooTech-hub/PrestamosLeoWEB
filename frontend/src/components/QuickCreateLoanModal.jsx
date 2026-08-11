@@ -149,14 +149,14 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
           <div className="space-y-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/60">
             <div>
               <label className="block text-xs font-bold text-[#6E615A] mb-1">
-                Nombre Completo del Cliente:
+                Nombres y Apellidos:
               </label>
               <input
                 type="text"
                 required
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                placeholder=""
+                placeholder="Leonardo Rodriguez Rodriguez"
                 className="w-full px-3 py-2 bg-white border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>

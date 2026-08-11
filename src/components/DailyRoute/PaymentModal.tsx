@@ -226,7 +226,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {/* Mora / Penalidad */}
             <div>
               <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
-                Mora / Interés por Mora (S/.) <span className="text-[10px] text-[#6E615A] dark:text-[#C2B29F] font-normal">(Opcional)</span>:
+                Mora <span className="text-[10px] text-[#6E615A] dark:text-[#C2B29F] font-normal">(Opcional)</span>:
               </label>
               <input
                 type="number"

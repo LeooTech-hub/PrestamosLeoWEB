@@ -67,7 +67,7 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment, onRe
               Ruta Diaria de Cobranza
             </h2>
             <p className="text-xs text-[#6E615A] dark:text-[#E5E7EB]">
-              Control en vivo de cuotas del día en Soles (S/.).
+              Control de cuotas diarias.
             </p>
           </div>
         </div>
@@ -281,7 +281,7 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment, onRe
                         ? 'Pagado Completo'
                         : isPaidToday
                         ? 'Abonar más'
-                        : 'Cobrar Cuota'}
+                        : 'Cobrar'}
                     </span>
                   </button>
 

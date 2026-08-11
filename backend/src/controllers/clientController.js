@@ -38,23 +38,23 @@ export const getClients = async (req, res) => {
 
     if (isCobrador && userId && !isTodos) {
       try {
-        const [r] = await pool.query(
-          `${baseQuery} WHERE (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.created_at DESC`,
+        const { rows: r } = await pool.query(
+          `${baseQuery} WHERE (c.assigned_to = $1 OR c.assigned_to_user_id = $2 OR c.created_by = $3 OR c.created_by_user_id = $4) ORDER BY c.created_at DESC`,
           [userId, userId, userId, userId]
         );
         rows = r || [];
       } catch (err) {
         console.error("[ERROR GET /api/clients COBRADOR]:", err);
-        const [r] = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
+        const { rows: r } = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
         rows = r || [];
       }
     } else {
       try {
-        const [r] = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
+        const { rows: r } = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
         rows = r || [];
       } catch (err) {
         console.error("[ERROR GET /api/clients ADMIN]:", err);
-        const [r] = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
+        const { rows: r } = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
         rows = r || [];
       }
     }

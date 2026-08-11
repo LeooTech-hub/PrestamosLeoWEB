@@ -228,7 +228,7 @@ export function VistaClientes({
                   className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-[#D96B27]/40 bg-[#FDF3ED] text-[#D96B27] text-xs font-bold hover:bg-[#FDEBD8] transition-all"
                 >
                   <CheckSquare className="w-3.5 h-3.5" />
-                  <span>Asignar Cartera</span>
+                  <span>Asignar Cobrador</span>
                 </button>
               )}
             </>

@@ -36,13 +36,13 @@ async function seedAdmin() {
     const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     // 3. Verificar si el usuario admin ya existe
-    const [existingUsers] = await pool.query('SELECT * FROM users WHERE LOWER(email) = ?', [adminEmail.toLowerCase()]);
+    const { rows: existingUsers } = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [adminEmail.toLowerCase()]);
 
     if (existingUsers.length === 0) {
       const userId = generateUUID();
       await pool.query(
-        `INSERT INTO users (id, name, email, password_hash, created_at) VALUES (?, ?, ?, ?, ?)`,
-        [userId, adminName, adminEmail, passwordHash, createdAt]
+        'INSERT INTO users (id, name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5)',
+        [userId, adminName, adminEmail, passwordHash, 'ADMIN']
       );
       console.log('🎉 Usuario Administrador registrado exitosamente:');
       console.log(`   • Name: ${adminName}`);
@@ -51,8 +51,8 @@ async function seedAdmin() {
     } else {
       const user = existingUsers[0];
       await pool.query(
-        `UPDATE users SET name = ?, password_hash = ? WHERE id = ?`,
-        [adminName, passwordHash, user.id]
+        'UPDATE users SET password_hash = $1, role = $2 WHERE id = $3',
+        [passwordHash, 'ADMIN', existingUsers[0].id]
       );
       console.log('🔄 Usuario Administrador actualizado exitosamente con la clave admin123:');
       console.log(`   • Name: ${adminName}`);

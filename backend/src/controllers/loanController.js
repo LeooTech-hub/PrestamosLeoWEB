@@ -26,6 +26,23 @@ function formatDatePE(dateStr) {
   return dateStr;
 }
 
+export function resolveAssignedUserId(req) {
+  const body = req.body || {};
+  const explicit = body.assigned_to_user_id ?? body.assignedToUserId ?? body.assignedTo ?? body.assigned_to;
+  if (explicit !== undefined && explicit !== null && String(explicit).trim() !== '' && String(explicit) !== 'unassigned') {
+    return explicit;
+  }
+  const userId = req.user ? req.user.id : null;
+  const userRole = String(req.user?.role || '').toUpperCase();
+  if (userRole === 'ADMIN' && userId) {
+    return userId;
+  }
+  if (userRole === 'COBRADOR' && userId) {
+    return userId;
+  }
+  return userId || 1;
+}
+
 function mapRowToClient(row) {
   const dniVal = row.dni ?? row.documento ?? row.identification ?? undefined;
   return {
@@ -35,15 +52,15 @@ function mapRowToClient(row) {
     phone: String(row.phone || ''),
     address: String(row.address || ''),
     dni: dniVal ? String(dniVal) : undefined,
-    documento: row.documento ? String(row.documento) : (dniVal ? String(dniVal) : undefined),
-    identification: row.identification ? String(row.identification) : (dniVal ? String(dniVal) : undefined),
+    documento: row.documento ? String(row.documento) : dniVal ? String(dniVal) : undefined,
+    identification: row.identification ? String(row.identification) : dniVal ? String(dniVal) : undefined,
     notes: row.notes ? String(row.notes) : undefined,
     createdAt: String(row.created_at || row.createdAt || new Date().toISOString()),
     status: row.status || 'ACTIVE',
     routeOrder: Number(row.route_order ?? row.routeOrder ?? 0),
     assignedTo: row.assigned_to || row.assigned_to_user_id || undefined,
     assignedToName: row.assigned_to_name || row.collector_name || undefined,
-    createdBy: row.created_by || row.created_by_user_id || undefined,
+    createdBy: row.created_by || row.created_by_user_id || undefined
   };
 }
 
@@ -52,7 +69,7 @@ function mapRowToLoan(row) {
   const interestRate = Number(row.interest_rate ?? 20);
   const interestAmount = Number(row.interest_amount ?? Math.round(capital * 0.20));
   const penaltyAmount = Number(row.penalty_amount ?? row.penaltyAmount ?? row.mora ?? 0);
-  const totalToPay = Number(row.total_to_pay ?? row.total_amount ?? (capital + interestAmount + penaltyAmount));
+  const totalToPay = Number(row.total_to_pay ?? row.total_amount ?? capital + interestAmount + penaltyAmount);
   const paymentDays = Number(row.payment_days ?? row.days_agreed ?? 20);
   const dailyPaymentAmount = Number(row.daily_payment_amount ?? row.daily_payment ?? Math.round(totalToPay / (paymentDays || 1)));
 
@@ -89,7 +106,7 @@ function mapRowToLoan(row) {
     isArchived: Boolean(row.is_archived),
     assignedTo: row.assigned_to || row.assigned_to_user_id || undefined,
     assignedToName: row.assigned_to_name || row.collector_name || undefined,
-    createdBy: row.created_by || row.created_by_user_id || undefined,
+    createdBy: row.created_by || row.created_by_user_id || undefined
   };
 }
 
@@ -126,7 +143,7 @@ function mapRowToPayment(row) {
     createdBy: row.created_by || undefined,
     created_by: row.created_by || undefined,
     collectorName: collectorName ? String(collectorName) : undefined,
-    collector_name: collectorName ? String(collectorName) : undefined,
+    collector_name: collectorName ? String(collectorName) : undefined
   };
 }
 
@@ -137,7 +154,7 @@ function mapRowToExpense(row) {
     category: row.category || 'OTROS',
     description: String(row.description || ''),
     date: String(row.expense_date || row.date || new Date().toISOString().split('T')[0]),
-    createdAt: String(row.created_at || new Date().toISOString()),
+    createdAt: String(row.created_at || new Date().toISOString())
   };
 }
 
@@ -160,24 +177,24 @@ const loanController = {
 
       if (isCobrador && userId && !isTodos) {
         try {
-          const [r] = await pool.query(
-            `${baseQuery} WHERE (c.assigned_to = ? OR c.assigned_to_user_id = ? OR c.created_by = ? OR c.created_by_user_id = ?) ORDER BY c.created_at DESC`,
+          const { rows: r } = await pool.query(
+            `${baseQuery} WHERE (c.assigned_to = $1 OR c.assigned_to_user_id = $2 OR c.created_by = $3 OR c.created_by_user_id = $4) ORDER BY c.created_at DESC`,
             [userId, userId, userId, userId]
           );
           rows = r || [];
         } catch (err) {
           console.error("[ERROR GET /api/clients COBRADOR]:", err);
-          const [r] = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
+          const { rows: r } = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
           rows = r || [];
         }
       } else {
         // ADMIN or TODOS: Retorna la totalidad de los 29 clientes sin filtros bloqueantes
         try {
-          const [r] = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
+          const { rows: r } = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
           rows = r || [];
         } catch (err) {
           console.error("[ERROR GET /api/clients ADMIN]:", err);
-          const [r] = await pool.query(`SELECT * FROM clients ORDER BY created_at DESC`);
+          const { rows: r } = await pool.query(`SELECT * FROM clients ORDER BY created_at DESC`);
           rows = r || [];
         }
       }
@@ -244,27 +261,27 @@ const loanController = {
   // POST /api/clients
   async createClient(req, res) {
     try {
-      const { name, alias, phone, address, identification, notes, routeOrder, assignedToUserId } = req.body;
+      const { name, alias, phone, address, identification, notes, routeOrder } = req.body || {};
       const id = generateUUID();
       const createdAt = new Date().toISOString();
       const userId = req.user ? req.user.id : null;
-      const assignedId = assignedToUserId || userId;
+      const assignedId = resolveAssignedUserId(req);
 
       try {
         await pool.query(
-          `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order, assigned_to_user_id, created_by_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-          [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0, assignedId, userId]
+          `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order, assigned_to_user_id, assigned_to, created_by_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0, assignedId, assignedId, userId]
         );
       } catch (_) {
         try {
           await pool.query(
-            `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-            [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0]
+            `INSERT INTO clients (id, name, alias, phone, address, identification, notes, created_at, status, route_order, assigned_to_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            [id, name?.trim() || 'Sin Nombre', alias?.trim() || null, phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', Number(routeOrder) || 0, assignedId]
           );
         } catch (__) {
           await pool.query(
-            `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [id, name?.trim() || 'Sin Nombre', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE']
+            `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status, assigned_to_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [id, name?.trim() || 'Sin Nombre', phone?.trim() || '', address?.trim() || '', identification?.trim() || null, notes?.trim() || null, createdAt, 'ACTIVE', assignedId]
           );
         }
       }
@@ -280,6 +297,8 @@ const loanController = {
         createdAt,
         status: 'ACTIVE',
         routeOrder: Number(routeOrder) || 0,
+        assignedToUserId: assignedId,
+        assigned_to_user_id: assignedId
       });
     } catch (error) {
       console.error('Error in createClient:', error);
@@ -374,9 +393,9 @@ const loanController = {
     try {
       const { id } = req.params;
       try {
-        await pool.execute(`UPDATE clients SET status = 'ACTIVE', is_archived = 0 WHERE id = ?`, [id]);
+        await pool.query(`UPDATE clients SET status = 'ACTIVE', is_archived = 0 WHERE id = $1`, [id]);
       } catch {
-        await pool.execute(`UPDATE clients SET status = 'ACTIVE' WHERE id = ?`, [id]);
+        await pool.query(`UPDATE clients SET status = 'ACTIVE' WHERE id = $1`, [id]);
       }
       return res.json({ success: true, message: 'Cliente restaurado' });
     } catch (error) {
@@ -389,7 +408,7 @@ const loanController = {
   async restoreLoan(req, res) {
     try {
       const { id } = req.params;
-      await pool.execute(`UPDATE loans SET is_archived = 0, status = 'ACTIVE' WHERE id = ?`, [id]);
+      await pool.query(`UPDATE loans SET is_archived = 0, status = 'ACTIVE' WHERE id = $1`, [id]);
       return res.json({ success: true, message: 'Préstamo restaurado' });
     } catch (error) {
       console.error('Error in restoreLoan:', error);
@@ -404,18 +423,18 @@ const loanController = {
       let loans = [];
 
       try {
-        const [cRows] = await pool.query(
+        const { rows: cRows } = await pool.query(
           `SELECT * FROM clients WHERE status = 'INACTIVE' OR is_archived = 1 ORDER BY id DESC`
         );
         clients = cRows.map(mapRowToClient);
       } catch {
-        const [cRows] = await pool.query(
+        const { rows: cRows } = await pool.query(
           `SELECT * FROM clients WHERE status = 'INACTIVE' ORDER BY id DESC`
         );
         clients = cRows.map(mapRowToClient);
       }
 
-      const [lRows] = await pool.query(
+      const { rows: lRows } = await pool.query(
         `SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address 
          FROM loans l 
          LEFT JOIN clients c ON l.client_id = c.id 
@@ -490,16 +509,16 @@ const loanController = {
 
       if (isCobrador && userId && !isTodos) {
         try {
-          const [r] = await pool.execute(`
+          const { rows: r } = await pool.query(`
             ${baseQuery}
-            WHERE (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?)
+            WHERE (l.assigned_to_user_id = $1 OR l.created_by_user_id = $2 OR l.assigned_to = $3 OR l.created_by = $4)
             ORDER BY l.created_at DESC
           `, [userId, userId, userId, userId]);
           rows = r || [];
         } catch (error) {
           console.error("[ERROR GET /api/loans COBRADOR]:", error);
           try {
-            const [r] = await pool.execute(`${baseQuery} ORDER BY l.created_at DESC`);
+            const { rows: r } = await pool.query(`${baseQuery} ORDER BY l.created_at DESC`);
             rows = r || [];
           } catch (innerErr) {
             console.error("[ERROR GET /api/loans]:", innerErr);
@@ -514,12 +533,12 @@ const loanController = {
           const conditions = [];
 
           if (statusFilter && statusFilter !== 'ALL' && statusFilter !== 'TODOS') {
-            conditions.push(`l.status = ?`);
+            conditions.push(`l.status = $${params.length + 1}`);
             params.push(statusFilter);
           }
 
           if (searchFilter && searchFilter.trim() !== '') {
-            conditions.push(`(l.client_name LIKE ? OR c.name LIKE ?)`);
+            conditions.push(`(l.client_name LIKE $${params.length + 1} OR c.name LIKE $${params.length + 2})`);
             params.push(`%${searchFilter.trim()}%`, `%${searchFilter.trim()}%`);
           }
 
@@ -529,12 +548,12 @@ const loanController = {
 
           queryStr += ` ORDER BY l.created_at DESC`;
 
-          const [r] = await pool.execute(queryStr, params);
+          const { rows: r } = await pool.query(queryStr, params);
           rows = r || [];
         } catch (error) {
           console.error("[ERROR GET /api/loans ADMIN]:", error);
           try {
-            const [r] = await pool.execute(`${baseQuery} ORDER BY l.created_at DESC`);
+            const { rows: r } = await pool.query(`${baseQuery} ORDER BY l.created_at DESC`);
             rows = r || [];
           } catch (fallbackErr) {
             console.error("[ERROR GET /api/loans FALLBACK]:", fallbackErr);
@@ -570,7 +589,7 @@ const loanController = {
       } = req.body || {};
 
       const userId = req.user ? req.user.id : null;
-      const assigned_to_user_id = req.body.assigned_to_user_id || req.body.assignedToUserId || req.body.assigned_to || userId || 1;
+      const assigned_to_user_id = resolveAssignedUserId(req);
 
       const finalName = (clientName || client_name)?.trim() || 'Cliente Sin Nombre';
       const finalAlias = (clientAlias || alias)?.trim() || null;
@@ -610,8 +629,8 @@ const loanController = {
       const days = parseInt(req.body.days || req.body.dias || req.body.paymentDays || 20);
       const interest_rate = parseFloat(req.body.interest_rate || req.body.interestRate || 20);
 
-      const total_amount = parseFloat(req.body.total_amount || req.body.totalAmount || req.body.total_to_pay || (amount * 1.2));
-      const daily_amount = parseFloat(req.body.daily_amount || req.body.dailyAmount || req.body.daily_payment_amount || (total_amount / (days || 1)));
+      const total_amount = parseFloat(req.body.total_amount || req.body.totalAmount || req.body.total_to_pay || amount * 1.2);
+      const daily_amount = parseFloat(req.body.daily_amount || req.body.dailyAmount || req.body.daily_payment_amount || total_amount / (days || 1));
 
       const todayStr = new Date().toISOString().split('T')[0];
       const start_date = req.body.start_date || req.body.startDate || todayStr;
@@ -633,7 +652,7 @@ const loanController = {
       let insertedRow = null;
 
       try {
-        const [rows] = await pool.query(
+        const { rows } = await pool.query(
           `INSERT INTO loans (
             id, client_id, client_name, client_phone, client_address,
             capital, amount_borrowed, amount,
@@ -656,30 +675,30 @@ const loanController = {
             $29, $30
           ) RETURNING *`,
           [
-            loanId, client_id, finalName, finalPhone, finalAddress,
-            amount, amount, amount,
-            interest_rate, calcInterest, 0.00, 0.00,
-            total_amount, total_amount,
-            days, days, days,
-            daily_amount, daily_amount, daily_amount,
-            0.00, total_amount, 0,
-            start_date, due_date, status, notes, 0,
-            assigned_to_user_id, userId
-          ]
+          loanId, client_id, finalName, finalPhone, finalAddress,
+          amount, amount, amount,
+          interest_rate, calcInterest, 0.00, 0.00,
+          total_amount, total_amount,
+          days, days, days,
+          daily_amount, daily_amount, daily_amount,
+          0.00, total_amount, 0,
+          start_date, due_date, status, notes, 0,
+          assigned_to_user_id, userId]
+
         );
         insertedRow = rows && rows.length > 0 ? rows[0] : null;
       } catch (err1) {
         try {
-          const [rows] = await pool.query(
+          const { rows } = await pool.query(
             `INSERT INTO loans (
               client_id, amount, total_amount, daily_amount, days, interest_rate,
               start_date, due_date, status, assigned_to_user_id, notes
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *`,
             [
-              client_id, amount, total_amount, daily_amount, days, interest_rate,
-              start_date, due_date, status, assigned_to_user_id, notes
-            ]
+            client_id, amount, total_amount, daily_amount, days, interest_rate,
+            start_date, due_date, status, assigned_to_user_id, notes]
+
           );
           insertedRow = rows && rows.length > 0 ? rows[0] : null;
         } catch (err2) {
@@ -743,7 +762,7 @@ const loanController = {
         notes
       } = req.body;
 
-      const [rows] = await pool.execute(`SELECT * FROM loans WHERE id = ?`, [id]);
+      const { rows } = await pool.query(`SELECT * FROM loans WHERE id = $1`, [id]);
       if (rows.length === 0) return res.status(404).json({ error: 'Préstamo no encontrado' });
 
       const loan = mapRowToLoan(rows[0]);
@@ -771,9 +790,9 @@ const loanController = {
 
       const customInterest = commission ?? interest ?? interestAmount;
       const interestRate = customInterest != null ? null : 20;
-      const calculatedInterest = customInterest != null
-        ? Math.round(Number(customInterest))
-        : Math.round(newCapital * 0.20);
+      const calculatedInterest = customInterest != null ?
+      Math.round(Number(customInterest)) :
+      Math.round(newCapital * 0.20);
 
       const totalToPay = newCapital + calculatedInterest + penaltyVal;
       const dailyPaymentAmount = Math.ceil(totalToPay / (newDays || 1));
@@ -791,38 +810,38 @@ const loanController = {
         newStatus = 'ACTIVE';
       }
 
-      await pool.execute(
+      await pool.query(
         `UPDATE loans SET 
-          capital = ?, amount_borrowed = ?, 
-          interest_rate = ?, interest_amount = ?, 
-          penalty_amount = ?, mora = ?, 
-          total_to_pay = ?, total_amount = ?, 
-          payment_days = ?, days_agreed = ?, 
-          daily_payment_amount = ?, daily_payment = ?, 
-          start_date = ?, due_date = ?, 
-          remaining_amount = ?, paid_days_count = ?, 
-          status = ?, notes = ? 
-        WHERE id = ?`,
+          capital = $1, amount_borrowed = $2, 
+          interest_rate = $3, interest_amount = $4, 
+          penalty_amount = $5, mora = $6, 
+          total_to_pay = $7, total_amount = $8, 
+          payment_days = $9, days_agreed = $10, 
+          daily_payment_amount = $11, daily_payment = $12, 
+          start_date = $13, due_date = $14, 
+          remaining_amount = $15, paid_days_count = $16, 
+          status = $17, notes = $18 
+        WHERE id = $19`,
         [
-          newCapital, newCapital,
-          interestRate ?? 0, calculatedInterest,
-          penaltyVal, penaltyVal,
-          totalToPay, totalToPay,
-          newDays, newDays,
-          dailyPaymentAmount, dailyPaymentAmount,
-          startDateStr, dueDateStr,
-          newRemainingAmount, newPaidDaysCount,
-          newStatus,
-          notes?.trim() || null,
-          id,
-        ]
+        newCapital, newCapital,
+        interestRate ?? 0, calculatedInterest,
+        penaltyVal, penaltyVal,
+        totalToPay, totalToPay,
+        newDays, newDays,
+        dailyPaymentAmount, dailyPaymentAmount,
+        startDateStr, dueDateStr,
+        newRemainingAmount, newPaidDaysCount,
+        newStatus,
+        notes?.trim() || null,
+        id]
+
       );
 
-      const [updatedRows] = await pool.execute(
+      const { rows: updatedRows } = await pool.query(
         `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
          FROM loans l
          LEFT JOIN clients c ON l.client_id = c.id
-         WHERE l.id = ?`,
+         WHERE l.id = $1`,
         [id]
       );
 
@@ -832,7 +851,7 @@ const loanController = {
         success: true,
         message: 'Préstamo actualizado exitosamente',
         loan: updatedLoan,
-        updatedLoan,
+        updatedLoan
       });
     } catch (error) {
       console.error('Error in updateLoan:', error);
@@ -879,10 +898,10 @@ const loanController = {
 
       let rows = [];
       try {
-        const [result] = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC, id DESC');
+        const { rows: result } = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC, id DESC');
         rows = result;
       } catch (_) {
-        const [result] = await pool.query('SELECT * FROM payments');
+        const { rows: result } = await pool.query('SELECT * FROM payments');
         rows = result;
       }
       return res.json(rows.map(mapRowToPayment));
@@ -937,7 +956,7 @@ const loanController = {
         remainingAmount: newRemainingAmount,
         paidDaysCount: newPaidDaysCount,
         status: newStatus,
-        lastPaymentDate: todayStr,
+        lastPaymentDate: todayStr
       };
 
       const isFullDay = numericAmount >= loan.dailyPaymentAmount;
@@ -952,7 +971,7 @@ const loanController = {
         date: todayStr,
         type: newRemainingAmount <= 0 ? 'FULL_PAYOFF' : isFullDay ? 'FULL_DAY' : 'PARTIAL',
         dayNumber: newPaidDaysCount + (isFullDay ? 0 : 1),
-        notes: notes || (numericLateFee > 0 ? `Pago con mora de S/. ${numericLateFee.toFixed(2)}` : isFullDay ? 'Pago diario completo' : 'Abono parcial'),
+        notes: notes || (numericLateFee > 0 ? `Pago con mora de S/. ${numericLateFee.toFixed(2)}` : isFullDay ? 'Pago diario completo' : 'Abono parcial')
       };
 
       await client.query('BEGIN');
@@ -1077,7 +1096,7 @@ const loanController = {
         remainingAmount: newRemainingAmount,
         paidDaysCount: newPaidDaysCount,
         status: newStatus,
-        lastPaymentDate: newLastPaymentDate,
+        lastPaymentDate: newLastPaymentDate
       };
 
       return res.json({ success: true, message: 'Pago revertido exitosamente', updatedLoan });
@@ -1155,14 +1174,14 @@ const loanController = {
         remainingAmount: newRemainingAmount,
         paidDaysCount: newPaidDaysCount,
         status: newStatus,
-        lastPaymentDate: newLastPaymentDate,
+        lastPaymentDate: newLastPaymentDate
       };
 
       return res.json({
         success: true,
         message: 'Pago anulado correctamente',
         deletedPaymentId: id,
-        updatedLoan,
+        updatedLoan
       });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -1178,10 +1197,10 @@ const loanController = {
     try {
       let rows = [];
       try {
-        const [result] = await pool.query('SELECT * FROM expenses ORDER BY id DESC');
+        const { rows: result } = await pool.query('SELECT * FROM expenses ORDER BY id DESC');
         rows = result;
       } catch (_) {
-        const [result] = await pool.query('SELECT * FROM expenses');
+        const { rows: result } = await pool.query('SELECT * FROM expenses');
         rows = result;
       }
       return res.json(rows.map(mapRowToExpense));
@@ -1200,13 +1219,13 @@ const loanController = {
       const expenseDate = formatToMySQLDate(date);
 
       try {
-        await pool.execute(
-          `INSERT INTO expenses (id, amount, category, description, expense_date, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+          `INSERT INTO expenses (id, amount, category, description, expense_date, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
           [id, amount || 0, category || 'OTROS', description || '', expenseDate, createdAt]
         );
       } catch (_) {
-        await pool.execute(
-          `INSERT INTO expenses (id, amount, category, description, date, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+          `INSERT INTO expenses (id, amount, category, description, date, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
           [id, amount || 0, category || 'OTROS', description || '', expenseDate, createdAt]
         );
       }
@@ -1217,7 +1236,7 @@ const loanController = {
         category: category || 'OTROS',
         description: description || '',
         date: expenseDate,
-        createdAt,
+        createdAt
       });
     } catch (error) {
       console.error('Error in addExpense:', error);
@@ -1229,7 +1248,7 @@ const loanController = {
   async deleteExpense(req, res) {
     try {
       const { id } = req.params;
-      await pool.execute(`DELETE FROM expenses WHERE id = ?`, [id]);
+      await pool.query(`DELETE FROM expenses WHERE id = $1`, [id]);
       return res.json({ success: true, message: 'Gasto eliminado' });
     } catch (error) {
       console.error('Error in deleteExpense:', error);
@@ -1245,13 +1264,13 @@ const loanController = {
       const expenseDate = formatToMySQLDate(date || new Date().toISOString().split('T')[0]);
 
       try {
-        await pool.execute(
-          `UPDATE expenses SET amount = ?, category = ?, description = ?, expense_date = ? WHERE id = ?`,
+        await pool.query(
+          `UPDATE expenses SET amount = $1, category = $2, description = $3, expense_date = $4 WHERE id = $5`,
           [Number(amount) || 0, category || 'OTROS', description || '', expenseDate, id]
         );
       } catch (_) {
-        await pool.execute(
-          `UPDATE expenses SET amount = ?, category = ?, description = ?, date = ? WHERE id = ?`,
+        await pool.query(
+          `UPDATE expenses SET amount = $1, category = $2, description = $3, date = $4 WHERE id = $5`,
           [Number(amount) || 0, category || 'OTROS', description || '', expenseDate, id]
         );
       }
@@ -1263,7 +1282,7 @@ const loanController = {
         amount: Number(amount) || 0,
         category: category || 'OTROS',
         description: description || '',
-        date: expenseDate,
+        date: expenseDate
       });
     } catch (error) {
       console.error('Error in updateExpense:', error);
@@ -1354,7 +1373,7 @@ const loanController = {
         ...existingPayment,
         amount: newAmount,
         date: newDate,
-        notes: newNotes,
+        notes: newNotes
       };
 
       const updatedLoan = {
@@ -1363,14 +1382,14 @@ const loanController = {
         remainingAmount: newRemainingAmount,
         paidDaysCount: newPaidDaysCount,
         status: newStatus,
-        lastPaymentDate: newLastPaymentDate,
+        lastPaymentDate: newLastPaymentDate
       };
 
       return res.json({
         success: true,
         message: 'Pago actualizado correctamente',
         payment: updatedPayment,
-        updatedLoan,
+        updatedLoan
       });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -1390,15 +1409,15 @@ const loanController = {
       const baseSelect = `SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address, c.route_order AS joined_client_route_order FROM loans l LEFT JOIN clients c ON l.client_id = c.id`;
       if (isCobrador && userId) {
         try {
-          [rows] = await pool.query(
-            `${baseSelect} WHERE (l.is_archived = 0 OR l.is_archived IS NULL) AND (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?) ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`,
+          ({ rows } = await pool.query(
+            `${baseSelect} WHERE (l.is_archived = 0 OR l.is_archived IS NULL) AND (l.assigned_to_user_id = $1 OR l.created_by_user_id = $2 OR l.assigned_to = $3 OR l.created_by = $4) ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`,
             [userId, userId, userId, userId]
-          );
+          ));
         } catch (_) {
-          [rows] = await pool.query(`${baseSelect} WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`);
+          ({ rows } = await pool.query(`${baseSelect} WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`));
         }
       } else {
-        [rows] = await pool.query(`${baseSelect} WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`);
+        ({ rows } = await pool.query(`${baseSelect} WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`));
       }
       const loans = rows.map(mapRowToLoan);
       const activeLoans = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
@@ -1406,17 +1425,17 @@ const loanController = {
       let pRows = [];
       try {
         if (isCobrador && userId && loans.length > 0) {
-          const loanIds = loans.map(l => l.id);
-          const placeholders = loanIds.map(() => '?').join(',');
-          const [result] = await pool.query(`SELECT * FROM payments WHERE loan_id IN (${placeholders})`, loanIds);
+          const loanIds = loans.map((l) => l.id);
+          const placeholders = loanIds.map((_, i) => '$' + (params.length + i + 1)).join(',');
+          const { rows: result } = await pool.query(`SELECT * FROM payments WHERE loan_id IN (${placeholders})`, loanIds);
           pRows = result;
         } else {
-          const [result] = await pool.query('SELECT * FROM payments');
+          const { rows: result } = await pool.query('SELECT * FROM payments');
           pRows = result;
         }
       } catch (_) {
         try {
-          const [result] = await pool.query('SELECT * FROM payments');
+          const { rows: result } = await pool.query('SELECT * FROM payments');
           pRows = result;
         } catch (__) {}
       }
@@ -1432,7 +1451,7 @@ const loanController = {
         return {
           loan,
           isPaidToday,
-          amountPaidToday,
+          amountPaidToday
         };
       });
 
@@ -1452,19 +1471,19 @@ const loanController = {
 
       if (isCobrador && userId) {
         try {
-          const [r] = await pool.query(`
+          const { rows: r } = await pool.query(`
             SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
             FROM loans l
             LEFT JOIN clients c ON l.client_id = c.id
             WHERE (l.is_archived = 0 OR l.is_archived IS NULL)
-              AND (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?)
+              AND (l.assigned_to_user_id = $1 OR l.created_by_user_id = $2 OR l.assigned_to = $3 OR l.created_by = $4)
           `, [userId, userId, userId, userId]);
           rows = r;
         } catch (_) {
           rows = [];
         }
       } else {
-        const [r] = await pool.query(`
+        const { rows: r } = await pool.query(`
           SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
           FROM loans l
           LEFT JOIN clients c ON l.client_id = c.id
@@ -1504,7 +1523,7 @@ const loanController = {
             daysDifference: diffDays,
             remainingAmount: loan.remainingAmount,
             totalToPay: loan.totalToPay,
-            dueDate: loan.dueDate,
+            dueDate: loan.dueDate
           });
         }
       });
@@ -1522,11 +1541,11 @@ const loanController = {
       console.log("[DASHBOARD] Usuario en sesión:", req.user);
       console.log("--- AUDITORÍA DE PAGOS REGISTRADOS HOY ---");
       try {
-        const [pagosAudit] = await pool.query('SELECT * FROM payments ORDER BY id DESC LIMIT 10');
+        const { rows: pagosAudit } = await pool.query('SELECT * FROM payments ORDER BY id DESC LIMIT 10');
         console.dir(pagosAudit, { depth: null });
-        const [cntAudit] = await pool.query('SELECT COUNT(*) AS total FROM payments');
+        const { rows: cntAudit } = await pool.query('SELECT COUNT(*) AS total FROM payments');
         console.log("Total pagos en tabla payments:", cntAudit[0]?.total);
-        const [loansAudit] = await pool.query("SELECT * FROM loans WHERE client_name LIKE '%PRUEBA%' OR id IN (SELECT loan_id FROM payments)");
+        const { rows: loansAudit } = await pool.query("SELECT * FROM loans WHERE client_name LIKE '%PRUEBA%' OR id IN (SELECT loan_id FROM payments)");
         console.log("Préstamos auditados:", loansAudit.length);
       } catch (auditErr) {
         console.error("Error en auditoría:", auditErr);
@@ -1537,25 +1556,25 @@ const loanController = {
       let lRows = [];
       if (isCobrador && userId) {
         try {
-          [lRows] = await pool.query(
+          ({ rows: lRows } = await pool.query(
             `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
              FROM loans l
              LEFT JOIN clients c ON l.client_id = c.id
              WHERE (l.is_archived = 0 OR l.is_archived IS NULL)
-               AND (l.assigned_to_user_id = ? OR l.created_by_user_id = ? OR l.assigned_to = ? OR l.created_by = ?)
+               AND (l.assigned_to_user_id = $1 OR l.created_by_user_id = $2 OR l.assigned_to = $3 OR l.created_by = $4)
              ORDER BY l.created_at DESC`,
             [userId, userId, userId, userId]
-          );
+          ));
         } catch (err) {
           console.error('[ERROR DASHBOARD LOANS COBRADOR]:', err);
           try {
-            [lRows] = await pool.query(
+            ({ rows: lRows } = await pool.query(
               `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
                FROM loans l
                LEFT JOIN clients c ON l.client_id = c.id
                WHERE l.is_archived = 0 OR l.is_archived IS NULL
                ORDER BY l.created_at DESC`
-            );
+            ));
           } catch (innerErr) {
             console.error('[ERROR DASHBOARD LOANS]:', innerErr);
             lRows = [];
@@ -1563,13 +1582,13 @@ const loanController = {
         }
       } else {
         try {
-          [lRows] = await pool.query(
+          ({ rows: lRows } = await pool.query(
             `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
              FROM loans l
              LEFT JOIN clients c ON l.client_id = c.id
              WHERE l.is_archived = 0 OR l.is_archived IS NULL
              ORDER BY l.created_at DESC`
-          );
+          ));
         } catch (err) {
           console.error('[ERROR DASHBOARD LOANS ADMIN]:', err);
           lRows = [];
@@ -1582,7 +1601,7 @@ const loanController = {
       try {
         if (isCobrador && userId) {
           try {
-            const [result] = await pool.query(
+            const { rows: result } = await pool.query(
               `SELECT 
                  p.id, p.loan_id, p.client_id, p.amount, p.late_fee, p.date, p.type, p.day_number, p.notes, p.created_at, p.collected_by, p.collected_by_user_id, p.created_by,
                  COALESCE(c.name, l.client_name, p.client_name, 'Cliente') AS client_name,
@@ -1591,11 +1610,11 @@ const loanController = {
                LEFT JOIN loans l ON p.loan_id = l.id
                LEFT JOIN clients c ON (p.client_id = c.id OR l.client_id = c.id)
                LEFT JOIN users u ON (p.collected_by = u.id OR p.collected_by_user_id = u.id)
-               WHERE p.collected_by = ? 
-                  OR p.collected_by_user_id = ? 
-                  OR p.created_by = ? 
-                  OR l.assigned_to_user_id = ? 
-                  OR l.assigned_to = ?
+               WHERE p.collected_by = $1 
+                  OR p.collected_by_user_id = $2 
+                  OR p.created_by = $3 
+                  OR l.assigned_to_user_id = $4 
+                  OR l.assigned_to = $5
                ORDER BY p.date DESC, p.created_at DESC, p.id DESC
                LIMIT 15`,
               [userId, userId, userId, userId, userId]
@@ -1604,10 +1623,10 @@ const loanController = {
           } catch (err) {
             console.error('[ERROR PAYMENTS COBRADOR]:', err);
             try {
-              const [result] = await pool.query(
+              const { rows: result } = await pool.query(
                 `SELECT p.*, COALESCE(p.client_name, 'Cliente') AS client_name, 'ADMIN' AS collector_name
                  FROM payments p 
-                 WHERE p.collected_by = ? OR p.collected_by_user_id = ? OR p.created_by = ? 
+                 WHERE p.collected_by = $1 OR p.collected_by_user_id = $2 OR p.created_by = $3 
                  ORDER BY p.date DESC, p.created_at DESC, p.id DESC LIMIT 15`,
                 [userId, userId, userId]
               );
@@ -1619,7 +1638,7 @@ const loanController = {
         } else {
           // ADMIN: Direct SQL without WHERE clause, joining loans, clients and users, ordered by date DESC, created_at DESC
           try {
-            const [result] = await pool.query(
+            const { rows: result } = await pool.query(
               `SELECT 
                  p.id, p.loan_id, p.client_id, p.amount, p.late_fee, p.date, p.type, p.day_number, p.notes, p.created_at, p.collected_by, p.collected_by_user_id, p.created_by,
                  COALESCE(c.name, l.client_name, p.client_name, 'Cliente') AS client_name,
@@ -1634,7 +1653,7 @@ const loanController = {
             pRows = result;
           } catch (err) {
             console.error('[ERROR PAYMENTS ADMIN]:', err);
-            const [result] = await pool.query(
+            const { rows: result } = await pool.query(
               `SELECT p.* FROM payments p ORDER BY p.date DESC, p.created_at DESC, p.id DESC LIMIT 15`
             );
             pRows = result;
@@ -1650,20 +1669,20 @@ const loanController = {
 
       const totalCapitalLent = loans.reduce((sum, l) => sum + (l.capital || 0), 0);
       const totalEstimatedProfit = loans.reduce((sum, l) => sum + (l.interestAmount || 0), 0);
-      
+
       let collectedTodayRaw = 0;
       try {
         if (isCobrador && userId) {
-          const [sumRows] = await pool.query(
+          const { rows: sumRows } = await pool.query(
             `SELECT COALESCE(SUM(amount), 0) AS total
              FROM payments
-             WHERE (collected_by = ? OR collected_by_user_id = ? OR created_by = ?)
+             WHERE (collected_by = $1 OR collected_by_user_id = $2 OR created_by = $3)
                AND (DATE(created_at) = CURRENT_DATE OR DATE(date) = CURRENT_DATE)`,
             [userId, userId, userId]
           );
           collectedTodayRaw = sumRows[0]?.total;
         } else {
-          const [sumRows] = await pool.query(
+          const { rows: sumRows } = await pool.query(
             `SELECT COALESCE(SUM(amount), 0) AS total
              FROM payments
              WHERE DATE(created_at) = CURRENT_DATE OR DATE(date) = CURRENT_DATE`
@@ -1673,7 +1692,7 @@ const loanController = {
       } catch (err) {
         console.error('[ERROR SUM RECAUDADO HOY]:', err);
         try {
-          const [sumRows] = await pool.query(
+          const { rows: sumRows } = await pool.query(
             `SELECT COALESCE(SUM(amount), 0) AS total FROM payments`
           );
           collectedTodayRaw = sumRows[0]?.total;
@@ -1682,9 +1701,9 @@ const loanController = {
         }
       }
 
-      const collectedToday = (collectedTodayRaw === null || collectedTodayRaw === undefined || isNaN(Number(collectedTodayRaw)))
-        ? 0.00
-        : Number(Number(collectedTodayRaw).toFixed(2));
+      const collectedToday = collectedTodayRaw === null || collectedTodayRaw === undefined || isNaN(Number(collectedTodayRaw)) ?
+      0.00 :
+      Number(Number(collectedTodayRaw).toFixed(2));
 
       const nowLimaStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
       const todayStr = nowLimaStr || new Date().toISOString().split('T')[0];
@@ -1698,7 +1717,7 @@ const loanController = {
       const pendingClientsTodayCount = todayCollections.filter((isPaid) => !isPaid).length;
       const totalTodayTargetCount = todayCollections.length;
       const paidTodayCount = totalTodayTargetCount - pendingClientsTodayCount;
-      const collectionProgressPercent = totalTodayTargetCount > 0 ? Math.round((paidTodayCount / totalTodayTargetCount) * 100) : 100;
+      const collectionProgressPercent = totalTodayTargetCount > 0 ? Math.round(paidTodayCount / totalTodayTargetCount * 100) : 100;
 
       const overdueCount = loans.filter((l) => l.status === 'OVERDUE' && !l.isArchived).length;
 
@@ -1718,7 +1737,7 @@ const loanController = {
         recentLoans,
         recentPayments,
         cobros: recentPayments,
-        payments: recentPayments,
+        payments: recentPayments
       });
     } catch (error) {
       console.error("[ERROR DASHBOARD SUMMARY]:", error);
@@ -1735,7 +1754,7 @@ const loanController = {
         recentLoans: [],
         recentPayments: [],
         cobros: [],
-        payments: [],
+        payments: []
       });
     }
   },
@@ -1747,7 +1766,7 @@ const loanController = {
 
       let loans = [];
       try {
-        const [lRows] = await pool.query(`SELECT * FROM loans WHERE is_archived = 0 OR is_archived IS NULL`);
+        const { rows: lRows } = await pool.query(`SELECT * FROM loans WHERE is_archived = 0 OR is_archived IS NULL`);
         loans = lRows.map(mapRowToLoan);
       } catch (err) {
         console.error('Error leyendo loans en reportes:', err.message);
@@ -1755,7 +1774,7 @@ const loanController = {
 
       let payments = [];
       try {
-        const [pRows] = await pool.query('SELECT * FROM payments');
+        const { rows: pRows } = await pool.query('SELECT * FROM payments');
         payments = pRows.map(mapRowToPayment);
       } catch (err) {
         console.error('Error leyendo payments en reportes:', err.message);
@@ -1763,7 +1782,7 @@ const loanController = {
 
       let expenses = [];
       try {
-        const [eRows] = await pool.query('SELECT * FROM expenses');
+        const { rows: eRows } = await pool.query('SELECT * FROM expenses');
         expenses = eRows.map(mapRowToExpense);
       } catch (err) {
         console.error('Error leyendo expenses en reportes:', err.message);
@@ -1817,7 +1836,7 @@ const loanController = {
         totalExpenses,
         netProfit,
         remainingToCollect,
-        expensesList: periodExpenses,
+        expensesList: periodExpenses
       });
     } catch (error) {
       console.error('Error in getFinancialReport:', error);
@@ -1834,7 +1853,7 @@ const loanController = {
         totalExpenses: 0,
         netProfit: 0,
         remainingToCollect: 0,
-        expensesList: [],
+        expensesList: []
       });
     }
   },
@@ -1850,10 +1869,10 @@ const loanController = {
     }
 
     try {
-      await pool.execute('DELETE FROM payments');
-      await pool.execute('DELETE FROM expenses');
-      await pool.execute('DELETE FROM loans');
-      await pool.execute('DELETE FROM clients');
+      await pool.query('DELETE FROM payments');
+      await pool.query('DELETE FROM expenses');
+      await pool.query('DELETE FROM loans');
+      await pool.query('DELETE FROM clients');
 
       const todayStr = new Date().toISOString().split('T')[0];
       const dueStr1 = new Date(Date.now() + 10 * 86400000).toISOString().split('T')[0];
@@ -1863,20 +1882,20 @@ const loanController = {
       const cli1 = generateUUID();
       const cli2 = generateUUID();
 
-      await pool.execute(
-        `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      await pool.query(
+        `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [cli1, 'Carlos Andrés Mendoza', '910456789', 'Av. Larco 450, Miraflores', '45987654', 'Cliente muy puntual. Cobrar en la mañana.', createdAt, 'ACTIVE']
       );
 
-      await pool.execute(
-        `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      await pool.query(
+        `INSERT INTO clients (id, name, phone, address, identification, notes, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [cli2, 'María Fernanda Restrepo', '915987654', 'Jr. de la Unión 820, Cercado de Lima', '08345678', 'Puesto de ropa.', createdAt, 'ACTIVE']
       );
 
       const loan1 = generateUUID();
       const loan2 = generateUUID();
 
-      await pool.execute(
+      await pool.query(
         `INSERT INTO loans (
           id, client_id, client_name, client_phone, client_address,
           capital, amount_borrowed,
@@ -1885,15 +1904,15 @@ const loanController = {
           payment_days, days_agreed,
           daily_payment_amount, daily_payment,
           start_date, due_date, status, paid_amount, remaining_amount, paid_days_count, notes, created_at, is_archived
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, 0)`,
         [
-          loan1, cli1, 'Carlos Andrés Mendoza', '910456789', 'Av. Larco 450, Miraflores',
-          500, 500, 20, 100, 600, 600, 20, 20, 30, 30,
-          '2026-07-10', dueStr1, 'ACTIVE', 360, 240, 12, 'Préstamo activo en Soles', createdAt
-        ]
+        loan1, cli1, 'Carlos Andrés Mendoza', '910456789', 'Av. Larco 450, Miraflores',
+        500, 500, 20, 100, 600, 600, 20, 20, 30, 30,
+        '2026-07-10', dueStr1, 'ACTIVE', 360, 240, 12, 'Préstamo activo en Soles', createdAt]
+
       );
 
-      await pool.execute(
+      await pool.query(
         `INSERT INTO loans (
           id, client_id, client_name, client_phone, client_address,
           capital, amount_borrowed,
@@ -1902,36 +1921,36 @@ const loanController = {
           payment_days, days_agreed,
           daily_payment_amount, daily_payment,
           start_date, due_date, status, paid_amount, remaining_amount, paid_days_count, notes, created_at, is_archived
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, 0)`,
         [
-          loan2, cli2, 'María Fernanda Restrepo', '915987654', 'Jr. de la Unión 820, Cercado de Lima',
-          1000, 1000, 20, 200, 1200, 1200, 15, 15, 80, 80,
-          '2026-07-05', dueStr2, 'OVERDUE', 640, 560, 8, 'En mora', createdAt
-        ]
+        loan2, cli2, 'María Fernanda Restrepo', '915987654', 'Jr. de la Unión 820, Cercado de Lima',
+        1000, 1000, 20, 200, 1200, 1200, 15, 15, 80, 80,
+        '2026-07-05', dueStr2, 'OVERDUE', 640, 560, 8, 'En mora', createdAt]
+
       );
 
       const pay1 = generateUUID();
       try {
-        await pool.execute(
-          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, payment_date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, payment_date, type, day_number, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [pay1, loan1, cli1, 'Carlos Andrés Mendoza', 30, todayStr, 'FULL_DAY', 12, 'Pago del día']
         );
       } catch (_) {
-        await pool.execute(
-          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, date, type, day_number, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, date, type, day_number, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [pay1, loan1, cli1, 'Carlos Andrés Mendoza', 30, todayStr, 'FULL_DAY', 12, 'Pago del día']
         );
       }
 
       const exp1 = generateUUID();
       try {
-        await pool.execute(
-          `INSERT INTO expenses (id, amount, category, description, expense_date, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+          `INSERT INTO expenses (id, amount, category, description, expense_date, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
           [exp1, 25, 'COMBUSTIBLE', 'Gasolina para moto de cobranza', todayStr, createdAt]
         );
       } catch (_) {
-        await pool.execute(
-          `INSERT INTO expenses (id, amount, category, description, date, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+          `INSERT INTO expenses (id, amount, category, description, date, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
           [exp1, 25, 'COMBUSTIBLE', 'Gasolina para moto de cobranza', todayStr, createdAt]
         );
       }
@@ -1947,9 +1966,9 @@ const loanController = {
   async getCollectorStats(req, res) {
     try {
       const todayStr = new Date().toISOString().split('T')[0];
-      
+
       // Get all collectors (role = COBRADOR or ADMIN)
-      const [collectors] = await pool.query(
+      const { rows: collectors } = await pool.query(
         `SELECT id, name, email, role FROM users ORDER BY name ASC`
       );
 
@@ -1958,8 +1977,8 @@ const loanController = {
           // Recaudado hoy by this collector
           let collectedToday = 0;
           try {
-            const [todayRows] = await pool.query(
-              `SELECT COALESCE(SUM(a.amount), 0) as total FROM activity_logs a WHERE a.user_id = ? AND DATE(a.created_at) = ? AND a.action_type = 'PAGO_REGISTRADO'`,
+            const { rows: todayRows } = await pool.query(
+              `SELECT COALESCE(SUM(a.amount), 0) as total FROM activity_logs a WHERE a.user_id = $1 AND DATE(a.created_at) = $2 AND a.action_type = 'PAGO_REGISTRADO'`,
               [collector.id, todayStr]
             );
             collectedToday = Number(todayRows[0]?.total || 0);
@@ -1968,8 +1987,8 @@ const loanController = {
           // Recaudado histórico total
           let collectedTotal = 0;
           try {
-            const [totalRows] = await pool.query(
-              `SELECT COALESCE(SUM(a.amount), 0) as total FROM activity_logs a WHERE a.user_id = ? AND a.action_type = 'PAGO_REGISTRADO'`,
+            const { rows: totalRows } = await pool.query(
+              `SELECT COALESCE(SUM(a.amount), 0) as total FROM activity_logs a WHERE a.user_id = $1 AND a.action_type = 'PAGO_REGISTRADO'`,
               [collector.id]
             );
             collectedTotal = Number(totalRows[0]?.total || 0);
@@ -1978,14 +1997,14 @@ const loanController = {
           // Clientes asignados activos
           let assignedClients = 0;
           try {
-            const [clientRows] = await pool.query(
-              `SELECT COUNT(*) as total FROM clients WHERE (assigned_to = ? OR assigned_to_user_id = ?) AND (status != 'INACTIVE' OR status IS NULL) AND (is_archived = 0 OR is_archived IS NULL)`,
+            const { rows: clientRows } = await pool.query(
+              `SELECT COUNT(*) as total FROM clients WHERE (assigned_to = $1 OR assigned_to_user_id = $2) AND (status != 'INACTIVE' OR status IS NULL) AND (is_archived = 0 OR is_archived IS NULL)`,
               [collector.id, collector.id]
             );
             assignedClients = Number(clientRows[0]?.total || 0);
           } catch {
-            const [clientRows] = await pool.query(
-              `SELECT COUNT(*) as total FROM clients WHERE assigned_to = ? AND status != 'INACTIVE'`,
+            const { rows: clientRows } = await pool.query(
+              `SELECT COUNT(*) as total FROM clients WHERE assigned_to = $1 AND status != 'INACTIVE'`,
               [collector.id]
             );
             assignedClients = Number(clientRows[0]?.total || 0);
@@ -1998,7 +2017,7 @@ const loanController = {
             role: collector.role,
             collectedToday,
             collectedTotal,
-            assignedClients,
+            assignedClients
           };
         } catch (_) {
           return {
@@ -2008,7 +2027,7 @@ const loanController = {
             role: collector.role,
             collectedToday: 0,
             collectedTotal: 0,
-            assignedClients: 0,
+            assignedClients: 0
           };
         }
       }));
@@ -2025,21 +2044,21 @@ const loanController = {
     try {
       const { id } = req.params;
       const limit = parseInt(req.query.limit) || 50;
-      
+
       let activities = [];
       try {
-        const [rows] = await pool.query(
-          `SELECT * FROM activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+        const { rows } = await pool.query(
+          `SELECT * FROM activity_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2`,
           [id, limit]
         );
-        activities = rows.map(row => ({
+        activities = rows.map((row) => ({
           id: row.id,
           userId: row.user_id,
           userName: row.user_name,
           actionType: row.action_type,
           description: row.description,
           amount: Number(row.amount || 0),
-          createdAt: row.created_at,
+          createdAt: row.created_at
         }));
       } catch (_) {
         activities = [];
@@ -2059,11 +2078,11 @@ const loanController = {
       let sql = `SELECT id, name, email, role, created_at FROM users WHERE UPPER(role) IN ('ADMIN','COBRADOR')`;
       let params = [];
       if (role) {
-        sql = `SELECT id, name, email, role, created_at FROM users WHERE UPPER(role) = ?`;
+        sql = `SELECT id, name, email, role, created_at FROM users WHERE UPPER(role) = $1`;
         params.push(String(role).toUpperCase());
       }
       sql += ` ORDER BY name ASC`;
-      const [rows] = await pool.query(sql, params);
+      const { rows } = await pool.query(sql, params);
       return res.json({ success: true, collectors: rows, users: rows, data: rows });
     } catch (error) {
       console.error('Error in getCollectorsList:', error);
@@ -2079,10 +2098,10 @@ const loanController = {
 
       if (!collectorId || collectorId === 'ALL') {
         // Return all active clients and loans
-        const [clientRows] = await pool.query(
+        const { rows: clientRows } = await pool.query(
           `SELECT c.*, u.name AS assigned_to_name FROM clients c LEFT JOIN users u ON (c.assigned_to_user_id = u.id OR c.assigned_to = u.id) WHERE (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) ORDER BY c.route_order ASC, c.id DESC`
         );
-        const [loanRows] = await pool.query(
+        const { rows: loanRows } = await pool.query(
           `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order FROM loans l LEFT JOIN clients c ON l.client_id = c.id WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY l.created_at DESC`
         );
         return res.json({
@@ -2093,12 +2112,12 @@ const loanController = {
         });
       }
 
-      const [clientRows] = await pool.query(
-        `SELECT c.*, u.name AS assigned_to_name FROM clients c LEFT JOIN users u ON (c.assigned_to_user_id = u.id OR c.assigned_to = u.id) WHERE (c.assigned_to_user_id = ? OR c.assigned_to = ?) AND (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) ORDER BY c.route_order ASC, c.id DESC`,
+      const { rows: clientRows } = await pool.query(
+        `SELECT c.*, u.name AS assigned_to_name FROM clients c LEFT JOIN users u ON (c.assigned_to_user_id = u.id OR c.assigned_to = u.id) WHERE (c.assigned_to_user_id = $1 OR c.assigned_to = $2) AND (c.status != 'INACTIVE' OR c.status IS NULL) AND (c.is_archived = 0 OR c.is_archived IS NULL) ORDER BY c.route_order ASC, c.id DESC`,
         [collectorId, collectorId]
       );
-      const [loanRows] = await pool.query(
-        `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order FROM loans l LEFT JOIN clients c ON l.client_id = c.id WHERE (l.assigned_to_user_id = ? OR l.assigned_collector_id = ?) AND (l.is_archived = 0 OR l.is_archived IS NULL) ORDER BY l.created_at DESC`,
+      const { rows: loanRows } = await pool.query(
+        `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order FROM loans l LEFT JOIN clients c ON l.client_id = c.id WHERE (l.assigned_to_user_id = $1 OR l.assigned_collector_id = $2) AND (l.is_archived = 0 OR l.is_archived IS NULL) ORDER BY l.created_at DESC`,
         [collectorId, collectorId]
       );
       return res.json({
@@ -2119,8 +2138,8 @@ const loanController = {
     try {
       const { clientIds = [], loanIds = [], collectorId } = req.body;
 
-      if ((!Array.isArray(clientIds) || clientIds.length === 0) &&
-          (!Array.isArray(loanIds) || loanIds.length === 0)) {
+      if ((!Array.isArray(clientIds) || clientIds.length === 0) && (
+      !Array.isArray(loanIds) || loanIds.length === 0)) {
         return res.status(400).json({ error: 'Debes proporcionar clientIds o loanIds' });
       }
 
@@ -2207,27 +2226,27 @@ const loanController = {
 
       // Role restriction: COBRADOR only sees own payments
       if (isCobrador) {
-        conditions.push('(p.collected_by = ? OR p.collected_by_user_id = ? OR p.created_by = ?)');
+        conditions.push(`(p.collected_by = $${params.length + 1} OR p.collected_by_user_id = $${params.length + 2} OR p.created_by = $${params.length + 3})`);
         params.push(userId, userId, userId);
       } else if (collector_id) {
         // ADMIN filtered by specific collector
-        conditions.push('(p.collected_by = ? OR p.collected_by_user_id = ?)');
+        conditions.push(`(p.collected_by = $${params.length + 1} OR p.collected_by_user_id = $${params.length + 2})`);
         params.push(collector_id, collector_id);
       }
 
       if (start_date) {
-        conditions.push('(p.date >= ? OR DATE(p.created_at) >= ?)');
+        conditions.push(`(p.date >= $${params.length + 1} OR DATE(p.created_at) >= $${params.length + 2})`);
         params.push(start_date, start_date);
       }
       if (end_date) {
-        conditions.push('(p.date <= ? OR DATE(p.created_at) <= ?)');
+        conditions.push(`(p.date <= $${params.length + 1} OR DATE(p.created_at) <= $${params.length + 2})`);
         params.push(end_date, end_date);
       }
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
       const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 500);
 
-      const [rows] = await pool.query(
+      const { rows } = await pool.query(
         `SELECT
            p.id, p.loan_id, p.client_id, p.amount, p.late_fee,
            p.date, p.created_at, p.notes, p.day_number, p.type,
@@ -2249,7 +2268,7 @@ const loanController = {
       console.error('[ERROR getPaymentHistory]:', error);
       return res.status(500).json({ error: 'Error obteniendo historial de cobros', detail: error.message });
     }
-  },
+  }
 };
 
 export default loanController;

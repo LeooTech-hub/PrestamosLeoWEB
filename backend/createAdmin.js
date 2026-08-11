@@ -32,18 +32,17 @@ async function createAdminUser() {
     const adminName = 'Leo Admin';
 
     // 2. Verificar si el usuario admin ya existe
-    const [rows] = await pool.query('SELECT * FROM users WHERE LOWER(email) = ?', [adminEmail.toLowerCase()]);
+    const { rows } = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [adminEmail.toLowerCase()]);
 
     // Hashear la contraseña obligatoriamente con bcrypt
     const passwordHash = await bcrypt.hash(rawPassword, 10);
-    const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     if (rows.length === 0) {
       // Inserción de nuevo usuario administrador
       const userId = generateUUID();
       await pool.query(
-        `INSERT INTO users (id, name, email, password_hash, created_at) VALUES (?, ?, ?, ?, ?)`,
-        [userId, adminName, adminEmail, passwordHash, createdAt]
+        'INSERT INTO users (id, name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5)',
+        [userId, adminName, adminEmail, passwordHash, 'ADMIN']
       );
       console.log('🎉 Usuario Administrador creado exitosamente:');
       console.log(`   - Nombre: ${adminName}`);
@@ -53,8 +52,8 @@ async function createAdminUser() {
       // Actualizar el hash de contraseña y nombre si ya existe para asegurar acceso con password123
       const existingUser = rows[0];
       await pool.query(
-        `UPDATE users SET name = ?, password_hash = ? WHERE id = ?`,
-        [adminName, passwordHash, existingUser.id]
+        'UPDATE users SET password_hash = $1, role = $2 WHERE id = $3',
+        [passwordHash, 'ADMIN', rows[0].id]
       );
       console.log('🔄 Usuario Administrador existente actualizado con las nuevas credenciales:');
       console.log(`   - Nombre: ${adminName}`);

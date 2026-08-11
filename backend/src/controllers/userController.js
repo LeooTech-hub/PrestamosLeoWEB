@@ -13,11 +13,11 @@ export const userController = {
       let query = 'SELECT id, name, email, role, created_at FROM users';
       let params = [];
       if (role) {
-        query += ' WHERE UPPER(role) = ?';
+        query += ' WHERE UPPER(role) = $1';
         params.push(String(role).toUpperCase());
       }
       query += ' ORDER BY created_at DESC';
-      const [rows] = await pool.query(query, params);
+      const { rows } = await pool.query(query, params);
       return res.json({ success: true, users: rows, collectors: rows, data: rows });
     } catch (error) {
       console.error('Error listando usuarios:', error);
@@ -38,7 +38,7 @@ export const userController = {
       const userRole = validRoles.includes(role) ? role : 'COBRADOR';
 
       const normalizedEmail = String(email).trim().toLowerCase();
-      const [existing] = await pool.query('SELECT id FROM users WHERE LOWER(email) = ?', [normalizedEmail]);
+      const { rows: existing } = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
 
       if (existing && existing.length > 0) {
         return res.status(409).json({ error: 'Ya existe un usuario con ese correo electrónico' });
@@ -49,7 +49,7 @@ export const userController = {
       const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
       await pool.query(
-        'INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
         [userId, name.trim(), normalizedEmail, passwordHash, userRole, createdAt]
       );
 
@@ -73,12 +73,12 @@ export const userController = {
         return res.status(400).json({ error: 'No puedes eliminar tu propio usuario administrador' });
       }
 
-      const [rows] = await pool.query('SELECT id FROM users WHERE id = ?', [id]);
+      const { rows } = await pool.query('SELECT id FROM users WHERE id = $1', [id]);
       if (!rows || rows.length === 0) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
-      await pool.query('DELETE FROM users WHERE id = ?', [id]);
+      await pool.query('DELETE FROM users WHERE id = $1', [id]);
       return res.json({ success: true, message: 'Usuario eliminado correctamente' });
     } catch (error) {
       console.error('Error eliminando usuario:', error);
