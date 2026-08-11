@@ -898,13 +898,26 @@ const loanController = {
 
       let rows = [];
       try {
-        const { rows: result } = await pool.query('SELECT * FROM payments ORDER BY payment_date DESC, id DESC');
-        rows = result;
+        const { rows: result } = await pool.query(`
+          SELECT p.id, p.loan_id, p.client_id, p.amount, p.late_fee,
+                 COALESCE(p.payment_date, p.date) as payment_date, p.date, p.created_at, p.notes,
+                 p.day_number, p.type, p.collected_by, p.collected_by_user_id,
+                 l.daily_payment_amount as daily_amount,
+                 COALESCE(c.name, p.client_name, 'Cliente') as client_name,
+                 c.alias as client_alias,
+                 COALESCE(u.name, 'ADMIN') as collector_name
+          FROM payments p
+          LEFT JOIN loans l ON p.loan_id = l.id
+          LEFT JOIN clients c ON (p.client_id = c.id OR l.client_id = c.id)
+          LEFT JOIN users u ON (p.collected_by = u.id OR p.collected_by_user_id = u.id)
+          ORDER BY COALESCE(p.payment_date, p.date) DESC, p.created_at DESC, p.id DESC
+        `);
+        rows = result || [];
       } catch (_) {
         const { rows: result } = await pool.query('SELECT * FROM payments');
-        rows = result;
+        rows = result || [];
       }
-      return res.json(rows.map(mapRowToPayment));
+      return res.status(200).json(rows.map(mapRowToPayment));
     } catch (error) {
       console.error('Error in getPayments:', error);
       return res.status(500).json({ error: error.message });

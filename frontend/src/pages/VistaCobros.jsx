@@ -53,15 +53,64 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
       if (endDate) params.append("end_date", endDate);
       if (isAdmin && collectorId) params.append("collector_id", collectorId);
       const res = await api.get(`/payments/history?${params.toString()}`);
-      const raw = Array.isArray(res.data) ? res.data : (res.data?.payments || res.data?.data || []);
-      setPayments(raw);
+      if (Array.isArray(res.data)) {
+        setPayments(res.data);
+      } else if (res.data && Array.isArray(res.data.payments)) {
+        setPayments(res.data.payments);
+      } else if (res.data && Array.isArray(res.data.data)) {
+        setPayments(res.data.data);
+      } else {
+        setPayments([]);
+      }
     } catch (err) {
       console.error("[VistaCobros]", err);
       setError("No se pudo cargar el historial de cobros.");
+      setPayments([]);
     } finally { setIsLoading(false); }
   }, [startDate, endDate, collectorId, isAdmin]);
 
-  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadHistory = async () => {
+      setIsLoading(true);
+      setError("");
+      try {
+        const params = new URLSearchParams({ limit: "100" });
+        if (startDate) params.append("start_date", startDate);
+        if (endDate) params.append("end_date", endDate);
+        if (isAdmin && collectorId) params.append("collector_id", collectorId);
+        const res = await api.get(`/payments/history?${params.toString()}`);
+        if (isMounted) {
+          if (Array.isArray(res.data)) {
+            setPayments(res.data);
+          } else if (res.data && Array.isArray(res.data.payments)) {
+            setPayments(res.data.payments);
+          } else if (res.data && Array.isArray(res.data.data)) {
+            setPayments(res.data.data);
+          } else {
+            setPayments([]);
+          }
+        }
+      } catch (err) {
+        console.error("[VistaCobros]", err);
+        if (isMounted) {
+          setError("No se pudo cargar el historial de cobros.");
+          setPayments([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [startDate, endDate, collectorId, isAdmin]);
 
   const setQuickFilter = (mode) => {
     const today = todayISO();
@@ -70,7 +119,10 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
     else if (mode === "month") { setStartDate(monthStartISO()); setEndDate(today); }
   };
 
-  const filtered = payments.filter(p => {
+  const safePayments = Array.isArray(payments) ? payments : [];
+
+  const filtered = safePayments.filter(p => {
+    if (!p) return false;
     if (!searchText.trim()) return true;
     const q = searchText.toLowerCase();
     return (p.client_name || "").toLowerCase().includes(q) ||
@@ -78,7 +130,7 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
            (p.notes || "").toLowerCase().includes(q);
   });
 
-  const totalRecaudado = filtered.reduce((s, p) => s + Number(p.amount || 0), 0);
+  const totalRecaudado = filtered.reduce((s, p) => s + Number(p?.amount || 0), 0);
 
   const handleDelete = async (payment) => {
     if (!onDeletePayment) return;
@@ -194,7 +246,7 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
       ) : filtered.length === 0 ? (
         <div className="p-10 text-center bg-white dark:bg-[#18181B] rounded-2xl border border-[#E6DCD2] dark:border-[#27272A] shadow-sm">
           <Receipt className="w-10 h-10 text-[#E6DCD2] dark:text-[#27272A] mx-auto mb-3" />
-          <p className="text-sm font-semibold text-[#6E615A] dark:text-[#C2B29F]">Sin cobros en el período seleccionado</p>
+          <p className="text-sm font-semibold text-[#6E615A] dark:text-[#C2B29F]">No hay cobros registrados en este periodo.</p>
           <p className="text-xs text-[#9A8A84] dark:text-[#6E615A] mt-1">Prueba con otro rango de fechas o elimina el filtro de cobrador.</p>
         </div>
       ) : (
@@ -205,7 +257,7 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
             ))}
           </div>
 
-          {filtered.map(p => (
+          {(Array.isArray(filtered) ? filtered : []).map(p => (
             <div
               key={p.id}
               className="bg-white dark:bg-[#18181B] border border-[#E6DCD2] dark:border-[#27272A] rounded-2xl p-4 shadow-sm hover:border-[#E89D4F]/50 transition-all group"
