@@ -69,41 +69,25 @@ export const getClients = async (req, res) => {
 
 export const createClient = async (req, res) => {
   try {
-    const name = req.body.name || req.body.nombre || '';
-    const alias = req.body.alias || req.body.apodo || '';
-    const phone = req.body.phone || req.body.telefono || '';
-    const dni = req.body.dni || req.body.documento || '';
-    const address = req.body.address || req.body.direccion || '';
-    const notes = req.body.notes || req.body.observaciones || '';
-    const assigned_to_user_id = req.body.assigned_to_user_id || req.body.assignedTo || req.user?.id || null;
+    const { name, alias = '', phone = '', dni = '', address = '', notes = '', assigned_to_user_id = null } = req.body;
+    const assignedUser = assigned_to_user_id || req.body.assignedTo || req.user?.id || null;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'El nombre es obligatorio' });
     }
 
-    const query = `
+    const queryText = `
       INSERT INTO clients (name, alias, phone, dni, address, notes, assigned_to_user_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
+    const queryParams = [name, alias, phone, dni, address, notes, assignedUser];
+    const result = await pool.query(queryText, queryParams);
 
-    const values = [
-      name.trim(),
-      alias.trim(),
-      phone.trim(),
-      dni.trim(),
-      address.trim(),
-      notes.trim(),
-      assigned_to_user_id
-    ];
-
-    const result = await pool.query(query, values);
-    const newClient = result.rows[0];
-
-    return res.status(201).json(newClient);
+    return res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('[ERROR POST /api/clients]:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: 'Error interno', details: error.message });
   }
 };
 
