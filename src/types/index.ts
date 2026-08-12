@@ -13,28 +13,56 @@ export interface Client {
   createdAt?: string;
   assignedTo?: string;
   createdBy?: string;
+  amount?: number;
+  monto?: number;
+  loan_amount?: number;
+  capital?: number;
+  total_amount?: number;
+  totalAmount?: number;
+  due_date?: string;
+  dueDate?: string;
+  fecha_vencimiento?: string;
+  end_date?: string;
+  isPaidToday?: boolean;
+  is_paid_today?: boolean;
+  todayPaidAmount?: number;
+  today_paid_amount?: number;
+  todayStatus?: 'COBRADO' | 'PENDIENTE';
+  today_status?: 'COBRADO' | 'PENDIENTE';
+  activeLoan?: Partial<Loan> | null;
+  active_loan?: Partial<Loan> | null;
 }
 
 export interface Loan {
   id: string;
   clientId: string;
+  client_id?: string;
   clientName: string;
+  client_name?: string;
   clientAlias?: string;
   clientPhone: string;
   clientAddress?: string;
   routeOrder?: number;
   capital: number;
   amount?: number;
+  monto?: number;
+  interestRate?: number;
+  interest_rate?: number;
   interestAmount: number;
   interest?: number;
+  interes?: number;
   penaltyAmount?: number;
   penalty_amount?: number;
   mora?: number;
   totalToPay: number;
+  totalAmount?: number;
   total_amount?: number;
   dailyPaymentAmount: number;
   daily_amount?: number;
   paymentDays: number;
+  days?: number;
+  duration?: number;
+  total_installments?: number;
   duration_days?: number;
   paidAmount: number;
   total_paid?: number;
@@ -42,7 +70,11 @@ export interface Loan {
   remaining_amount?: number;
   paidDaysCount: number;
   startDate: string;
+  start_date?: string;
   dueDate: string;
+  due_date?: string;
+  fecha_vencimiento?: string;
+  end_date?: string;
   notes?: string;
   status: 'ACTIVE' | 'PAID' | 'OVERDUE' | 'EXPIRED';
   isArchived?: boolean;
@@ -52,12 +84,15 @@ export interface Loan {
 export interface Payment {
   id: string;
   loanId: string;
+  loan_id?: string;
   clientId: string;
+  client_id?: string;
   clientName: string;
   amount: number;
   lateFee?: number;
   dayNumber?: number;
   paymentDate?: string;
+  payment_date?: string;
   date?: string;
   notes?: string;
   paymentMethod?: string;
@@ -124,16 +159,21 @@ export interface FinancialReportData {
 
 export interface AlertNotification {
   id: string;
-  type: 'OVERDUE' | 'EXPIRING_SOON' | 'DUE_TODAY' | 'INFO';
-  title: string;
-  message: string;
-  date: string;
+  type: 'OVERDUE' | 'DUE_TODAY' | 'DUE_TOMORROW';
+  title?: string;
+  message?: string;
+  date?: string;
   loanId?: string;
   clientId?: string;
   clientName?: string;
   clientPhone?: string;
   remainingAmount?: number;
+  remaining_amount?: number;
   totalToPay?: number;
+  total_to_pay?: number;
   dueDate?: string;
+  due_date?: string;
+  daysRemaining?: number;
+  days_remaining?: number;
   daysDifference?: number;
 }

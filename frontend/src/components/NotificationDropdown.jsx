@@ -39,6 +39,7 @@ export function NotificationDropdown({ alerts = [], isOpen, onClose }) {
             alerts.map((alert) => {
               const isOverdue = alert.type === 'OVERDUE';
               const isToday = alert.type === 'DUE_TODAY';
+              const statusLabel = isOverdue ? 'VENCIDO' : isToday ? 'VENCE HOY' : 'VENCE MAÑANA';
 
               return (
                 <div
@@ -70,24 +71,24 @@ export function NotificationDropdown({ alerts = [], isOpen, onClose }) {
                           : 'bg-[#E89D4F]/20 text-[#2C221E] border-[#E89D4F]/30'
                       }`}
                     >
-                      {isOverdue ? 'EN MORA' : isToday ? 'VENCE HOY' : 'MAÑANA'}
+                      {statusLabel}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center bg-white p-2 rounded-xl border border-[#E6DCD2]/60">
                     <div>
                       <span className="text-[10px] text-[#6E615A] block">Saldo Restante:</span>
-                      <strong className="text-[#C84B31]">{formatCurrency(alert.remainingAmount)}</strong>
+                      <strong className="text-[#C84B31]">{formatCurrency(alert.remainingAmount ?? alert.remaining_amount)}</strong>
                     </div>
 
                     <a
                       href={generateWhatsAppReminderMessage({
                         clientName: alert.clientName,
                         phone: alert.clientPhone,
-                        remainingAmount: alert.remainingAmount,
-                        totalToPay: alert.totalToPay,
-                        dueDate: alert.dueDate,
-                        daysDifference: alert.daysDifference,
+                        remainingAmount: alert.remainingAmount ?? alert.remaining_amount,
+                        totalToPay: alert.totalToPay ?? alert.total_to_pay,
+                        dueDate: alert.dueDate ?? alert.due_date,
+                        daysDifference: alert.daysDifference ?? alert.daysRemaining,
                       })}
                       target="_blank"
                       rel="noopener noreferrer"

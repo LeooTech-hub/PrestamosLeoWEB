@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatCurrency, formatDatePE, formatDueDate, getDaysDifferenceInfo, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
+import { formatCurrency, formatDatePE, formatDueDate, getDaysDifferenceInfo, getOrCalculateDueDate, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
 import { PaymentModal } from '../components/PaymentModal';
 import { EditLoanModal } from '../components/EditLoanModal';
 import { SmartDeleteModal } from '../components/SmartDeleteModal';
@@ -136,7 +136,7 @@ export function VistaPrestamos({ loans = [], onRegisterPayment, onUpdateLoan, on
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLoans.map((loan) => {
-            const daysInfo = getDaysDifferenceInfo(loan.dueDate);
+            const daysInfo = getDaysDifferenceInfo(getOrCalculateDueDate(loan));
 
             return (
               <div

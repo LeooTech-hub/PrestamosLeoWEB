@@ -96,6 +96,7 @@ export default function Home() {
         ),
       ]);
 
+      console.log("CLIENT DATA:", cList);
       setClients(cList);
       setLoans(lList);
       setPayments(pList);

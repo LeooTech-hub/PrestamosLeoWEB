@@ -21,11 +21,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   if (!isOpen) return null;
 
   const overdueAlerts = alerts.filter((a) => a.type === 'OVERDUE');
-  const expiringAlerts = alerts.filter((a) => a.type === 'DUE_TODAY' || a.type === 'EXPIRING_SOON');
+  const expiringAlerts = alerts.filter((a) => a.type === 'DUE_TODAY' || a.type === 'DUE_TOMORROW');
 
   const filteredAlerts = alerts.filter((a) => {
     if (filter === 'OVERDUE') return a.type === 'OVERDUE';
-    if (filter === 'EXPIRING') return a.type === 'DUE_TODAY' || a.type === 'EXPIRING_SOON';
+    if (filter === 'EXPIRING') return a.type === 'DUE_TODAY' || a.type === 'DUE_TOMORROW';
     return true;
   });
 
@@ -33,10 +33,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     const url = generateWhatsAppReminderMessage({
       clientName: alert.clientName,
       phone: alert.clientPhone,
-      remainingAmount: alert.remainingAmount,
-      totalToPay: alert.totalToPay,
-      dueDate: alert.dueDate,
-      daysDifference: alert.daysDifference,
+      remainingAmount: alert.remainingAmount ?? alert.remaining_amount,
+      totalToPay: alert.totalToPay ?? alert.total_to_pay,
+      dueDate: alert.dueDate ?? alert.due_date,
+      daysDifference: alert.daysDifference ?? alert.daysRemaining,
     });
     window.open(url, '_blank');
   };
@@ -111,6 +111,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             filteredAlerts.map((item) => {
               const isOverdue = item.type === 'OVERDUE';
               const isToday = item.type === 'DUE_TODAY';
+              const statusLabel = isOverdue ? 'VENCIDO' : isToday ? 'VENCE HOY' : 'VENCE MAÑANA';
 
               return (
                 <div
@@ -131,7 +132,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         </span>
                       </div>
                       <span className="text-[11px] text-[#6E615A] dark:text-[#C2B29F] block">
-                        Vencimiento: <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatDatePE(item.dueDate)}</strong>
+                        Vencimiento: <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatDatePE(item.dueDate ?? item.due_date)}</strong>
                       </span>
                     </div>
 
@@ -142,11 +143,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                           : 'bg-[#E89D4F] text-white border-transparent'
                       }`}
                     >
-                      {isOverdue
-                        ? `Vencido (${Math.abs(item.daysDifference || 0)}d)`
-                        : isToday
-                        ? 'Vence HOY'
-                        : 'Vence Mañana'}
+                      {statusLabel}
                     </span>
                   </div>
 
@@ -154,7 +151,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     <div>
                       <span className="text-[10px] text-[#6E615A] dark:text-[#C2B29F] block">Saldo Restante:</span>
                       <strong className="text-sm text-[#C84B31] font-black">
-                        {formatCurrency(item.remainingAmount)}
+                        {formatCurrency(item.remainingAmount ?? item.remaining_amount)}
                       </strong>
                     </div>
 

@@ -4,25 +4,13 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 export default defineConfig([
   ...nextVitals,
   {
-    rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          argsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_"
-        }
-      ]
-    }
-  },
-  {
     ignores: [
       ".next/**",
       "out/**",
       "build/**",
+      "frontend/dist/**",
       "next-env.d.ts",
       "node_modules/**"
     ]
   }
 ]);
-
-export default eslintConfig;

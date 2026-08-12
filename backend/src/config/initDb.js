@@ -170,6 +170,7 @@ export async function initDb() {
     await safeAddColumn('loans', 'paid_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'remaining_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'paid_days_count', 'INT DEFAULT 0');
+    await safeAddColumn('loans', 'remaining_days', 'INT NULL');
     await safeAddColumn('loans', 'start_date', 'DATE NULL');
     await safeAddColumn('loans', 'due_date', 'DATE NULL');
     await safeAddColumn('loans', 'notes', 'TEXT NULL');

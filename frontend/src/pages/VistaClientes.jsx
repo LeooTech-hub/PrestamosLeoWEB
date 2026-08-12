@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
+import { formatCurrency, formatDatePE, getOrCalculateDueDate, getDueDateFormattedSpanish, renderRemainingDays } from '../utils/loanHelpers';
 import { SmartDeleteModal } from '../components/SmartDeleteModal';
 import { EditClientModal } from '../components/EditClientModal';
 import { EditLoanModal } from '../components/EditLoanModal';
@@ -27,6 +27,9 @@ import {
   CheckSquare,
   Square,
   Filter,
+  Calendar,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 
 export function VistaClientes({
@@ -54,6 +57,10 @@ export function VistaClientes({
   const [activeTab, setActiveTab] = useState('LOANS');
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
   const [selectedPaymentForReceipt, setSelectedPaymentForReceipt] = useState(null);
+
+  useEffect(() => {
+    console.log("CLIENT DATA:", clients);
+  }, [clients]);
 
   // Portfolio assignment state (ADMIN only)
   const [selectedClientIds, setSelectedClientIds] = useState([]);
@@ -371,11 +378,42 @@ export function VistaClientes({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => {
-            const currentLoans = loans.filter((l) => l.clientId === client.id && !l.isArchived);
-            const currentActive = currentLoans.filter((l) => l.status !== 'PAID');
-            const totalRemaining = currentActive.reduce((sum, l) => sum + (l.remainingAmount || 0), 0);
-            const hasOverdue = currentActive.some((l) => l.status === 'OVERDUE');
+            const currentLoans = (loans || []).filter((l) => (l?.clientId === client?.id || l?.client_id === client?.id) && !l?.isArchived);
+            const currentActive = currentLoans.filter((l) => l?.status !== 'PAID');
+            const totalRemaining = currentActive.reduce((sum, l) => sum + (l?.remainingAmount || l?.remaining_amount || 0), 0);
+            const hasOverdue = currentActive.some((l) => l?.status === 'OVERDUE');
             const isChecked = selectedClientIds.includes(client.id);
+
+            const activeLoan = currentActive[0] || client?.active_loan || client?.activeLoan;
+
+            const loanAmount = Number(
+              activeLoan?.amount ?? 
+              activeLoan?.monto ??
+              activeLoan?.capital ?? 
+              client?.amount ?? 
+              client?.monto ??
+              client?.loan_amount ?? 
+              client?.capital ?? 
+              (currentLoans.length > 0 ? currentLoans.reduce((sum, l) => sum + Number(l?.capital || l?.amount || l?.monto || 0), 0) : 0)
+            );
+
+            const dueDateFormatted = getDueDateFormattedSpanish(activeLoan || client);
+
+            const now = new Date();
+            const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            const hasPaymentToday = (payments || []).some((p) => {
+              const pClientId = p?.clientId || p?.client_id;
+              const pLoanId = p?.loanId || p?.loan_id;
+              const matches = pClientId === client.id || (activeLoan && (pLoanId === activeLoan.id || pLoanId === activeLoan.loan_id));
+              if (!matches) return false;
+              const pAmount = Number(p?.amount || 0);
+              if (pAmount <= 0) return false;
+              const pDateStr = String(p?.date || p?.payment_date || p?.paymentDate || '').split('T')[0];
+              return pDateStr === localTodayStr;
+            });
+
+            const isPaidToday = hasPaymentToday || Boolean(client.isPaidToday && Number(client.todayPaidAmount || client.today_paid_amount || 0) > 0);
 
             return (
               <div
@@ -455,6 +493,33 @@ export function VistaClientes({
                         DNI: <strong className="text-[#2C221E]">{client.dni || client.documento || client.identification}</strong>
                       </div>
                     )}
+
+                    {/* Fecha de Vencimiento */}
+                    <div className="flex items-center justify-between gap-1 text-[11px] text-[#6E615A] font-medium pt-0.5 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-[#D96B27] shrink-0" />
+                        <span>Fecha de Vencimiento: <strong className={`font-bold ${activeLoan && activeLoan.status !== 'NONE' ? 'text-[#2C221E]' : 'text-[#6E615A] italic font-normal'}`}>{dueDateFormatted}</strong></span>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#D96B27]">
+                        ({renderRemainingDays(client)})
+                      </span>
+                    </div>
+
+                    {/* Estado de Cobro Hoy */}
+                    {activeLoan && (
+                      <div className="flex items-center gap-1.5 text-[11px] pt-1">
+                        {isPaidToday ? (
+                          <span className="px-2.5 py-0.5 rounded-full font-extrabold bg-[#EEF6F2] text-[#2D7A5D] border border-[#2D7A5D]/30 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-[#2D7A5D]" /> COBRADO HOY
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full font-extrabold bg-[#FDF3ED] text-[#D96B27] border border-[#D96B27]/30 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-[#D96B27]" /> PAGO PENDIENTE HOY
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {/* Assigned collector badge (ADMIN view) */}
                     {isAdmin && client.assignedToName && (
                       <div className="flex items-center gap-1 text-[11px] text-[#2D7A5D] font-semibold mt-1">
@@ -469,19 +534,27 @@ export function VistaClientes({
                 </div>
 
                 <div className="border-t border-[#E6DCD2]/60 pt-3 space-y-3">
-                  <div className="flex items-center justify-between bg-[#FAF8F5] p-2.5 rounded-2xl border border-[#E6DCD2]/70 text-xs">
+                  <div className="grid grid-cols-2 gap-2 bg-[#FAF8F5] p-2.5 rounded-2xl border border-[#E6DCD2]/70 text-xs">
                     <div>
-                      <span className="text-[10px] text-[#6E615A] block">Deuda Total Activa:</span>
-                      <strong className={`font-extrabold ${hasOverdue ? 'text-[#C84B31]' : 'text-[#2C221E]'}`}>
-                        {formatCurrency(totalRemaining)}
-                      </strong>
+                      <span className="text-[10px] text-[#6E615A] block">Monto Préstamo:</span>
+                      {activeLoan ? (
+                        <strong className="font-extrabold text-[#2C221E]">
+                          {formatCurrency(loanAmount)}
+                        </strong>
+                      ) : (
+                        <span className="text-[11px] text-[#6E615A] italic font-medium">Sin Préstamo Activo</span>
+                      )}
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] text-[#6E615A] block">Préstamos:</span>
-                      <span className="font-bold text-[#D96B27]">
-                        {currentActive.length} Activo{currentActive.length !== 1 ? 's' : ''}
-                      </span>
+                      <span className="text-[10px] text-[#6E615A] block">Saldo Restante:</span>
+                      {activeLoan ? (
+                        <strong className={`font-extrabold ${hasOverdue ? 'text-[#C84B31]' : 'text-[#2D7A5D]'}`}>
+                          {formatCurrency(totalRemaining > 0 ? totalRemaining : (activeLoan ? (activeLoan.remainingAmount ?? activeLoan.remaining_amount ?? 0) : 0))}
+                        </strong>
+                      ) : (
+                        <span className="text-[11px] text-[#6E615A] italic font-medium">Sin Préstamo Activo</span>
+                      )}
                     </div>
                   </div>
 
@@ -567,6 +640,66 @@ export function VistaClientes({
               )}
             </div>
 
+            {/* Active Loan Quick Details Banner */}
+            {(() => {
+              const activeSelectedLoan = activeLoans[0] || activeSelectedClient?.active_loan || activeSelectedClient?.activeLoan;
+              return (
+                <div className="mt-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/70">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold text-[#D96B27] uppercase tracking-wider">
+                      Detalles del Préstamo Activo
+                    </span>
+                    {activeSelectedLoan ? (
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                        activeSelectedLoan.status === 'OVERDUE'
+                          ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
+                          : 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30'
+                      }`}>
+                        {activeSelectedLoan.status === 'OVERDUE' ? 'EN MORA' : 'VIGENTE'}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300">
+                        SIN PRÉSTAMO ACTIVO
+                      </span>
+                    )}
+                  </div>
+
+                  {activeSelectedLoan ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white p-2.5 rounded-xl border border-[#E6DCD2]/60">
+                      <div>
+                        <span className="text-[#6E615A] block text-[10px]">Monto Préstamo:</span>
+                        <strong className="text-[#2C221E] font-extrabold">
+                          {formatCurrency(Number(activeSelectedLoan.capital ?? activeSelectedLoan.amount ?? activeSelectedLoan.monto ?? 0))}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[#6E615A] block text-[10px]">Interés / Tasa:</span>
+                        <strong className="text-[#D96B27] font-extrabold">
+                          {Number(activeSelectedLoan.interestRate ?? activeSelectedLoan.interest_rate ?? activeSelectedLoan.interes ?? 20)}%
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[#6E615A] block text-[10px]">Fecha de Vencimiento:</span>
+                        <strong className="text-[#2C221E] font-extrabold">
+                          {getDueDateFormattedSpanish(activeSelectedLoan)}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[#6E615A] block text-[10px]">Saldo Restante:</span>
+                        <strong className="text-[#C84B31] font-extrabold">
+                          {formatCurrency(Number(activeSelectedLoan.remainingAmount ?? activeSelectedLoan.remaining_amount ?? (Number(activeSelectedLoan.totalToPay ?? activeSelectedLoan.total_amount ?? 0) - Number(activeSelectedLoan.paidAmount ?? activeSelectedLoan.paid_amount ?? 0))))}
+                        </strong>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-[#6E615A] italic font-medium py-1">
+                      Sin Préstamo Activo
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             <div className="flex items-center gap-2 border-b border-[#E6DCD2] mt-4 pb-2">
               <button
                 onClick={() => setActiveTab('LOANS')}
@@ -619,10 +752,12 @@ export function VistaClientes({
                         </span>
                         {activeLoans.map((loan) => {
                           const mora = Number(loan.mora ?? loan.penaltyAmount ?? loan.penalty_amount ?? 0);
-                          const total = Number(loan.totalToPay ?? loan.total_amount ?? 0);
-                          const amount = Number(loan.capital ?? loan.amount ?? 0);
-                          const interest = Number(loan.interestAmount ?? loan.interest ?? 0);
-                          const remaining = Number(loan.remainingAmount ?? loan.remaining_amount ?? Math.max(0, total - Number(loan.paidAmount || 0)));
+                          const amount = Number(loan.capital ?? loan.amount ?? loan.monto ?? 0);
+                          const interestRate = Number(loan.interestRate ?? loan.interest_rate ?? loan.interes ?? 20);
+                          const interest = Number(loan.interestAmount ?? loan.interest_amount ?? loan.interest ?? Math.round(amount * (interestRate / 100)));
+                          const total = Number(loan.totalToPay ?? loan.total_amount ?? (amount + interest));
+                          const remaining = Number(loan.remainingAmount ?? loan.remaining_amount ?? Math.max(0, total - Number(loan.paidAmount || loan.paid_amount || 0)));
+                          const dueSpanish = getDueDateFormattedSpanish(loan);
 
                           return (
                             <div
@@ -633,11 +768,11 @@ export function VistaClientes({
                                 <div>
                                   <strong className="text-sm font-extrabold text-[#2C221E] block">
                                     {mora > 0
-                                      ? `Capital: ${formatCurrency(amount)} + Int: ${formatCurrency(interest)} + Mora: ${formatCurrency(mora)} = ${formatCurrency(total)}`
-                                      : `Capital: ${formatCurrency(amount)} + 20% = ${formatCurrency(total)}`}
+                                      ? `Capital: ${formatCurrency(amount)} + Int (${interestRate}%): ${formatCurrency(interest)} + Mora: ${formatCurrency(mora)} = ${formatCurrency(total)}`
+                                      : `Capital: ${formatCurrency(amount)} + Int (${interestRate}%): ${formatCurrency(interest)} = ${formatCurrency(total)}`}
                                   </strong>
                                   <span className="text-xs text-[#6E615A]">
-                                    Modalidad: {loan.paymentDays} Días de Pago ({formatCurrency(loan.dailyPaymentAmount)}/día)
+                                    Modalidad: {loan.paymentDays || loan.days || loan.duration || 20} Días de Pago ({formatCurrency(loan.dailyPaymentAmount || loan.daily_amount)}/día)
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -664,15 +799,15 @@ export function VistaClientes({
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white p-2.5 rounded-xl border border-[#E6DCD2]/60">
                                 <div>
                                   <span className="text-[#6E615A] block text-[10px]">Fecha Inicio:</span>
-                                  <strong>{formatDatePE(loan.startDate)}</strong>
+                                  <strong>{formatDatePE(loan.startDate || loan.start_date || loan.created_at)}</strong>
                                 </div>
                                 <div>
-                                  <span className="text-[#6E615A] block text-[10px]">Vencimiento:</span>
-                                  <strong>{formatDatePE(loan.dueDate)}</strong>
+                                  <span className="text-[#6E615A] block text-[10px]">Fecha de Vencimiento:</span>
+                                  <strong className="text-[#2C221E] font-bold">{dueSpanish}</strong>
                                 </div>
                                 <div>
                                   <span className="text-[#6E615A] block text-[10px]">Cobrado:</span>
-                                  <strong className="text-[#2D7A5D]">{formatCurrency(loan.paidAmount)}</strong>
+                                  <strong className="text-[#2D7A5D]">{formatCurrency(loan.paidAmount || loan.paid_amount || 0)}</strong>
                                 </div>
                                 <div>
                                   <span className="text-[#6E615A] block text-[10px]">Saldo:</span>

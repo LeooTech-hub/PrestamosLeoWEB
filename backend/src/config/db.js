@@ -3,7 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { Pool } = pkg;
+const { Pool, types } = pkg;
+
+// PostgreSQL DATE no representa una hora ni una zona horaria. Mantenerlo como
+// YYYY-MM-DD evita desplazamientos UTC/local y conserva la fecha civil exacta.
+types.setTypeParser(1082, (value) => value);
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

@@ -7,19 +7,14 @@ import { verifyToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Helper para evitar que Express crashee si un controlador es undefined
 const safe = (handler) => handler || ((req, res) => res.status(501).json({ error: 'Ruta no implementada' }));
 
-// ==========================================
 // PUBLIC AUTH ROUTES
-// ==========================================
 router.post('/auth/login', safe(authController?.login));
 router.post('/auth/forgot-password', safe(authController?.forgotPassword));
 router.post('/auth/reset-password', safe(authController?.resetPassword));
 
-// ==========================================
 // PROTECTED ROUTES
-// ==========================================
 router.get('/auth/me', verifyToken, safe(authController?.me));
 
 // USER MANAGEMENT
@@ -42,6 +37,7 @@ router.delete('/clients/:id', verifyToken, requireAdmin, safe(loanController?.de
 // LOANS
 router.get('/loans', verifyToken, safe(loanController?.getLoans));
 router.post('/loans', verifyToken, safe(loanController?.createClientAndLoan));
+router.post('/clients-with-loan', verifyToken, safe(loanController?.createClientAndLoan));
 router.put('/loans/:id', verifyToken, safe(loanController?.updateLoan));
 router.put('/loans/:id/restore', verifyToken, safe(loanController?.restoreLoan));
 router.delete('/loans/:id', verifyToken, requireAdmin, safe(loanController?.deleteLoan));

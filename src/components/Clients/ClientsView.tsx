@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Client, Loan, Payment } from '@/types';
-import { formatCurrency } from '@/services/loanService';
+import { formatCurrency, formatDatePE, getDueDateFormattedSpanish, renderRemainingDays } from '@/services/loanService';
 import { ClientDetailModal } from './ClientDetailModal';
 import { EditClientModal } from './EditClientModal';
 import { SmartDeleteModal } from '../Modals/SmartDeleteModal';
@@ -15,6 +15,9 @@ import {
   UserPlus,
   Pencil,
   Trash2,
+  Calendar,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 
 interface ClientsViewProps {
@@ -55,6 +58,10 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   const [selectedClientForDetail, setSelectedClientForDetail] = useState<Client | null>(null);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+
+  React.useEffect(() => {
+    console.log("CLIENT DATA:", clients);
+  }, [clients]);
 
   // Active unarchived clients
   const activeClients = clients.filter((c) => c.status === 'ACTIVE');
@@ -190,10 +197,10 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
         </div>
       </div>
 
-      {/* Client List */}
+      {/* Clients Grid */}
       {filteredClients.length === 0 ? (
-        <div className="bg-white dark:bg-[#26221F] rounded-3xl p-10 text-center border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
-          <Users className="w-12 h-12 text-[#A89B92] dark:text-[#C2B29F] mx-auto mb-3 opacity-50" />
+        <div className="bg-white dark:bg-[#26221F] rounded-3xl p-12 text-center border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
+          <Users className="w-12 h-12 text-[#E89D4F] mx-auto mb-3 opacity-50" />
           <h3 className="font-bold text-base text-[#2C221E] dark:text-[#EAE0D5]">No se encontraron clientes</h3>
           <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
             Intenta con otro término de búsqueda o registra un nuevo cliente.
@@ -202,14 +209,46 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredClients.map((client) => {
-            const clientLoans = loans.filter((l) => l.clientId === client.id && !l.isArchived);
+            const clientLoans = loans.filter((l) => (l.clientId === client.id || l.client_id === client.id) && !l.isArchived);
             const activeLoans = clientLoans.filter((l) => l.status !== 'PAID');
             const hasOverdue = clientLoans.some((l) => l.status === 'OVERDUE');
 
-            const totalBorrowed = clientLoans.reduce((acc, l) => acc + l.capital, 0);
-            const totalRemaining = activeLoans.reduce((acc, l) => acc + l.remainingAmount, 0);
+            const activeLoan = activeLoans[0] || (client as any).active_loan || (client as any).activeLoan;
 
-            let statusLabel = 'Sin Préstamos Activos';
+            const loanAmount = Number(
+              activeLoan?.amount ??
+              activeLoan?.monto ??
+              activeLoan?.capital ??
+              (client as any).amount ??
+              (client as any).monto ??
+              (client as any).loan_amount ??
+              (client as any).capital ??
+              (clientLoans.length > 0 ? clientLoans.reduce((acc: number, l: Loan) => acc + l.capital, 0) : 0)
+            );
+
+            const totalRemaining = activeLoans.length > 0
+              ? activeLoans.reduce((acc: number, l: Loan) => acc + l.remainingAmount, 0)
+              : (activeLoan ? (activeLoan.remainingAmount ?? activeLoan.remaining_amount ?? 0) : 0);
+
+            const dueDateFormatted = getDueDateFormattedSpanish(activeLoan || client);
+
+            const now = new Date();
+            const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            const hasPaymentToday = (payments || []).some((p) => {
+              const pClientId = p?.clientId || p?.client_id;
+              const pLoanId = p?.loanId || p?.loan_id;
+              const matches = pClientId === client.id || (activeLoan && (pLoanId === activeLoan.id || pLoanId === (activeLoan as any).loan_id));
+              if (!matches) return false;
+              const pAmount = Number(p?.amount || 0);
+              if (pAmount <= 0) return false;
+              const pDateStr = String(p?.date || p?.payment_date || (p as any).paymentDate || '').split('T')[0];
+              return pDateStr === localTodayStr;
+            });
+
+            const isPaidToday = hasPaymentToday || Boolean(client.isPaidToday && Number(client.todayPaidAmount || client.today_paid_amount || 0) > 0);
+
+            let statusLabel = 'Sin Préstamo Activo';
             let statusStyle = 'bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E]';
 
             if (hasOverdue) {
@@ -276,11 +315,22 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Status Badge */}
-                  <div className="mt-2 flex justify-between items-center">
+                  {/* Status Badges */}
+                  <div className="mt-2 flex justify-between items-center flex-wrap gap-1.5">
                     <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${statusStyle}`}>
                       {statusLabel}
                     </span>
+                    {activeLoan && (
+                      isPaidToday ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EEF6F2] dark:bg-[#3D9970]/20 text-[#2D7A5D] dark:text-[#3D9970] border border-[#2D7A5D]/30 dark:border-[#3D9970]/30 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> COBRADO HOY
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#E07A5F]/20 text-[#D96B27] dark:text-[#E07A5F] border border-[#D96B27]/30 dark:border-[#E07A5F]/30 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> PAGO PENDIENTE HOY
+                        </span>
+                      )
+                    )}
                   </div>
 
                   {/* Client Address */}
@@ -298,17 +348,36 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     </div>
                   )}
 
+                  {/* Fecha de Vencimiento */}
+                  <div className="flex items-center justify-between gap-1 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1 font-medium flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#D96B27] dark:text-[#E07A5F] shrink-0" />
+                      <span>Fecha de Vencimiento: <strong className={activeLoan && (activeLoan as any).status !== 'NONE' ? 'text-[#2C221E] dark:text-[#EAE0D5] font-bold' : 'text-[#6E615A] dark:text-[#C2B29F] italic font-normal'}>{dueDateFormatted}</strong></span>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#D96B27] dark:text-[#E07A5F]">
+                      ({renderRemainingDays(client)})
+                    </span>
+                  </div>
+
                   {/* Loans Summary Row */}
                   <div className="grid grid-cols-2 gap-2 mt-3 bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E] text-xs">
                     <div>
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block">Total Prestaron:</span>
-                      <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(totalBorrowed)}</strong>
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block">Monto Préstamo:</span>
+                      {activeLoan ? (
+                        <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loanAmount)}</strong>
+                      ) : (
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] italic">Sin Préstamo Activo</span>
+                      )}
                     </div>
                     <div>
                       <span className="text-[#6E615A] dark:text-[#C2B29F] block">Saldo Restante:</span>
-                      <strong className={totalRemaining > 0 ? 'text-[#C84B31]' : 'text-[#2D7A5D] dark:text-[#3D9970]'}>
-                        {formatCurrency(totalRemaining)}
-                      </strong>
+                      {activeLoan ? (
+                        <strong className={totalRemaining > 0 ? 'text-[#C84B31]' : 'text-[#2D7A5D] dark:text-[#3D9970]'}>
+                          {formatCurrency(totalRemaining)}
+                        </strong>
+                      ) : (
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] italic">Sin Préstamo Activo</span>
+                      )}
                     </div>
                   </div>
                 </div>
