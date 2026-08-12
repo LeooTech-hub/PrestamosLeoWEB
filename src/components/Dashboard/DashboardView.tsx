@@ -220,7 +220,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-[#2C221E] dark:text-[#EAE0D5] truncate">
-                          {loan.clientName}
+                          {loan.client_name || loan.clientName || (loan as any).client?.name || 'Sin Nombre'}
                         </span>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -239,8 +239,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
-                        <span>Capital: <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loan.capital)}</strong></span>
-                        <span>Total (20%): <strong className="text-[#D96B27] dark:text-[#E07A5F]">{formatCurrency(loan.totalToPay)}</strong></span>
+                        <span>Capital: <strong className="text-[#2C221E] dark:text-[#EAE0D5]">S/. {Number(loan.amount || loan.capital || (loan as any).total_amount || 0).toFixed(2)}</strong></span>
+                        <span>Total: <strong className="text-[#D96B27] dark:text-[#E07A5F]">S/. {Number(loan.totalToPay || loan.totalAmount || 0).toFixed(2)}</strong></span>
                       </div>
                     </div>
 

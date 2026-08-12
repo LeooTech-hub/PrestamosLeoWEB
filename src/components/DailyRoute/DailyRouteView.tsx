@@ -214,7 +214,7 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                       </span>
                       <div>
                         <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-1.5 flex-wrap">
-                          <span>{loan.clientName}</span>
+                          <span>{loan.client_name || loan.clientName || (loan as any).client?.name || 'Sin Nombre'}</span>
                           {loan.clientAlias && (
                             <span className="text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#3D261A] text-[#D96B27] dark:text-[#E07A5F] px-2 py-0.5 rounded-full border border-[#D96B27]/30 dark:border-[#E07A5F]/30">
                               ({loan.clientAlias})

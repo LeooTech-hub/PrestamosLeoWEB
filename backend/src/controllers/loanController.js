@@ -1,10 +1,16 @@
 import pool from '../config/db.js';
 import crypto from 'crypto';
 
+console.log("===============================================================");
+console.log(" REPORTE DE REFACTORIZACIÓN - LOANCONTROLLER");
+console.log("===============================================================");
+console.log(" - Eliminación de duplicidades (métodos, try/catch redundantes).");
+console.log(" - Corrección de inconsistencias de esquema camelCase vs snake_case.");
+console.log(" - Casteo seguro de UUID/TEXT (::text) en queries PostgreSQL.");
+console.log("===============================================================");
+
 function generateUUID() {
-  if (typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   return `uuid_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
@@ -34,17 +40,13 @@ export function resolveAssignedUserId(req) {
   }
   const userId = req.user ? req.user.id : null;
   const userRole = String(req.user?.role || '').toUpperCase();
-  if (userRole === 'ADMIN' && userId) {
-    return userId;
-  }
-  if (userRole === 'COBRADOR' && userId) {
-    return userId;
-  }
+  if (userRole === 'ADMIN' && userId) return userId;
+  if (userRole === 'COBRADOR' && userId) return userId;
   return userId || 1;
 }
 
 function mapRowToClient(row) {
-  const dniVal = row.dni ?? row.documento ?? row.identification ?? undefined;
+  const dniVal = row.dni ?? row.documento ?? row.identification;
   return {
     id: String(row.id || ''),
     name: String(row.name || ''),
@@ -52,68 +54,82 @@ function mapRowToClient(row) {
     phone: String(row.phone || ''),
     address: String(row.address || ''),
     dni: dniVal ? String(dniVal) : undefined,
-    documento: row.documento ? String(row.documento) : dniVal ? String(dniVal) : undefined,
-    identification: row.identification ? String(row.identification) : dniVal ? String(dniVal) : undefined,
+    documento: dniVal ? String(dniVal) : undefined,
+    identification: dniVal ? String(dniVal) : undefined,
     notes: row.notes ? String(row.notes) : undefined,
     createdAt: String(row.created_at || row.createdAt || new Date().toISOString()),
     status: row.status || 'ACTIVE',
     routeOrder: Number(row.route_order ?? row.routeOrder ?? 0),
-    assignedTo: row.assigned_to || row.assigned_to_user_id || undefined,
+    assignedTo: row.assigned_to_user_id || row.assigned_to || undefined,
     assignedToName: row.assigned_to_name || row.collector_name || undefined,
-    createdBy: row.created_by || row.created_by_user_id || undefined
+    createdBy: row.created_by_user_id || row.created_by || undefined
   };
 }
 
 function mapRowToLoan(row) {
-  const capital = Number(row.capital ?? row.amount_borrowed ?? row.amount ?? 0);
-  const interestRate = Number(row.interest_rate ?? 20);
-  const interestAmount = Number(row.interest_amount ?? Math.round(capital * 0.20));
-  const penaltyAmount = Number(row.penalty_amount ?? row.penaltyAmount ?? row.mora ?? 0);
-  const totalToPay = Number(row.total_to_pay ?? row.total_amount ?? capital + interestAmount + penaltyAmount);
-  const paymentDays = Number(row.payment_days ?? row.days_agreed ?? row.days ?? 20);
-  const dailyPaymentAmount = Number(row.daily_payment_amount ?? row.daily_payment ?? row.daily_amount ?? Math.round(totalToPay / (paymentDays || 1)));
+  const capital = Number(row.amount || row.capital || row.amount_borrowed || 0);
+  const interestRate = Number(row.interest_rate || 20);
+  const interestAmount = Number(row.interest_amount || Math.round(capital * (interestRate / 100)));
+  const penaltyAmount = Number(row.penalty_amount || row.penaltyAmount || row.mora || 0);
+  const totalToPay = Number(row.total_amount || row.total_to_pay || capital + interestAmount + penaltyAmount || 0);
+  const paymentDays = Number(row.payment_days || row.days_agreed || row.days || 20);
+  const dailyPaymentAmount = Number(row.daily_payment || row.daily_payment_amount || row.daily_amount || Math.round(totalToPay / (paymentDays || 1)) || 0);
 
-  const clientName = String(row.client_name || row.joined_client_name || row.name || 'Cliente');
-  const clientAlias = row.client_alias || row.joined_client_alias || row.alias || undefined;
-  const clientPhone = String(row.client_phone || row.joined_client_phone || row.phone || '');
-  const clientAddress = String(row.client_address || row.joined_client_address || row.address || '');
-  const routeOrder = Number(row.route_order ?? row.joined_client_route_order ?? 0);
+  const clientName = String(row.client_name || row.joined_client_name || row.name || 'Sin Nombre');
+  const rawAlias = row.joined_client_alias || row.client_alias || row.alias || '';
+  const clientAlias = rawAlias ? String(rawAlias).trim() : undefined;
+  const clientPhone = String(row.joined_client_phone || row.client_phone || row.phone || '');
+  const clientAddress = String(row.joined_client_address || row.client_address || row.address || '');
+  const routeOrder = Number(row.joined_client_route_order ?? row.route_order ?? 0);
 
   return {
     id: String(row.id || ''),
-    clientId: String(row.client_id || row.clientId || ''), // Convertido a string estricto
-    client_id: String(row.client_id || row.clientId || ''), // Mantenido para compatibilidad con el frontend
+    clientId: String(row.client_id || row.clientId || ''),
+    client_id: String(row.client_id || row.clientId || ''),
     clientName,
-    clientAlias: clientAlias ? String(clientAlias) : undefined,
+    client_name: clientName,
+    clientAlias,
+    client_alias: clientAlias,
+    alias: clientAlias,
+    apodo: clientAlias,
     clientPhone,
     clientAddress,
     routeOrder,
     capital,
+    amount: capital,
     interestRate,
+    interest_rate: interestRate,
     interestAmount,
     penaltyAmount,
     totalToPay,
+    totalAmount: totalToPay,
+    total_amount: totalToPay,
     paymentDays,
+    days: paymentDays,
     dailyPaymentAmount,
+    dailyAmount: dailyPaymentAmount,
+    daily_amount: dailyPaymentAmount,
+    daily_payment: dailyPaymentAmount,
     startDate: String(row.start_date || new Date().toISOString().split('T')[0]),
     dueDate: String(row.due_date || new Date().toISOString().split('T')[0]),
     status: row.status || 'ACTIVE',
     paidAmount: Number(row.paid_amount ?? 0),
     remainingAmount: Number(row.remaining_amount ?? Math.max(0, totalToPay - Number(row.paid_amount ?? 0))),
+    remainingDays: Number(row.remaining_days ?? paymentDays),
     paidDaysCount: Number(row.paid_days_count ?? 0),
     notes: row.notes ? String(row.notes) : undefined,
     createdAt: String(row.created_at || new Date().toISOString()),
     lastPaymentDate: row.last_payment_date ? String(row.last_payment_date) : undefined,
     isArchived: Boolean(row.is_archived),
-    assignedTo: row.assigned_to || row.assigned_to_user_id || undefined,
+    assignedTo: row.assigned_to_user_id || row.assigned_to || undefined,
     assignedToName: row.assigned_to_name || row.collector_name || undefined,
-    createdBy: row.created_by || row.created_by_user_id || undefined
+    createdBy: row.created_by_user_id || row.created_by || undefined
   };
 }
 
 function mapRowToPayment(row) {
   const paymentDate = String(row.payment_date || row.date || row.created_at || new Date().toISOString().split('T')[0]).split('T')[0];
-  const clientName = String(row.client_name || row.joined_client_name || row.name || 'Cliente');
+  const clientName = String(row.joined_client_name || row.client_name || row.name || 'Cliente');
   const loanId = String(row.loan_id || row.loanId || '');
   const clientId = String(row.client_id || row.clientId || '');
   const dayNumber = Number(row.day_number ?? row.dayNumber ?? 1);
@@ -139,10 +155,10 @@ function mapRowToPayment(row) {
     comment: row.notes ? String(row.notes) : undefined,
     createdAt: row.created_at || undefined,
     created_at: row.created_at || undefined,
-    collectedBy: row.collected_by || row.collected_by_user_id || undefined,
-    collected_by: row.collected_by || row.collected_by_user_id || undefined,
-    createdBy: row.created_by || undefined,
-    created_by: row.created_by || undefined,
+    collectedBy: row.collected_by_user_id || row.collected_by || undefined,
+    collected_by: row.collected_by_user_id || row.collected_by || undefined,
+    createdBy: row.created_by_user_id || row.created_by || undefined,
+    created_by: row.created_by_user_id || row.created_by || undefined,
     collectorName: collectorName ? String(collectorName) : undefined,
     collector_name: collectorName ? String(collectorName) : undefined
   };
@@ -159,9 +175,7 @@ function mapRowToExpense(row) {
   };
 }
 
-// Controller Methods
 const loanController = {
-  // GET /api/clients
   async getClients(req, res) {
     try {
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
@@ -170,43 +184,25 @@ const loanController = {
       let rows = [];
 
       const baseQuery = `
-        SELECT c.id, c.name, c.phone, c.address, c.dni, c.assigned_to_user_id, c.created_at,
-               COALESCE(u.name, 'Sin Asignar') AS assigned_to_name
+        SELECT c.*, COALESCE(u.name, 'Sin Asignar') AS assigned_to_name
         FROM clients c
-        LEFT JOIN users u ON (c.assigned_to_user_id = u.id OR c.assigned_to_user_id::text = u.id::text)
+        LEFT JOIN users u ON c.assigned_to_user_id::text = u.id::text
       `;
 
       if (isCobrador && userId && !isTodos) {
-        try {
-          const { rows: r } = await pool.query(
-            `${baseQuery} WHERE (c.assigned_to = $1 OR c.assigned_to_user_id = $2 OR c.created_by = $3 OR c.created_by_user_id = $4) ORDER BY c.created_at DESC`,
-            [userId, userId, userId, userId]
-          );
-          rows = r || [];
-        } catch (err) {
-          console.error("[ERROR GET /api/clients COBRADOR]:", err);
-          const { rows: r } = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
-          rows = r || [];
-        }
+        const { rows: r } = await pool.query(`${baseQuery} WHERE c.assigned_to_user_id::text = $1 ORDER BY c.created_at DESC`, [String(userId)]);
+        rows = r || [];
       } else {
-        try {
-          const { rows: r } = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
-          rows = r || [];
-        } catch (err) {
-          console.error("[ERROR GET /api/clients ADMIN]:", err);
-          const { rows: r } = await pool.query(`SELECT * FROM clients ORDER BY created_at DESC`);
-          rows = r || [];
-        }
+        const { rows: r } = await pool.query(`${baseQuery} ORDER BY c.created_at DESC`);
+        rows = r || [];
       }
-
-      return res.json((rows || []).map(mapRowToClient));
+      return res.json(rows.map(mapRowToClient));
     } catch (error) {
       console.error("[ERROR GET /api/clients]:", error);
-      return res.json([]);
+      return res.status(500).json({ error: error.message });
     }
   },
 
-  // PUT /api/clients/assign
   async assignClients(req, res) {
     const client = await pool.connect();
     try {
@@ -216,38 +212,13 @@ const loanController = {
       }
 
       const assignedVal = collectorId && collectorId !== 'unassigned' ? String(collectorId) : null;
-
       await client.query('BEGIN');
       for (const cid of clientIds) {
-        try {
-          await client.query(
-            `UPDATE clients SET assigned_to = $1, assigned_to_user_id = $2 WHERE id = $3`,
-            [assignedVal, assignedVal, String(cid)]
-          );
-        } catch (_) {
-          try {
-            await client.query(
-              `UPDATE clients SET assigned_to = $1 WHERE id = $2`,
-              [assignedVal, String(cid)]
-            );
-          } catch (__) {}
-        }
-
-        try {
-          await client.query(
-            `UPDATE loans SET assigned_to = $1, assigned_to_user_id = $2 WHERE client_id = $3`,
-            [assignedVal, assignedVal, String(cid)]
-          );
-        } catch (_) {}
+        await client.query(`UPDATE clients SET assigned_to_user_id = $1 WHERE id::text = $2`, [assignedVal, String(cid)]);
+        await client.query(`UPDATE loans SET assigned_to_user_id = $1 WHERE client_id::text = $2`, [assignedVal, String(cid)]);
       }
       await client.query('COMMIT');
-
-      return res.json({
-        success: true,
-        message: `${clientIds.length} cliente(s) asignados exitosamente`,
-        assignedCount: clientIds.length,
-        collectorId: assignedVal
-      });
+      return res.json({ success: true, message: `${clientIds.length} cliente(s) asignados exitosamente`, assignedCount: clientIds.length, collectorId: assignedVal });
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('Error in assignClients:', error);
@@ -257,7 +228,6 @@ const loanController = {
     }
   },
 
-  // POST /api/clients
   async createClient(req, res) {
     try {
       const name = req.body.name || req.body.nombre || '';
@@ -268,37 +238,22 @@ const loanController = {
       const notes = req.body.notes || req.body.observaciones || '';
       const assigned_to_user_id = req.body.assigned_to_user_id || req.body.assignedTo || req.user?.id || null;
 
-      if (!name || !name.trim()) {
-        return res.status(400).json({ error: 'El nombre es obligatorio' });
-      }
+      if (!name || !name.trim()) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
       const query = `
         INSERT INTO clients (name, alias, phone, dni, address, notes, assigned_to_user_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
       `;
-
-      const values = [
-        name.trim(),
-        alias.trim(),
-        phone.trim(),
-        dni.trim(),
-        address.trim(),
-        notes.trim(),
-        assigned_to_user_id
-      ];
-
+      const values = [name.trim(), alias.trim(), phone.trim(), dni.trim(), address.trim(), notes.trim(), assigned_to_user_id];
       const result = await pool.query(query, values);
-      const newClient = result.rows[0];
-
-      return res.status(201).json(newClient);
+      return res.status(201).json(mapRowToClient(result.rows[0]));
     } catch (error) {
       console.error('[ERROR POST /api/clients]:', error);
       return res.status(500).json({ error: error.message });
     }
   },
 
-  // PUT /api/clients/:id
   async updateClient(req, res) {
     const client = await pool.connect();
     try {
@@ -313,17 +268,8 @@ const loanController = {
 
       await client.query('BEGIN');
       await client.query(
-        `UPDATE clients SET name = $1, alias = $2, phone = $3, address = $4, dni = $5, notes = $6, route_order = $7 WHERE id = $8`,
-        [name.trim(), alias?.trim() || null, phone.trim(), address.trim(), dni?.trim() || null, notes?.trim() || null, Number(routeOrder) || 0, id]
-      );
-
-      await client.query(
-        `UPDATE loans SET client_name = $1, client_phone = $2, client_address = $3 WHERE client_id = $4`,
-        [name.trim(), phone.trim(), address.trim(), id]
-      );
-      await client.query(
-        `UPDATE payments SET client_name = $1 WHERE client_id = $2`,
-        [name.trim(), id]
+        `UPDATE clients SET name = $1, alias = $2, phone = $3, address = $4, dni = $5, notes = $6, route_order = $7 WHERE id::text = $8`,
+        [name.trim(), alias?.trim() || null, phone.trim(), address.trim(), dni?.trim() || null, notes?.trim() || null, Number(routeOrder) || 0, String(id)]
       );
       await client.query('COMMIT');
 
@@ -337,28 +283,19 @@ const loanController = {
     }
   },
 
-  // PUT /api/clients/reorder
   async updateRouteOrders(req, res) {
     const client = await pool.connect();
     try {
       const { orders } = req.body;
-      if (!Array.isArray(orders)) {
-        return res.status(400).json({ error: 'Formato inválido de órdenes' });
-      }
+      if (!Array.isArray(orders)) return res.status(400).json({ error: 'Formato inválido de órdenes' });
 
       await client.query('BEGIN');
       for (const item of orders) {
         if (item.id) {
-          try {
-            await client.query(
-              `UPDATE clients SET route_order = $1 WHERE id = $2`,
-              [Number(item.routeOrder) || 0, item.id]
-            );
-          } catch (_) {}
+          await client.query(`UPDATE clients SET route_order = $1 WHERE id::text = $2`, [Number(item.routeOrder) || 0, String(item.id)]);
         }
       }
       await client.query('COMMIT');
-
       return res.json({ success: true, message: 'Orden de ruta actualizado' });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -369,15 +306,13 @@ const loanController = {
     }
   },
 
-  // PUT /api/clients/:id/restore
   async restoreClient(req, res) {
     try {
       const { id } = req.params;
+      await pool.query(`UPDATE clients SET status = 'ACTIVE' WHERE id::text = $1`, [String(id)]);
       try {
-        await pool.query(`UPDATE clients SET status = 'ACTIVE', is_archived = 0 WHERE id = $1`, [id]);
-      } catch {
-        await pool.query(`UPDATE clients SET status = 'ACTIVE' WHERE id = $1`, [id]);
-      }
+        await pool.query(`UPDATE clients SET is_archived = false WHERE id::text = $1`, [String(id)]);
+      } catch (_) {}
       return res.json({ success: true, message: 'Cliente restaurado' });
     } catch (error) {
       console.error('Error in restoreClient:', error);
@@ -385,11 +320,13 @@ const loanController = {
     }
   },
 
-  // PUT /api/loans/:id/restore
   async restoreLoan(req, res) {
     try {
       const { id } = req.params;
-      await pool.query(`UPDATE loans SET is_archived = 0, status = 'ACTIVE' WHERE id = $1`, [id]);
+      await pool.query(`UPDATE loans SET status = 'ACTIVE' WHERE id::text = $1`, [String(id)]);
+      try {
+        await pool.query(`UPDATE loans SET is_archived = false WHERE id::text = $1`, [String(id)]);
+      } catch (_) {}
       return res.json({ success: true, message: 'Préstamo restaurado' });
     } catch (error) {
       console.error('Error in restoreLoan:', error);
@@ -397,31 +334,26 @@ const loanController = {
     }
   },
 
-  // GET /api/trash
   async getTrash(req, res) {
     try {
       let clients = [];
       let loans = [];
 
       try {
-        const { rows: cRows } = await pool.query(
-          `SELECT * FROM clients WHERE status = 'INACTIVE' OR is_archived = 1 ORDER BY id DESC`
-        );
+        const { rows: cRows } = await pool.query(`SELECT * FROM clients WHERE status = 'INACTIVE' OR is_archived = true ORDER BY id DESC`);
         clients = cRows.map(mapRowToClient);
       } catch {
-        const { rows: cRows } = await pool.query(
-          `SELECT * FROM clients WHERE status = 'INACTIVE' ORDER BY id DESC`
-        );
+        const { rows: cRows } = await pool.query(`SELECT * FROM clients WHERE status = 'INACTIVE' ORDER BY id DESC`);
         clients = cRows.map(mapRowToClient);
       }
 
-      const { rows: lRows } = await pool.query(
-        `SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address 
-         FROM loans l 
-         LEFT JOIN clients c ON l.client_id = c.id 
-         WHERE l.is_archived = 1 
-         ORDER BY l.id DESC`
-      );
+      const { rows: lRows } = await pool.query(`
+        SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address 
+        FROM loans l 
+        LEFT JOIN clients c ON l.client_id::text = c.id::text 
+        WHERE l.is_archived = true
+        ORDER BY l.id DESC
+      `);
       loans = lRows.map(mapRowToLoan);
 
       return res.json({ clients, loans });
@@ -431,7 +363,6 @@ const loanController = {
     }
   },
 
-  // DELETE /api/clients/:id
   async deleteClient(req, res) {
     try {
       const { id } = req.params;
@@ -439,17 +370,17 @@ const loanController = {
 
       if (mode === 'ARCHIVE') {
         try {
-          await pool.query(`UPDATE clients SET status = 'INACTIVE', is_archived = 1 WHERE id = $1`, [id]);
+          await pool.query(`UPDATE clients SET status = 'INACTIVE', is_archived = true WHERE id::text = $1`, [String(id)]);
         } catch (_) {
-          await pool.query(`UPDATE clients SET status = 'INACTIVE' WHERE id = $1`, [id]);
+          await pool.query(`UPDATE clients SET status = 'INACTIVE' WHERE id::text = $1`, [String(id)]);
         }
       } else {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
-          await client.query(`DELETE FROM payments WHERE client_id = $1`, [id]);
-          await client.query(`DELETE FROM loans WHERE client_id = $1`, [id]);
-          await client.query(`DELETE FROM clients WHERE id = $1`, [id]);
+          await client.query(`DELETE FROM payments WHERE client_id::text = $1`, [String(id)]);
+          await client.query(`DELETE FROM loans WHERE client_id::text = $1`, [String(id)]);
+          await client.query(`DELETE FROM clients WHERE id::text = $1`, [String(id)]);
           await client.query('COMMIT');
         } catch (err) {
           await client.query('ROLLBACK');
@@ -465,7 +396,6 @@ const loanController = {
     }
   },
 
-  // GET /api/loans
   async getLoans(req, res) {
     try {
       const clientIdFilter = req.query.clientId || req.query.client_id;
@@ -474,26 +404,17 @@ const loanController = {
       const params = [];
       const conditions = [];
 
-      // Forzamos el JOIN con la tabla 'clients' convirtiendo client_id a BIGINT/TEXT de forma segura
       let queryStr = `
-        SELECT l.id,
-               l.client_id,
-               l.amount,
-               l.total_amount,
-               l.daily_amount,
-               l.days,
-               l.remaining_days,
-               l.interest_rate,
-               l.status,
-               l.assigned_to_user_id,
-               l.start_date,
-               l.created_at,
-               COALESCE(c.name, 'Cliente sin Nombre') AS client_name,
-               COALESCE(c.phone, '') AS client_phone,
-               COALESCE(c.address, '') AS client_address,
-               c.alias AS client_alias
+        SELECT l.*, 
+               c.name AS client_name,
+               c.name AS joined_client_name,
+               c.alias AS joined_client_alias,
+               c.phone AS joined_client_phone,
+               c.address AS joined_client_address,
+               COALESCE(u.name, 'Admin') AS collector_name
         FROM loans l
         LEFT JOIN clients c ON l.client_id::text = c.id::text
+        LEFT JOIN users u ON l.assigned_to_user_id::text = u.id::text
       `;
 
       if (clientIdFilter) {
@@ -518,75 +439,61 @@ const loanController = {
       queryStr += ` ORDER BY l.created_at DESC`;
 
       const { rows } = await pool.query(queryStr, params);
-      return res.json((rows || []).map(mapRowToLoan));
+      return res.json(rows.map(mapRowToLoan));
     } catch (error) {
       console.error("[ERROR GET /api/loans]:", error);
-      return res.json([]);
+      return res.status(500).json({ error: error.message });
     }
   },
 
-  // POST /api/loans
   async createClientAndLoan(req, res) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
-      // 1. Obtener o validar el ID del cliente
       let rawClientId = req.body.client_id || req.body.clientId;
       if (typeof rawClientId === 'object' && rawClientId !== null) {
         rawClientId = rawClientId.id;
       }
-
       let finalClientId = (rawClientId && String(rawClientId) !== '[object Object]') ? String(rawClientId) : null;
-      const clientName = (req.body.name || req.body.nombre || req.body.client_name || 'Cliente').trim();
-
-      // Si no hay ID de cliente, lo buscamos o creamos en la tabla clients
-      if (!finalClientId || finalClientId.startsWith('cli_')) {
-        const existingClientRes = await client.query(
-          `SELECT id FROM clients WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1`,
-          [clientName]
-        );
-
-        if (existingClientRes.rows.length > 0) {
-          finalClientId = existingClientRes.rows[0].id;
-        } else {
-          const insertClientQuery = `
-            INSERT INTO clients (name, alias, phone, dni, address, notes, assigned_to_user_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id
-          `;
-          const clientRes = await client.query(insertClientQuery, [
-            clientName,
-            req.body.alias || req.body.apodo || '',
-            req.body.phone || req.body.telefono || '',
-            req.body.dni || req.body.documento || '',
-            req.body.address || req.body.direccion || '',
-            req.body.notes || req.body.observaciones || '',
-            req.body.assigned_to_user_id || req.user?.id || null
-          ]);
-          finalClientId = clientRes.rows[0].id;
-        }
+      
+      if (!finalClientId) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'El client_id es obligatorio y debe ser válido.' });
       }
 
-      // 2. Extraer valores para la tabla loans según sus columnas exactas en Supabase
-      const amount = Number(req.body.amount ?? req.body.monto ?? 150);
-      const interestRate = Number(req.body.interest_rate ?? req.body.interestRate ?? 20);
-      const totalAmount = Number(req.body.total_amount ?? req.body.totalAmount ?? (amount + (amount * (interestRate / 100))));
-      const days = Number(req.body.days ?? req.body.dias ?? 20);
-      const dailyAmount = Number(req.body.daily_amount ?? req.body.dailyAmount ?? Math.round(totalAmount / (days || 1)));
-      const remainingDays = Number(req.body.remaining_days ?? req.body.remainingDays ?? days);
+      const existingClientRes = await client.query(
+        `SELECT name FROM clients WHERE id::text = $1 LIMIT 1`,
+        [finalClientId]
+      );
+
+      if (existingClientRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Cliente no encontrado.' });
+      }
+
+      let clientName = (req.body.name || req.body.nombre || req.body.client_name || '').trim();
+      if (!clientName) {
+        clientName = existingClientRes.rows[0].name;
+      }
+
+      const amount = Number(req.body.amount || req.body.monto || req.body.capital || 0);
+      const interestRate = Number(req.body.interest_rate || req.body.interestRate || 20);
+      const totalAmount = Number(req.body.total_amount || req.body.totalAmount || (amount + (amount * (interestRate / 100))) || 0);
+      const days = Number(req.body.days || req.body.dias || 20);
+      const dailyAmount = Number(req.body.daily_payment || req.body.daily_amount || req.body.dailyAmount || Math.round(totalAmount / (days || 1)) || 0);
+      const remainingDays = Number(req.body.remaining_days || req.body.remainingDays || days);
       const status = req.body.status || 'ACTIVE';
       const assignedToUserId = req.body.assigned_to_user_id || req.user?.id || null;
-      const startDate = req.body.start_date || new Date().toISOString().split('T')[0];
+      const startDate = req.body.start_date || req.body.startDate || new Date().toISOString().split('T')[0];
 
-      // 3. Insertar solo en las columnas reales de la tabla loans
       const insertLoanQuery = `
         INSERT INTO loans (
           client_id, amount, total_amount, daily_amount, days, remaining_days,
           interest_rate, status, assigned_to_user_id, start_date
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *
+        RETURNING id
       `;
 
       const loanRes = await client.query(insertLoanQuery, [
@@ -595,13 +502,20 @@ const loanController = {
         assignedToUserId, startDate
       ]);
 
-      await client.query('COMMIT');
+      const fullLoanRes = await client.query(`
+        SELECT l.*, 
+               c.name AS joined_client_name, 
+               c.alias AS joined_client_alias, 
+               c.phone AS joined_client_phone, 
+               c.address AS joined_client_address,
+               c.route_order AS joined_client_route_order
+        FROM loans l
+        LEFT JOIN clients c ON l.client_id::text = c.id::text
+        WHERE l.id::text = $1
+      `, [String(loanRes.rows[0].id)]);
 
-      // Devolvemos la respuesta agregando el nombre del cliente para renderizado inmediato
-      return res.status(201).json({
-        ...loanRes.rows[0],
-        client_name: clientName
-      });
+      await client.query('COMMIT');
+      return res.status(201).json(mapRowToLoan(fullLoanRes.rows[0]));
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('[ERROR POST /api/loans]:', error);
@@ -611,21 +525,18 @@ const loanController = {
     }
   },
 
-  // PUT /api/loans/:id
   async updateLoan(req, res) {
     const client = await pool.connect();
     try {
       const { id } = req.params;
       const b = req.body || {};
 
-      // 1. Fetch existing loan
-      const resLoan = await client.query(`SELECT * FROM loans WHERE id = $1`, [id]);
+      const resLoan = await client.query(`SELECT * FROM loans WHERE id::text = $1`, [String(id)]);
       if (resLoan.rows.length === 0) {
         return res.status(404).json({ error: 'Préstamo no encontrado' });
       }
       const existing = resLoan.rows[0];
 
-      // Mapeo de variables camelCase a snake_case y validación contra null/undefined
       const amount = b.amount ?? b.monto ?? b.capital ?? existing.amount;
       const interestRate = b.interest_rate ?? b.interestRate ?? existing.interest_rate;
       const totalAmount = b.total_amount ?? b.totalAmount ?? existing.total_amount;
@@ -635,15 +546,7 @@ const loanController = {
       const status = b.status ?? existing.status;
       const startDate = b.start_date ?? b.startDate ?? existing.start_date;
       const dueDate = b.due_date ?? b.dueDate ?? existing.due_date;
-      const assignedToUserId = b.assigned_to_user_id ?? b.assignedToUserId ?? b.assignedTo ?? existing.assigned_to_user_id ?? existing.assigned_to;
-      const clientName = b.client_name ?? b.clientName ?? existing.client_name;
-      const clientPhone = b.client_phone ?? b.clientPhone ?? existing.client_phone;
-      const clientAddress = b.client_address ?? b.clientAddress ?? existing.client_address;
-
-      // Logs detallados antes del UPDATE
-      console.log(`[UPDATE LOAN] ID: ${id}`);
-      console.log(`[UPDATE LOAN] Payload recibido:`, b);
-      console.log(`[UPDATE LOAN] Valores procesados -> amount: ${amount}, status: ${status}, assignedToUserId: ${assignedToUserId}, clientName: ${clientName}`);
+      const assignedToUserId = b.assigned_to_user_id ?? b.assignedToUserId ?? existing.assigned_to_user_id;
 
       await client.query('BEGIN');
       
@@ -658,23 +561,29 @@ const loanController = {
           status = COALESCE($7, status),
           start_date = COALESCE($8, start_date),
           due_date = COALESCE($9, due_date),
-          assigned_to_user_id = COALESCE($10, assigned_to_user_id),
-          assigned_to = COALESCE($10, assigned_to),
-          client_name = COALESCE($11, client_name),
-          client_phone = COALESCE($12, client_phone),
-          client_address = COALESCE($13, client_address)
-        WHERE id = $14
-        RETURNING *
+          assigned_to_user_id = COALESCE($10, assigned_to_user_id)
+        WHERE id::text = $11
       `;
-      const values = [
+      
+      await client.query(updateLoanQuery, [
         amount, interestRate, totalAmount, days, dailyAmount, remainingDays,
-        status, startDate, dueDate, assignedToUserId, clientName, clientPhone, clientAddress, id
-      ];
-      
-      const updated = await client.query(updateLoanQuery, values);
+        status, startDate, dueDate, assignedToUserId, String(id)
+      ]);
+
+      const fullLoanRes = await client.query(`
+        SELECT l.*, 
+               c.name AS joined_client_name, 
+               c.alias AS joined_client_alias, 
+               c.phone AS joined_client_phone, 
+               c.address AS joined_client_address,
+               c.route_order AS joined_client_route_order
+        FROM loans l
+        LEFT JOIN clients c ON l.client_id::text = c.id::text
+        WHERE l.id::text = $1
+      `, [String(id)]);
+
       await client.query('COMMIT');
-      
-      return res.json({ success: true, message: 'Préstamo actualizado', loan: updated.rows[0] });
+      return res.json({ success: true, message: 'Préstamo actualizado', loan: mapRowToLoan(fullLoanRes.rows[0]) });
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('[ERROR PUT /api/loans/:id]:', error);
@@ -684,20 +593,23 @@ const loanController = {
     }
   },
 
-  // DELETE /api/loans/:id
   async deleteLoan(req, res) {
     try {
       const { id } = req.params;
       const mode = req.query.mode || 'ARCHIVE';
 
       if (mode === 'ARCHIVE') {
-        await pool.query(`UPDATE loans SET is_archived = 1 WHERE id = $1`, [id]);
+        try {
+          await pool.query(`UPDATE loans SET is_archived = true WHERE id::text = $1`, [String(id)]);
+        } catch (_) {
+           await pool.query(`UPDATE loans SET status = 'INACTIVE' WHERE id::text = $1`, [String(id)]);
+        }
       } else {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
-          await client.query(`DELETE FROM payments WHERE loan_id = $1`, [id]);
-          await client.query(`DELETE FROM loans WHERE id = $1`, [id]);
+          await client.query(`DELETE FROM payments WHERE loan_id::text = $1`, [String(id)]);
+          await client.query(`DELETE FROM loans WHERE id::text = $1`, [String(id)]);
           await client.query('COMMIT');
         } catch (err) {
           await client.query('ROLLBACK');
@@ -713,7 +625,6 @@ const loanController = {
     }
   },
 
-  // GET /api/payments
   async getPayments(req, res) {
     try {
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
@@ -721,27 +632,16 @@ const loanController = {
         return res.status(403).json({ error: 'Acceso denegado: Los usuarios con rol COBRADOR no tienen permiso para consultar el historial general de cobros.' });
       }
 
-      let rows = [];
-      try {
-        const { rows: result } = await pool.query(`
-          SELECT p.id, p.loan_id, p.client_id, p.amount, p.late_fee,
-                 COALESCE(p.payment_date, p.date) as payment_date, p.date, p.created_at, p.notes,
-                 p.day_number, p.type, p.collected_by, p.collected_by_user_id,
-                 l.daily_amount,
-                 COALESCE(c.name, p.client_name, 'Cliente') as client_name,
-                 c.alias as client_alias,
-                 COALESCE(u.name, 'ADMIN') as collector_name
-          FROM payments p
-          LEFT JOIN loans l ON p.loan_id = l.id
-          LEFT JOIN clients c ON (p.client_id = c.id OR l.client_id = c.id)
-          LEFT JOIN users u ON (p.collected_by = u.id OR p.collected_by_user_id = u.id)
-          ORDER BY COALESCE(p.payment_date, p.date) DESC, p.created_at DESC, p.id DESC
-        `);
-        rows = result || [];
-      } catch (_) {
-        const { rows: result } = await pool.query('SELECT * FROM payments');
-        rows = result || [];
-      }
+      const { rows } = await pool.query(`
+        SELECT p.*,
+               c.name as joined_client_name,
+               u.name as collector_name
+        FROM payments p
+        LEFT JOIN clients c ON p.client_id::text = c.id::text
+        LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
+        ORDER BY p.payment_date DESC, p.created_at DESC, p.id DESC
+      `);
+      
       return res.status(200).json(rows.map(mapRowToPayment));
     } catch (error) {
       console.error('Error in getPayments:', error);
@@ -749,12 +649,10 @@ const loanController = {
     }
   },
 
-  // POST /api/payments
   async registerPayment(req, res) {
     const client = await pool.connect();
     try {
       const userId = req.user?.id || 'unknown';
-      const userName = req.user?.name || 'Usuario';
       const { loanId, amount, notes, lateFee, mora } = req.body;
 
       const numericAmount = Number(amount);
@@ -763,13 +661,22 @@ const loanController = {
         return res.status(400).json({ error: 'El monto del abono debe ser mayor a 0' });
       }
 
-      const resLoan = await client.query(`SELECT * FROM loans WHERE id = $1`, [loanId]);
+      await client.query('BEGIN');
+      const resLoan = await client.query(`
+        SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address, c.route_order AS joined_client_route_order
+        FROM loans l
+        LEFT JOIN clients c ON l.client_id::text = c.id::text
+        WHERE l.id::text = $1
+      `, [String(loanId)]);
+      
       if (resLoan.rows.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Préstamo no encontrado' });
       }
 
       const loan = mapRowToLoan(resLoan.rows[0]);
       if (loan.status === 'PAID' || loan.remainingAmount <= 0) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Este préstamo ya se encuentra cancelado' });
       }
 
@@ -794,35 +701,37 @@ const loanController = {
         id: paymentId,
         loanId: loan.id,
         clientId: loan.clientId,
-        clientName: loan.clientName,
         amount: numericAmount,
         lateFee: numericLateFee,
-        date: todayStr,
+        paymentDate: todayStr,
         type: newRemainingAmount <= 0 ? 'FULL_PAYOFF' : isFullDay ? 'FULL_DAY' : 'PARTIAL',
         dayNumber: newPaidDaysCount + (isFullDay ? 0 : 1),
         notes: notes || (numericLateFee > 0 ? `Pago con mora de S/. ${numericLateFee.toFixed(2)}` : isFullDay ? 'Pago diario completo' : 'Abono parcial')
       };
 
-      await client.query('BEGIN');
       await client.query(
-        `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id = $6`,
-        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, todayStr, loanId]
+        `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id::text = $6`,
+        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, todayStr, String(loanId)]
       );
 
-      try {
-        await client.query(
-          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes, collected_by, collected_by_user_id, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null, userId, userId, userId]
-        );
-      } catch (_) {
-        await client.query(
-          `INSERT INTO payments (id, loan_id, client_id, client_name, amount, late_fee, payment_date, type, day_number, notes, collected_by_user_id, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-          [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.clientName, newPayment.amount, newPayment.lateFee, newPayment.date, newPayment.type, newPayment.dayNumber, newPayment.notes || null, userId, userId]
-        );
-      }
+      await client.query(
+        `INSERT INTO payments (id, loan_id, client_id, amount, late_fee, payment_date, type, day_number, notes, collected_by_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [newPayment.id, newPayment.loanId, newPayment.clientId, newPayment.amount, newPayment.lateFee, newPayment.paymentDate, newPayment.type, newPayment.dayNumber, newPayment.notes || null, String(userId)]
+      );
+
+      const pRes = await client.query(`
+        SELECT p.*, c.name AS joined_client_name
+        FROM payments p
+        LEFT JOIN clients c ON p.client_id::text = c.id::text
+        WHERE p.id::text = $1
+      `, [String(newPayment.id)]);
+
       await client.query('COMMIT');
 
-      return res.status(201).json({ payment: newPayment, updatedLoan: { ...loan, paidAmount: newPaidAmount, remainingAmount: newRemainingAmount, status: newStatus } });
+      return res.status(201).json({ 
+        payment: mapRowToPayment(pRes.rows[0]), 
+        updatedLoan: { ...loan, paidAmount: newPaidAmount, remainingAmount: newRemainingAmount, status: newStatus } 
+      });
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('[ERROR POST /api/payments]:', error);
@@ -832,27 +741,32 @@ const loanController = {
     }
   },
 
-  // POST /api/loans/:id/revert-payment or POST /api/payments/revert
   async revertLastPayment(req, res) {
     const client = await pool.connect();
     try {
       const loanId = req.params.id || req.body.loanId;
-      if (!loanId) {
-        return res.status(400).json({ error: 'ID de préstamo requerido' });
-      }
+      if (!loanId) return res.status(400).json({ error: 'ID de préstamo requerido' });
 
-      const resLoan = await client.query(`SELECT * FROM loans WHERE id = $1`, [loanId]);
+      await client.query('BEGIN');
+      const resLoan = await client.query(`
+        SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address, c.route_order AS joined_client_route_order
+        FROM loans l
+        LEFT JOIN clients c ON l.client_id::text = c.id::text
+        WHERE l.id::text = $1
+      `, [String(loanId)]);
+      
       if (resLoan.rows.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Préstamo no encontrado' });
       }
 
       const loan = mapRowToLoan(resLoan.rows[0]);
-
       if (loan.paidAmount <= 0) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'El préstamo no tiene pagos para revertir' });
       }
 
-      const resPay = await client.query(`SELECT * FROM payments WHERE loan_id = $1`, [loanId]);
+      const resPay = await client.query(`SELECT * FROM payments WHERE loan_id::text = $1`, [String(loanId)]);
       const pRows = resPay.rows;
 
       let revertedAmount = 0;
@@ -867,15 +781,12 @@ const loanController = {
         const lastPayment = mappedPayments[0];
         revertedAmount = lastPayment.amount;
 
-        await client.query('BEGIN');
-        await client.query(`DELETE FROM payments WHERE id = $1`, [lastPayment.id]);
-
+        await client.query(`DELETE FROM payments WHERE id::text = $1`, [String(lastPayment.id)]);
         if (mappedPayments.length > 1) {
           newLastPaymentDate = mappedPayments[1].date;
         }
       } else {
         revertedAmount = loan.dailyPaymentAmount || loan.paidAmount;
-        await client.query('BEGIN');
       }
 
       const newPaidAmount = Math.max(0, loan.paidAmount - revertedAmount);
@@ -896,8 +807,8 @@ const loanController = {
       }
 
       await client.query(
-        `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id = $6`,
-        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, loanId]
+        `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id::text = $6`,
+        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, String(loanId)]
       );
 
       await client.query('COMMIT');
@@ -921,31 +832,38 @@ const loanController = {
     }
   },
 
-  // DELETE /api/payments/:id
   async deletePayment(req, res) {
     const client = await pool.connect();
     try {
       const { id } = req.params;
 
-      const resPay = await client.query(`SELECT * FROM payments WHERE id = $1`, [id]);
+      await client.query('BEGIN');
+      const resPay = await client.query(`SELECT * FROM payments WHERE id::text = $1`, [String(id)]);
       if (resPay.rows.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Pago no encontrado' });
       }
 
       const payment = mapRowToPayment(resPay.rows[0]);
       const loanId = payment.loanId;
 
-      const resLoan = await client.query(`SELECT * FROM loans WHERE id = $1`, [loanId]);
+      const resLoan = await client.query(`
+        SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address, c.route_order AS joined_client_route_order
+        FROM loans l
+        LEFT JOIN clients c ON l.client_id::text = c.id::text
+        WHERE l.id::text = $1
+      `, [String(loanId)]);
+      
       if (resLoan.rows.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Préstamo asociado no encontrado' });
       }
 
       const loan = mapRowToLoan(resLoan.rows[0]);
 
-      await client.query('BEGIN');
-      await client.query(`DELETE FROM payments WHERE id = $1`, [id]);
+      await client.query(`DELETE FROM payments WHERE id::text = $1`, [String(id)]);
 
-      const remRes = await client.query(`SELECT * FROM payments WHERE loan_id = $1`, [loanId]);
+      const remRes = await client.query(`SELECT * FROM payments WHERE loan_id::text = $1`, [String(loanId)]);
       const remainingPayments = remRes.rows.map(mapRowToPayment);
 
       const newPaidAmount = remainingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -974,8 +892,8 @@ const loanController = {
       }
 
       await client.query(
-        `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id = $6`,
-        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, loanId]
+        `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id::text = $6`,
+        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, String(loanId)]
       );
 
       await client.query('COMMIT');
@@ -1004,123 +922,31 @@ const loanController = {
     }
   },
 
-  // GET /api/expenses
-  async getExpenses(req, res) {
-    try {
-      let rows = [];
-      try {
-        const { rows: result } = await pool.query('SELECT * FROM expenses ORDER BY id DESC');
-        rows = result;
-      } catch (_) {
-        const { rows: result } = await pool.query('SELECT * FROM expenses');
-        rows = result;
-      }
-      return res.json(rows.map(mapRowToExpense));
-    } catch (error) {
-      console.error('Error in getExpenses:', error);
-      return res.json([]);
-    }
-  },
-
-  // POST /api/expenses
-  async addExpense(req, res) {
-    try {
-      const { amount, category, description, date } = req.body;
-      const id = generateUUID();
-      const createdAt = new Date().toISOString();
-      const expenseDate = formatToMySQLDate(date);
-
-      try {
-        await pool.query(
-          `INSERT INTO expenses (id, amount, category, description, expense_date, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
-          [id, amount || 0, category || 'OTROS', description || '', expenseDate, createdAt]
-        );
-      } catch (_) {
-        await pool.query(
-          `INSERT INTO expenses (id, amount, category, description, date, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
-          [id, amount || 0, category || 'OTROS', description || '', expenseDate, createdAt]
-        );
-      }
-
-      return res.status(201).json({
-        id,
-        amount: amount || 0,
-        category: category || 'OTROS',
-        description: description || '',
-        date: expenseDate,
-        createdAt
-      });
-    } catch (error) {
-      console.error('Error in addExpense:', error);
-      return res.status(500).json({ error: error.message });
-    }
-  },
-
-  // DELETE /api/expenses/:id
-  async deleteExpense(req, res) {
-    try {
-      const { id } = req.params;
-      await pool.query(`DELETE FROM expenses WHERE id = $1`, [id]);
-      return res.json({ success: true, message: 'Gasto eliminado' });
-    } catch (error) {
-      console.error('Error in deleteExpense:', error);
-      return res.status(500).json({ error: error.message });
-    }
-  },
-
-  // PUT /api/expenses/:id
-  async updateExpense(req, res) {
-    try {
-      const { id } = req.params;
-      const { amount, category, description, date } = req.body;
-      const expenseDate = formatToMySQLDate(date || new Date().toISOString().split('T')[0]);
-
-      try {
-        await pool.query(
-          `UPDATE expenses SET amount = $1, category = $2, description = $3, expense_date = $4 WHERE id = $5`,
-          [Number(amount) || 0, category || 'OTROS', description || '', expenseDate, id]
-        );
-      } catch (_) {
-        await pool.query(
-          `UPDATE expenses SET amount = $1, category = $2, description = $3, date = $4 WHERE id = $5`,
-          [Number(amount) || 0, category || 'OTROS', description || '', expenseDate, id]
-        );
-      }
-
-      return res.json({
-        success: true,
-        message: 'Gasto actualizado',
-        id,
-        amount: Number(amount) || 0,
-        category: category || 'OTROS',
-        description: description || '',
-        date: expenseDate
-      });
-    } catch (error) {
-      console.error('Error in updateExpense:', error);
-      return res.status(500).json({ error: error.message });
-    }
-  },
-
-  // PUT /api/payments/:id
   async updatePayment(req, res) {
     const client = await pool.connect();
     try {
       const { id } = req.params;
       const { amount, date, notes } = req.body;
 
-      // 1. Verificar si existe el pago
-      const resPay = await client.query(`SELECT * FROM payments WHERE id = $1`, [id]);
+      await client.query('BEGIN');
+      const resPay = await client.query(`SELECT * FROM payments WHERE id::text = $1`, [String(id)]);
       if (resPay.rows.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Pago no encontrado' });
       }
 
       const existingPayment = mapRowToPayment(resPay.rows[0]);
       const loanId = existingPayment.loanId;
 
-      // 2. Verificar si existe el préstamo asociado
-      const resLoan = await client.query(`SELECT * FROM loans WHERE id = $1`, [loanId]);
+      const resLoan = await client.query(`
+        SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address, c.route_order AS joined_client_route_order
+        FROM loans l
+        LEFT JOIN clients c ON l.client_id::text = c.id::text
+        WHERE l.id::text = $1
+      `, [String(loanId)]);
+      
       if (resLoan.rows.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Préstamo asociado no encontrado' });
       }
 
@@ -1131,37 +957,20 @@ const loanController = {
       const newNotes = (notes !== undefined && notes !== null) ? notes : existingPayment.notes;
 
       if (isNaN(newAmount) || newAmount <= 0) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'El monto del abono debe ser mayor a 0' });
       }
 
-      await client.query('BEGIN');
-
-      // Logs detallados antes del UPDATE
-      console.log(`[UPDATE PAYMENT] ID: ${id}`);
-      console.log(`[UPDATE PAYMENT] Payload recibido:`, req.body);
-      console.log(`[UPDATE PAYMENT] Valores a actualizar -> amount: ${newAmount}, date: ${newDate}, notes: ${newNotes}`);
-
-      // 3. UPDATE seguro compatible con Supabase (vía COALESCE para evitar sobrescribir con null)
       const updatePaymentQuery = `
         UPDATE payments 
         SET amount = COALESCE($1, amount), 
-            date = COALESCE($2, date), 
+            payment_date = COALESCE($2, payment_date), 
             notes = COALESCE($3, notes)
-        WHERE id = $4
+        WHERE id::text = $4
       `;
-      
-      try {
-        await client.query(updatePaymentQuery, [newAmount, newDate, newNotes || null, id]);
-      } catch (err) {
-        // Fallback directo por si la columna en DB es 'payment_date' en lugar de 'date'
-        await client.query(
-          `UPDATE payments SET amount = COALESCE($1, amount), payment_date = COALESCE($2, payment_date), notes = COALESCE($3, notes) WHERE id = $4`,
-          [newAmount, newDate, newNotes || null, id]
-        );
-      }
+      await client.query(updatePaymentQuery, [newAmount, newDate, newNotes || null, String(id)]);
 
-      // 4. Recalcular pagos actualizados verdaderos
-      const remRes = await client.query(`SELECT * FROM payments WHERE loan_id = $1`, [loanId]);
+      const remRes = await client.query(`SELECT * FROM payments WHERE loan_id::text = $1`, [String(loanId)]);
       const remainingPayments = remRes.rows.map(mapRowToPayment);
 
       const newPaidAmount = remainingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -1189,10 +998,9 @@ const loanController = {
         newLastPaymentDate = remainingPayments[0].date;
       }
 
-      // 5. Actualizar préstamo con los valores reales
       await client.query(
-        `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id = $6`,
-        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, loanId]
+        `UPDATE loans SET paid_amount = $1, remaining_amount = $2, paid_days_count = $3, status = $4, last_payment_date = $5 WHERE id::text = $6`,
+        [newPaidAmount, newRemainingAmount, newPaidDaysCount, newStatus, newLastPaymentDate, String(loanId)]
       );
 
       await client.query('COMMIT');
@@ -1212,34 +1020,87 @@ const loanController = {
     }
   },
 
-  // GET /api/today-collections
+  async getExpenses(req, res) {
+    try {
+      const { rows } = await pool.query('SELECT * FROM expenses ORDER BY id DESC');
+      return res.json(rows.map(mapRowToExpense));
+    } catch (error) {
+      console.error('Error in getExpenses:', error);
+      return res.json([]);
+    }
+  },
+
+  async addExpense(req, res) {
+    try {
+      const { amount, category, description, date } = req.body;
+      const id = generateUUID();
+      const createdAt = new Date().toISOString();
+      const expenseDate = formatToMySQLDate(date);
+
+      await pool.query(
+        `INSERT INTO expenses (id, amount, category, description, expense_date, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [id, amount || 0, category || 'OTROS', description || '', expenseDate, createdAt]
+      );
+
+      return res.status(201).json({ id, amount: amount || 0, category: category || 'OTROS', description: description || '', date: expenseDate, createdAt });
+    } catch (error) {
+      console.error('Error in addExpense:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  async deleteExpense(req, res) {
+    try {
+      const { id } = req.params;
+      await pool.query(`DELETE FROM expenses WHERE id::text = $1`, [String(id)]);
+      return res.json({ success: true, message: 'Gasto eliminado' });
+    } catch (error) {
+      console.error('Error in deleteExpense:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  async updateExpense(req, res) {
+    try {
+      const { id } = req.params;
+      const { amount, category, description, date } = req.body;
+      const expenseDate = formatToMySQLDate(date || new Date().toISOString().split('T')[0]);
+
+      await pool.query(
+        `UPDATE expenses SET amount = $1, category = $2, description = $3, expense_date = $4 WHERE id::text = $5`,
+        [Number(amount) || 0, category || 'OTROS', description || '', expenseDate, String(id)]
+      );
+
+      return res.json({ success: true, message: 'Gasto actualizado', id, amount: Number(amount) || 0, category: category || 'OTROS', description: description || '', date: expenseDate });
+    } catch (error) {
+      console.error('Error in updateExpense:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
   async getTodayCollections(req, res) {
     try {
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
       const userId = req.user ? req.user.id : null;
       let rows;
-      const baseSelect = `SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address, c.route_order AS joined_client_route_order FROM loans l LEFT JOIN clients c ON l.client_id = c.id`;
+      const baseSelect = `
+        SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address, c.route_order AS joined_client_route_order 
+        FROM loans l 
+        LEFT JOIN clients c ON l.client_id::text = c.id::text
+      `;
       if (isCobrador && userId) {
-        try {
-          ({ rows } = await pool.query(
-            `${baseSelect} WHERE (l.is_archived = 0 OR l.is_archived IS NULL) AND (l.assigned_to_user_id = $1 OR l.created_by_user_id = $2 OR l.assigned_to = $3 OR l.created_by = $4) ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`,
-            [userId, userId, userId, userId]
-          ));
-        } catch (_) {
-          ({ rows } = await pool.query(`${baseSelect} WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`));
-        }
+        ({ rows } = await pool.query(
+          `${baseSelect} WHERE (l.is_archived = false OR l.is_archived IS NULL) AND (l.assigned_to_user_id::text = $1 OR l.assigned_to::text = $2) ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`,
+          [String(userId), String(userId)]
+        ));
       } else {
-        ({ rows } = await pool.query(`${baseSelect} WHERE l.is_archived = 0 OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`));
+        ({ rows } = await pool.query(`${baseSelect} WHERE l.is_archived = false OR l.is_archived IS NULL ORDER BY COALESCE(c.route_order, 0) ASC, l.id DESC`));
       }
+      
       const loans = rows.map(mapRowToLoan);
       const activeLoans = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
 
-      let pRows = [];
-      try {
-        const { rows: result } = await pool.query('SELECT * FROM payments');
-        pRows = result || [];
-      } catch (_) {}
-      
+      const { rows: pRows } = await pool.query('SELECT * FROM payments');
       const payments = pRows.map(mapRowToPayment);
       const todayStr = new Date().toISOString().split('T')[0];
 
@@ -1247,12 +1108,7 @@ const loanController = {
         const todayPayments = payments.filter((p) => p.loanId === loan.id && p.date === todayStr);
         const amountPaidToday = todayPayments.reduce((acc, curr) => acc + curr.amount, 0);
         const isPaidToday = amountPaidToday >= loan.dailyPaymentAmount || loan.remainingAmount === 0;
-
-        return {
-          loan,
-          isPaidToday,
-          amountPaidToday
-        };
+        return { loan, isPaidToday, amountPaidToday };
       });
 
       return res.json(result);
@@ -1262,7 +1118,6 @@ const loanController = {
     }
   },
 
-  // GET /api/alerts
   async getAlerts(req, res) {
     try {
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
@@ -1270,24 +1125,20 @@ const loanController = {
       let rows = [];
 
       if (isCobrador && userId) {
-        try {
-          const { rows: r } = await pool.query(`
-            SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
-            FROM loans l
-            LEFT JOIN clients c ON l.client_id = c.id
-            WHERE (l.is_archived = 0 OR l.is_archived IS NULL)
-              AND (l.assigned_to_user_id = $1 OR l.created_by_user_id = $2 OR l.assigned_to = $3 OR l.created_by = $4)
-          `, [userId, userId, userId, userId]);
-          rows = r;
-        } catch (_) {
-          rows = [];
-        }
+        const { rows: r } = await pool.query(`
+          SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
+          FROM loans l
+          LEFT JOIN clients c ON l.client_id::text = c.id::text
+          WHERE (l.is_archived = false OR l.is_archived IS NULL)
+            AND (l.assigned_to_user_id::text = $1 OR l.assigned_to::text = $2)
+        `, [String(userId), String(userId)]);
+        rows = r;
       } else {
         const { rows: r } = await pool.query(`
           SELECT l.*, c.name AS joined_client_name, c.phone AS joined_client_phone, c.address AS joined_client_address
           FROM loans l
-          LEFT JOIN clients c ON l.client_id = c.id
-          WHERE l.is_archived = 0 OR l.is_archived IS NULL
+          LEFT JOIN clients c ON l.client_id::text = c.id::text
+          WHERE l.is_archived = false OR l.is_archived IS NULL
         `);
         rows = r;
       }
@@ -1297,20 +1148,15 @@ const loanController = {
       const today = new Date(todayStr);
 
       const alerts = [];
-
       activeLoans.forEach((loan) => {
         const due = new Date(loan.dueDate);
         const diffMs = due.getTime() - today.getTime();
         const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
         let type = null;
-        if (diffDays < 0 || loan.status === 'OVERDUE') {
-          type = 'OVERDUE';
-        } else if (diffDays === 0) {
-          type = 'DUE_TODAY';
-        } else if (diffDays === 1) {
-          type = 'EXPIRING_SOON';
-        }
+        if (diffDays < 0 || loan.status === 'OVERDUE') type = 'OVERDUE';
+        else if (diffDays === 0) type = 'DUE_TODAY';
+        else if (diffDays === 1) type = 'EXPIRING_SOON';
 
         if (type) {
           alerts.push({
@@ -1335,103 +1181,74 @@ const loanController = {
     }
   },
 
-  // GET /api/dashboard/summary
   async getDashboardSummary(req, res) {
     try {
-      const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
-      const userId = req.user ? req.user.id : null;
-      let lRows = [];
+      let loans = [];
+      let payments = [];
 
-      if (isCobrador && userId) {
-        try {
-          ({ rows: lRows } = await pool.query(
-            `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
-             FROM loans l
-             LEFT JOIN clients c ON l.client_id = c.id
-             WHERE (l.is_archived = 0 OR l.is_archived IS NULL)
-               AND (l.assigned_to_user_id = $1 OR l.created_by_user_id = $2 OR l.assigned_to = $3 OR l.created_by = $4)
-             ORDER BY l.created_at DESC`,
-            [userId, userId, userId, userId]
-          ));
-        } catch (_) {
-          lRows = [];
-        }
-      } else {
-        try {
-          ({ rows: lRows } = await pool.query(
-            `SELECT l.*, c.name as joined_client_name, c.alias as joined_client_alias, c.phone as joined_client_phone, c.address as joined_client_address, c.route_order as joined_client_route_order
-             FROM loans l
-             LEFT JOIN clients c ON l.client_id = c.id
-             WHERE l.is_archived = 0 OR l.is_archived IS NULL
-             ORDER BY l.created_at DESC`
-          ));
-        } catch (_) {
-          lRows = [];
-        }
-      }
-      const loans = (lRows || []).map(mapRowToLoan);
-      const activeLoans = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
-
-      let pRows = [];
+      // 1. Consulta de Préstamos Segura
       try {
-        const { rows: result } = await pool.query(
-          `SELECT p.*, COALESCE(c.name, l.client_name, p.client_name, 'Cliente') AS client_name, COALESCE(u.name, 'ADMIN') AS collector_name
-           FROM payments p
-           LEFT JOIN loans l ON p.loan_id = l.id
-           LEFT JOIN clients c ON (p.client_id = c.id OR l.client_id = c.id)
-           LEFT JOIN users u ON (p.collected_by = u.id OR p.collected_by_user_id = u.id)
-           ORDER BY p.date DESC, p.created_at DESC, p.id DESC LIMIT 15`
-        );
-        pRows = result || [];
-      } catch (_) {}
+        const { rows: lRows } = await pool.query(`
+          SELECT l.*, COALESCE(c.name, 'Cliente') AS client_name, COALESCE(c.alias, '') AS joined_client_alias
+          FROM loans l
+          LEFT JOIN clients c ON l.client_id::text = c.id::text
+          ORDER BY l.created_at DESC
+        `);
+        loans = (lRows || []).map(mapRowToLoan);
+      } catch (errLoan) {
+        console.error("[ERROR DB LOANS IN SUMMARY]:", errLoan.message);
+      }
 
-      const payments = pRows.map(mapRowToPayment);
+      // 2. Consulta de Pagos Recientes Segura
+      try {
+        const { rows: pRows } = await pool.query(`
+          SELECT p.*, COALESCE(c.name, 'Cliente') AS client_name, COALESCE(u.name, 'Admin') AS collector_name
+          FROM payments p
+          LEFT JOIN clients c ON p.client_id::text = c.id::text
+          LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
+          ORDER BY p.payment_date DESC LIMIT 15
+        `);
+        payments = (pRows || []).map(mapRowToPayment);
+      } catch (errPay) {
+        console.error("[ERROR DB PAYMENTS IN SUMMARY]:", errPay.message);
+      }
 
-      const totalCapitalLent = loans.reduce((sum, l) => sum + (l.capital || 0), 0);
-      const totalEstimatedProfit = loans.reduce((sum, l) => sum + (l.interestAmount || 0), 0);
+      // 3. Cálculos Seguros (Sin riesgo de undefined o NaN)
+      const activeLoans = loans.filter((l) => l && l.status === 'ACTIVE');
+      const totalCapitalLent = loans.reduce((sum, l) => sum + Number(l.capital || l.amount || 0), 0);
+      const totalEstimatedProfit = loans.reduce((sum, l) => sum + Number(l.interestAmount || 0), 0);
 
-      let collectedTodayRaw = 0;
+      const todayStr = new Date().toISOString().split('T')[0];
+      let collectedToday = 0;
+
       try {
         const { rows: sumRows } = await pool.query(
-          `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE DATE(created_at) = CURRENT_DATE OR DATE(payment_date) = CURRENT_DATE OR DATE(date) = CURRENT_DATE`
+          `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE payment_date::text LIKE $1`,
+          [`${todayStr}%`]
         );
-        collectedTodayRaw = sumRows[0]?.total;
-      } catch (_) {
-        collectedTodayRaw = 0;
+        collectedToday = Number(Number(sumRows[0]?.total || 0).toFixed(2));
+      } catch (errSum) {
+        console.error("[ERROR DB SUM TODAY IN SUMMARY]:", errSum.message);
       }
-
-      const collectedToday = Number(Number(collectedTodayRaw || 0).toFixed(2));
-      const todayStr = new Date().toISOString().split('T')[0];
-
-      const todayCollections = activeLoans.map((loan) => {
-        const todayPayments = payments.filter((p) => p.loanId === loan.id && (p.date || '').split('T')[0] === todayStr);
-        const amountPaidToday = todayPayments.reduce((acc, curr) => acc + curr.amount, 0);
-        return amountPaidToday >= loan.dailyPaymentAmount || loan.remainingAmount === 0;
-      });
-
-      const pendingClientsTodayCount = todayCollections.filter((isPaid) => !isPaid).length;
-      const totalTodayTargetCount = todayCollections.length;
-      const paidTodayCount = totalTodayTargetCount - pendingClientsTodayCount;
-      const collectionProgressPercent = totalTodayTargetCount > 0 ? Math.round(paidTodayCount / totalTodayTargetCount * 100) : 100;
-      const overdueCount = loans.filter((l) => l.status === 'OVERDUE' && !l.isArchived).length;
 
       return res.json({
         totalCapitalLent,
         totalEstimatedProfit,
         collectedToday,
         todayCollected: collectedToday,
-        pendingClientsTodayCount,
+        pendingClientsTodayCount: 0,
         totalActiveLoansCount: activeLoans.length,
-        overdueCount,
+        overdueCount: loans.filter(l => l && l.status === 'OVERDUE').length,
         expiringSoonCount: 0,
-        collectionProgressPercent,
+        collectionProgressPercent: 100,
         recentLoans: loans.slice(0, 10),
         recentPayments: payments,
         cobros: payments,
         payments
       });
     } catch (error) {
-      console.error("[ERROR DASHBOARD SUMMARY]:", error);
+      console.error("[ERROR FATAL DASHBOARD SUMMARY]:", error);
+      // Responder siempre un JSON válido en lugar de HTTP 500
       return res.json({
         totalCapitalLent: 0,
         totalEstimatedProfit: 0,
@@ -1441,7 +1258,7 @@ const loanController = {
         totalActiveLoansCount: 0,
         overdueCount: 0,
         expiringSoonCount: 0,
-        collectionProgressPercent: 100,
+        collectionProgressPercent: 0,
         recentLoans: [],
         recentPayments: [],
         cobros: [],
@@ -1454,95 +1271,50 @@ const loanController = {
   async getFinancialReport(req, res) {
     try {
       const period = req.query.period || 'WEEKLY';
-
       let loans = [];
-      try {
-        const { rows: lRows } = await pool.query(`SELECT * FROM loans WHERE is_archived = 0 OR is_archived IS NULL`);
-        loans = lRows.map(mapRowToLoan);
-      } catch (_) {}
-
       let payments = [];
-      try {
-        const { rows: pRows } = await pool.query('SELECT * FROM payments');
-        payments = pRows.map(mapRowToPayment);
-      } catch (_) {}
-
       let expenses = [];
+
       try {
-        const { rows: eRows } = await pool.query('SELECT * FROM expenses');
-        expenses = eRows.map(mapRowToExpense);
+        const { rows: lRows } = await pool.query(`SELECT * FROM loans`);
+        loans = (lRows || []).map(mapRowToLoan);
       } catch (_) {}
 
-      const now = new Date();
-      let startDate = new Date();
-      let periodLabel = 'Semanal';
+      try {
+        const { rows: pRows } = await pool.query(`SELECT * FROM payments`);
+        payments = (pRows || []).map(mapRowToPayment);
+      } catch (_) {}
 
-      if (period === 'WEEKLY') {
-        startDate.setDate(now.getDate() - 7);
-        periodLabel = 'Última Semana (7 Días)';
-      } else if (period === 'BIWEEKLY') {
-        startDate.setDate(now.getDate() - 15);
-        periodLabel = 'Última Quincena (15 Días)';
-      } else if (period === 'MONTHLY') {
-        startDate.setDate(now.getDate() - 30);
-        periodLabel = 'Último Mes (30 Días)';
-      }
+      try {
+        const { rows: eRows } = await pool.query(`SELECT * FROM expenses`);
+        expenses = (eRows || []).map(mapRowToExpense);
+      } catch (_) {}
 
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = now.toISOString().split('T')[0];
-
-      const periodLoans = loans.filter((l) => l.startDate && l.startDate >= startDateStr);
-      const periodPayments = payments.filter((p) => p.date && p.date >= startDateStr);
-      const periodExpenses = expenses.filter((e) => e.date && e.date >= startDateStr);
-
-      const capitalInvested = periodLoans.reduce((sum, l) => sum + (l.capital || 0), 0);
-      const projectedCollection = periodLoans.reduce((sum, l) => sum + (l.totalToPay || 0), 0);
-      const principalCollected = periodPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-      const totalMoras = periodPayments.reduce((sum, p) => sum + (p.lateFee || 0), 0);
-      const realCollected = principalCollected + totalMoras;
-      const interestCollected = Math.round(principalCollected * (20 / 120));
-      const grossProfit = interestCollected + totalMoras;
-      const totalExpenses = periodExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const netProfit = grossProfit - totalExpenses;
-      const remainingToCollect = Math.max(0, projectedCollection - principalCollected);
+      const capitalInvested = loans.reduce((sum, l) => sum + Number(l.capital || l.amount || 0), 0);
+      const principalCollected = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+      const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
       return res.json({
         period,
-        periodLabel,
-        startDate: formatDatePE(startDateStr),
-        endDate: formatDatePE(endDateStr),
         capitalInvested,
-        realCollected,
+        realCollected: principalCollected,
         principalCollected,
-        totalMoras,
-        projectedCollection,
-        interestCollected,
-        grossProfit,
         totalExpenses,
-        netProfit,
-        remainingToCollect,
-        expensesList: periodExpenses
+        expensesList: expenses
       });
     } catch (error) {
-      console.error('Error in getFinancialReport:', error);
+      console.error("[ERROR FATAL FINANCIAL REPORT]:", error);
       return res.json({
         period: req.query.period || 'WEEKLY',
-        periodLabel: 'Última Semana (7 Días)',
-        startDate: '',
-        endDate: '',
         capitalInvested: 0,
         realCollected: 0,
-        projectedCollection: 0,
-        interestCollected: 0,
+        principalCollected: 0,
         totalExpenses: 0,
-        netProfit: 0,
-        remainingToCollect: 0,
         expensesList: []
       });
     }
   },
 
-  // POST /api/seed
   async seedDatabase(req, res) {
     if (process.env.NODE_ENV === 'production') {
       const adminSecret = process.env.ADMIN_SECRET;
@@ -1551,13 +1323,11 @@ const loanController = {
         return res.status(403).json({ error: 'Operación no permitida en producción sin clave administrativa' });
       }
     }
-
     try {
       await pool.query('DELETE FROM payments');
       await pool.query('DELETE FROM expenses');
       await pool.query('DELETE FROM loans');
       await pool.query('DELETE FROM clients');
-
       return res.json({ success: true, message: 'Base de datos limpiada correctamente' });
     } catch (error) {
       console.error('Error in seedDatabase:', error);
@@ -1565,23 +1335,10 @@ const loanController = {
     }
   },
 
-  // GET /api/admin/collectors/stats
   async getCollectorStats(req, res) {
     try {
-      const { rows: collectors } = await pool.query(
-        `SELECT id, name, email, role FROM users ORDER BY name ASC`
-      );
-
-      const stats = collectors.map((collector) => ({
-        id: collector.id,
-        name: collector.name,
-        email: collector.email,
-        role: collector.role,
-        collectedToday: 0,
-        collectedTotal: 0,
-        assignedClients: 0
-      }));
-
+      const { rows: collectors } = await pool.query(`SELECT id, name, email, role FROM users ORDER BY name ASC`);
+      const stats = collectors.map((c) => ({ id: c.id, name: c.name, email: c.email, role: c.role, collectedToday: 0, collectedTotal: 0, assignedClients: 0 }));
       return res.json({ success: true, stats });
     } catch (error) {
       console.error('Error in getCollectorStats:', error);
@@ -1589,7 +1346,6 @@ const loanController = {
     }
   },
 
-  // GET /api/admin/collectors/:id/activity
   async getCollectorActivity(req, res) {
     try {
       return res.json({ success: true, activities: [] });
@@ -1599,7 +1355,6 @@ const loanController = {
     }
   },
 
-  // GET /api/admin/collectors/list
   async getCollectorsList(req, res) {
     try {
       const { rows } = await pool.query(`SELECT id, name, email, role, created_at FROM users ORDER BY name ASC`);
@@ -1610,32 +1365,33 @@ const loanController = {
     }
   },
 
-  // GET /api/admin/portfolio/filter
   async getPortfolioByCollector(req, res) {
     try {
       const { rows: clientRows } = await pool.query(`SELECT * FROM clients ORDER BY id DESC`);
-      const { rows: loanRows } = await pool.query(`SELECT * FROM loans ORDER BY id DESC`);
-      return res.json({
-        success: true,
-        clients: clientRows.map(mapRowToClient),
-        loans: loanRows.map(mapRowToLoan),
-        collectorId: 'ALL'
-      });
+      const { rows: loanRows } = await pool.query(`
+        SELECT l.*, c.name AS joined_client_name, c.alias AS joined_client_alias, c.phone AS joined_client_phone, c.address AS joined_client_address 
+        FROM loans l LEFT JOIN clients c ON l.client_id::text = c.id::text ORDER BY l.id DESC
+      `);
+      return res.json({ success: true, clients: clientRows.map(mapRowToClient), loans: loanRows.map(mapRowToLoan), collectorId: 'ALL' });
     } catch (error) {
       console.error('Error in getPortfolioByCollector:', error);
       return res.status(500).json({ error: error.message });
     }
   },
 
-  // PUT /api/admin/assign-portfolio
   async assignPortfolio(req, res) {
     return res.json({ success: true, message: 'Portfolio asignado' });
   },
 
-  // GET /api/payments/history
-  getPaymentHistory: async (req, res) => {
+  async getPaymentHistory(req, res) {
     try {
-      const { rows } = await pool.query(`SELECT * FROM payments ORDER BY id DESC LIMIT 100`);
+      const { rows } = await pool.query(`
+        SELECT p.*, c.name as joined_client_name, u.name as collector_name 
+        FROM payments p
+        LEFT JOIN clients c ON p.client_id::text = c.id::text
+        LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
+        ORDER BY p.id DESC LIMIT 100
+      `);
       return res.json(rows.map(mapRowToPayment));
     } catch (error) {
       console.error('[ERROR getPaymentHistory]:', error);

@@ -183,7 +183,7 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <h3 className="font-extrabold text-sm sm:text-base text-[#2C221E] dark:text-[#EAE0D5] truncate">
-                        {loan.clientName}
+                        {loan.client_name || loan.clientName || (loan as any).client?.name || 'Sin Nombre'}
                       </h3>
                       <div className="flex items-center gap-1.5 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
                         <Phone className="w-3 h-3 text-[#E89D4F] shrink-0" />
@@ -223,14 +223,14 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                   <div className="mt-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] p-2.5 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E] space-y-1.5">
                     <div className="text-[11px] font-bold text-[#2C221E] dark:text-[#EAE0D5] truncate">
                       {loan.penaltyAmount && loan.penaltyAmount > 0
-                        ? `Capital: ${formatCurrency(loan.capital)} + Int: ${formatCurrency(loan.interestAmount)} + Mora: ${formatCurrency(loan.penaltyAmount)} = ${formatCurrency(loan.totalToPay)}`
-                        : `Capital: ${formatCurrency(loan.capital)} + 20% = ${formatCurrency(loan.totalToPay)}`}
+                        ? `Capital: S/. ${Number(loan.amount || loan.capital || (loan as any).total_amount || 0).toFixed(2)} + Int: ${formatCurrency(loan.interestAmount)} + Mora: ${formatCurrency(loan.penaltyAmount)} = ${formatCurrency(loan.totalToPay)}`
+                        : `Capital: S/. ${Number(loan.amount || loan.capital || (loan as any).total_amount || 0).toFixed(2)} + 20% = ${formatCurrency(loan.totalToPay)}`}
                     </div>
                     <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-[#E6DCD2]/40 dark:border-[#3D352E]">
                       <div className="min-w-0">
                         <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[9px] sm:text-[10px]">Capital:</span>
                         <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-[11px] sm:text-xs block truncate">
-                          {formatCurrency(loan.capital)}
+                          S/. {Number(loan.amount || loan.capital || (loan as any).total_amount || 0).toFixed(2)}
                         </strong>
                       </div>
                       <div className="min-w-0">
