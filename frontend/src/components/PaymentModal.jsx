@@ -25,12 +25,22 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!amount || amount <= 0) return;
+    if (!loan?.id || !amount || Number(amount) <= 0) return;
+    if (Number(amount) > Number(loan.remainingAmount ?? loan.remaining_amount ?? 0)) {
+      alert('El monto supera el saldo restante. Máximo a cobrar: ' + formatCurrency(loan.remainingAmount ?? loan.remaining_amount ?? 0) + '.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const result = await onConfirmPayment(loan.id, Number(amount), notes, Number(lateFee) || 0);
-      setSuccessData(result);
+      const payment = result?.payment || result;
+      const updatedLoan = result?.updatedLoan || result?.loan;
+      if (!payment?.amount || !updatedLoan?.id) {
+        throw new Error('La respuesta del pago no contiene payment y updatedLoan');
+      }
+      setSuccessData({ payment, updatedLoan });
+      onClose();
     } catch (err) {
       console.error('Error registrando pago:', err);
     } finally {
@@ -157,7 +167,8 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
                 type="number"
                 required
                 min="0.01"
-                step="any"
+                step="0.01"
+                max={Number(loan.remainingAmount ?? loan.remaining_amount ?? 0)}
                 value={amount || ''}
                 onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-sm font-extrabold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"

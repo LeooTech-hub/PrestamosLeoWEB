@@ -10,7 +10,11 @@ export const verifyToken = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const secret = process.env.JWT_SECRET || 'prestamos_leo_jwt_secret_key_2026_super_secure';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      console.error('JWT_SECRET no está configurado');
+      return res.status(500).json({ error: 'Configuración de autenticación incompleta' });
+    }
     const decoded = jwt.verify(token, secret);
     req.user = decoded;
     next();
@@ -25,24 +29,13 @@ export const requireAdmin = async (req, res, next) => {
     return res.status(403).json({ message: 'Acceso restringido a administradores' });
   }
 
-  // Comparación insensible a mayúsculas del rol en el token
-  const roleFromToken = String(req.user.role || '').toUpperCase();
-
-  if (roleFromToken === 'ADMIN') {
-    return next();
-  }
-
-  // Fallback: si el token no trae rol ADMIN (token antiguo o rol actualizado en BD),
-  // consultar el rol real del usuario directamente en la base de datos
   try {
     const pool = (await import('../config/db.js')).default;
-    const [rows] = await pool.query('SELECT role FROM users WHERE id = ?', [req.user.id]);
-
-    if (rows && rows.length > 0 && String(rows[0].role || '').toUpperCase() === 'ADMIN') {
-      return next();
-    }
+    const { rows } = await pool.query('SELECT role FROM users WHERE id::text = $1', [String(req.user.id)]);
+    if (rows.length > 0 && String(rows[0].role || '').toUpperCase() === 'ADMIN') { return next(); }
   } catch (dbError) {
     console.error('Error consultando rol de usuario en DB:', dbError.message);
+    return res.status(500).json({ message: 'No se pudo verificar la autorización' });
   }
 
   return res.status(403).json({ message: 'Acceso restringido a administradores' });

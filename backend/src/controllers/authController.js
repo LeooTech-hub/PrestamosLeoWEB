@@ -43,7 +43,11 @@ export const authController = {
         return res.status(401).json({ message: 'Correo o contraseña incorrectos', error: 'Correo o contraseña incorrectos' });
       }
 
-      const secret = process.env.JWT_SECRET || 'prestamos_leo_jwt_secret_key_2026_super_secure';
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        console.error('JWT_SECRET no está configurado');
+        return res.status(500).json({ error: 'Configuración de autenticación incompleta' });
+      }
       const token = jwt.sign(
         { id: user.id, email: user.email, name: user.name, role: user.role || 'COBRADOR' },
         secret,

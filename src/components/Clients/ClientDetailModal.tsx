@@ -150,30 +150,34 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
 
             {/* Active Loan Details Summary Block */}
             {(() => {
-              const activeLoansList = loans.filter((l) => l.status !== 'PAID' && !l.isArchived);
-              const activeLoan = activeLoansList[0] || (client as any).active_loan || (client as any).activeLoan;
-
-              const activeAmount = Number(
-                activeLoan?.capital ?? activeLoan?.amount ?? (activeLoan as any)?.monto ?? client.capital ?? client.amount ?? (client as any).monto ?? 0
+              const activeLoansList = loans.filter((l) => (l.status === 'ACTIVE' || l.status === 'OVERDUE') && !l.isArchived);
+              const activeLoan = [...activeLoansList].sort((a, b) =>
+                String(a.dueDate || a.due_date || '').localeCompare(String(b.dueDate || b.due_date || ''))
+              )[0];
+              const activeAmount = activeLoansList.reduce(
+                (sum, loan) => sum + Number(loan.capital ?? loan.amount ?? (loan as any).monto ?? 0),
+                0
               );
-              const activeInterestRate = Number(
-                activeLoan?.interestRate ?? activeLoan?.interest_rate ?? (activeLoan as any)?.interes ?? 20
+              const activeRemaining = activeLoansList.reduce(
+                (sum, loan) => sum + Number(loan.remainingAmount ?? loan.remaining_amount ?? 0),
+                0
               );
-              const activeDueDate = activeLoan ? getDueDateFormattedSpanish(activeLoan) : getDueDateFormattedSpanish(client);
+              const hasOverdueLoan = activeLoansList.some((loan) => loan.status === 'OVERDUE');
+              const activeDueDate = activeLoan ? getDueDateFormattedSpanish(activeLoan) : 'Sin vencimiento';
 
               return (
                 <div className="bg-[#FAF8F5] dark:bg-[#1C1917] rounded-2xl p-3.5 border border-[#E6DCD2] dark:border-[#3D352E] space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-[#D96B27] dark:text-[#E07A5F] uppercase tracking-wider">
-                      Detalles del Préstamo Activo
+                      Resumen de Préstamos Vigentes
                     </span>
                     {activeLoan ? (
                       <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                        activeLoan.status === 'OVERDUE'
+                        hasOverdueLoan
                           ? 'bg-[#FDF2F0] dark:bg-[#C84B31]/20 text-[#C84B31] border-[#C84B31]/30'
                           : 'bg-[#EEF6F2] dark:bg-[#3D9970]/20 text-[#2D7A5D] dark:text-[#3D9970] border-[#2D7A5D]/30'
                       }`}>
-                        {activeLoan.status === 'OVERDUE' ? 'EN MORA' : 'VIGENTE'}
+                        {hasOverdueLoan ? 'EN MORA' : 'VIGENTE'}
                       </span>
                     ) : (
                       <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#FAF8F5] dark:bg-[#1C1917] text-[#6E615A] dark:text-[#C2B29F] border border-[#E6DCD2] dark:border-[#3D352E]">
@@ -185,15 +189,15 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                   {activeLoan ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white dark:bg-[#26221F] p-2.5 rounded-xl border border-[#E6DCD2]/60 dark:border-[#3D352E]">
                       <div>
-                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Monto Préstamo:</span>
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Capital Prestado:</span>
                         <strong className="text-[#2C221E] dark:text-[#EAE0D5] font-extrabold">{formatCurrency(activeAmount)}</strong>
                       </div>
                       <div>
-                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Interés / Tasa:</span>
-                        <strong className="text-[#D96B27] dark:text-[#E07A5F] font-extrabold">{activeInterestRate}%</strong>
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Préstamos Vigentes:</span>
+                        <strong className="text-[#D96B27] dark:text-[#E07A5F] font-extrabold">{activeLoansList.length}</strong>
                       </div>
                       <div>
-                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Fecha de Vencimiento:</span>
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Próximo Vencimiento:</span>
                         <strong className="text-[#2C221E] dark:text-[#EAE0D5] font-extrabold">{activeDueDate}</strong>
                         <span className="block text-[10px] text-[#D96B27] dark:text-[#E07A5F] font-bold">
                           {renderRemainingDays(activeLoan || client)}
@@ -202,7 +206,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                       <div>
                         <span className="text-[#6E615A] dark:text-[#C2B29F] block text-[10px]">Saldo Restante:</span>
                         <strong className="text-[#C84B31] font-extrabold">
-                          {formatCurrency(Number(activeLoan.remainingAmount ?? (activeLoan as any).remaining_amount ?? (Number(activeLoan.totalToPay ?? activeLoan.total_amount ?? 0) - Number(activeLoan.paidAmount ?? 0))))}
+                          {formatCurrency(activeRemaining)}
                         </strong>
                       </div>
                     </div>

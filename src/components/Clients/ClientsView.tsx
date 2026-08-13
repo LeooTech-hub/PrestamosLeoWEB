@@ -209,28 +209,26 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredClients.map((client) => {
-            const clientLoans = loans.filter((l) => (l.clientId === client.id || l.client_id === client.id) && !l.isArchived);
-            const activeLoans = clientLoans.filter((l) => l.status !== 'PAID');
-            const hasOverdue = clientLoans.some((l) => l.status === 'OVERDUE');
+            const clientLoans = Array.from(new Map(
+              loans
+                .filter((l) => (l.clientId === client.id || l.client_id === client.id) && !l.isArchived)
+                .map((loan) => [loan.id, loan])
+            ).values());
+            const activeLoans = clientLoans.filter((l) => l.status === 'ACTIVE' || l.status === 'OVERDUE');
+            const hasOverdue = activeLoans.some((l) => l.status === 'OVERDUE');
+            const activeLoan = [...activeLoans].sort((a, b) =>
+              String(a.dueDate || a.due_date || '').localeCompare(String(b.dueDate || b.due_date || ''))
+            )[0];
 
-            const activeLoan = activeLoans[0] || (client as any).active_loan || (client as any).activeLoan;
-
-            const loanAmount = Number(
-              activeLoan?.amount ??
-              activeLoan?.monto ??
-              activeLoan?.capital ??
-              (client as any).amount ??
-              (client as any).monto ??
-              (client as any).loan_amount ??
-              (client as any).capital ??
-              (clientLoans.length > 0 ? clientLoans.reduce((acc: number, l: Loan) => acc + l.capital, 0) : 0)
+            const loanAmount = activeLoans.reduce(
+              (sum, loan) => sum + Number(loan.capital ?? loan.amount ?? loan.monto ?? 0),
+              0
             );
-
-            const totalRemaining = activeLoans.length > 0
-              ? activeLoans.reduce((acc: number, l: Loan) => acc + l.remainingAmount, 0)
-              : (activeLoan ? (activeLoan.remainingAmount ?? activeLoan.remaining_amount ?? 0) : 0);
-
-            const dueDateFormatted = getDueDateFormattedSpanish(activeLoan || client);
+            const totalRemaining = activeLoans.reduce(
+              (sum, loan) => sum + Number(loan.remainingAmount ?? loan.remaining_amount ?? 0),
+              0
+            );
+            const dueDateFormatted = activeLoan ? getDueDateFormattedSpanish(activeLoan) : 'Sin vencimiento';
 
             const now = new Date();
             const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -362,7 +360,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                   {/* Loans Summary Row */}
                   <div className="grid grid-cols-2 gap-2 mt-3 bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E] text-xs">
                     <div>
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block">Monto Préstamo:</span>
+                      <span className="text-[#6E615A] dark:text-[#C2B29F] block">Monto Prestado:</span>
                       {activeLoan ? (
                         <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loanAmount)}</strong>
                       ) : (
@@ -398,8 +396,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       {/* Client Detail Modal */}
       <ClientDetailModal
         client={selectedClientForDetail}
-        loans={selectedClientForDetail ? loans.filter((l) => l.clientId === selectedClientForDetail.id && !l.isArchived) : []}
-        payments={selectedClientForDetail ? payments.filter((p) => p.clientId === selectedClientForDetail.id) : []}
+        loans={selectedClientForDetail ? Array.from(new Map(loans.filter((l) => (l.clientId === selectedClientForDetail.id || l.client_id === selectedClientForDetail.id) && !l.isArchived).map((loan) => [loan.id, loan])).values()) : []}
+        payments={selectedClientForDetail ? payments.filter((p) => p.clientId === selectedClientForDetail.id || p.client_id === selectedClientForDetail.id) : []}
         isOpen={!!selectedClientForDetail}
         onClose={() => setSelectedClientForDetail(null)}
         onNewLoanForClient={(client) => {

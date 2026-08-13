@@ -1,6 +1,10 @@
 import pool from '../config/db.js';
 import crypto from 'crypto';
 
+// payment_date es la fecha civil del negocio. Supabase opera en UTC, por lo
+// que toda consulta de hoy debe fijar explícitamente la zona horaria de Perú.
+const PERU_TODAY_SQL = `(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::date`;
+
 function generateUUID() {
   return typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
@@ -438,12 +442,15 @@ function mapRowToPayment(row) {
     name: clientName,
     amount: Number(row.amount || 0),
     lateFee: Number(row.late_fee || 0),
+    late_fee: Number(row.late_fee || 0),
     date: paymentDate,
     payment_date: paymentDate,
     type: row.type || 'FULL_DAY',
     dayNumber: Number(row.day_number || 1),
+    day_number: Number(row.day_number || 1),
     notes: row.notes ? String(row.notes) : '',
     createdAt: row.created_at || undefined,
+    created_at: row.created_at || undefined,
     collectedBy: row.collected_by_user_id ? String(row.collected_by_user_id) : undefined,
     collectorName: collectorName,
     collector_name: collectorName
@@ -461,6 +468,55 @@ function mapRowToExpense(row) {
   };
 }
 
+export async function buildDashboardSummary(db = pool) {
+  const loanResult = await db.query(`
+    SELECT l.*, COALESCE(c.name, l.client_name, 'Cliente') AS client_name
+    FROM loans l
+    LEFT JOIN clients c ON l.client_id::text = c.id::text
+    ORDER BY l.created_at DESC NULLS LAST, l.id DESC
+  `);
+  const totalsResult = await db.query(`
+    SELECT
+      COALESCE(SUM(amount), 0) AS total,
+      ${PERU_TODAY_SQL}::text AS business_date
+    FROM payments
+    WHERE COALESCE(payment_date, date) = ${PERU_TODAY_SQL}
+  `);
+  const recentPaymentsResult = await db.query(`
+    SELECT
+      p.*,
+      COALESCE(c.name, p.client_name, 'Cliente sin Nombre') AS joined_client_name,
+      COALESCE(u.name, 'Admin') AS collector_name
+    FROM payments p
+    LEFT JOIN clients c ON p.client_id::text = c.id::text
+    LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
+    WHERE COALESCE(p.payment_date, p.date) = ${PERU_TODAY_SQL}
+    ORDER BY p.created_at DESC NULLS LAST, p.id DESC
+    LIMIT 10
+  `);
+
+  const loans = (loanResult.rows || []).map(mapRowToLoan);
+  const totalCapitalLent = loans.reduce((sum, loan) => sum + Number(loan.capital || 0), 0);
+  const totalEstimatedProfit = loans.reduce((sum, loan) => sum + Number(loan.interestAmount || 0), 0);
+  const collectedToday = Math.round(
+    finiteNumber(totalsResult.rows[0]?.total, 0) * 100
+  ) / 100;
+  const recentPayments = (recentPaymentsResult.rows || []).map(mapRowToPayment);
+
+  return {
+    totalCapitalLent,
+    totalEstimatedProfit,
+    collectedToday,
+    todayCollected: collectedToday,
+    totalActiveLoansCount: loans.filter((loan) => loan.status === 'ACTIVE').length,
+    businessDate: totalsResult.rows[0]?.business_date,
+    timeZone: 'America/Lima',
+    recentLoans: loans.slice(0, 10),
+    recentPayments,
+    payments: recentPayments,
+  };
+}
+
 // ==========================================
 // CONTROLADOR
 // ==========================================
@@ -474,12 +530,6 @@ const loanController = {
       const isTodos = req.query.filter === 'TODOS' || req.query.assignedTo === 'TODOS';
       const userId = req.user ? req.user.id : null;
       
-      const now = new Date();
-      const localYear = now.getFullYear();
-      const localMonth = String(now.getMonth() + 1).padStart(2, '0');
-      const localDay = String(now.getDate()).padStart(2, '0');
-      const todayStr = `${localYear}-${localMonth}-${localDay}`;
-
       const query = `
         SELECT
           c.*,
@@ -520,7 +570,12 @@ const loanController = {
               + COALESCE(NULLIF(l.payment_days, 0), NULLIF(l.days_agreed, 0), NULLIF(l.days, 0), 20)::integer
           ) AS fecha_vencimiento,
           l.status AS loan_status,
-          COALESCE(l.active_loan_count, 0) AS active_loan_count,
+          COALESCE(ls.active_loans_count, 0) AS active_loan_count,
+          COALESCE(ls.active_loans_count, 0) AS active_loans_count,
+          COALESCE(ls.total_loans_count, 0) AS total_loans_count,
+          COALESCE(ls.total_active_capital, 0) AS total_active_capital,
+          COALESCE(ls.total_remaining_amount, 0) AS total_remaining_amount,
+          ls.next_due_date,
           COALESCE(p_today.today_paid_amount, 0) AS today_paid_amount,
           COALESCE(p_today.today_payments_count, 0) AS today_payments_count
         FROM clients c
@@ -538,18 +593,46 @@ const loanController = {
         ) l ON l.client_id::text = c.id::text
         LEFT JOIN (
           SELECT
+            client_id::text AS client_id,
+            COUNT(*) FILTER (
+              WHERE UPPER(status) IN ('ACTIVE', 'OVERDUE', 'VIGENTE', 'VENCIDO', 'MORA')
+            )::integer AS active_loans_count,
+            COUNT(*)::integer AS total_loans_count,
+            COALESCE(SUM(
+              CASE WHEN UPPER(status) IN ('ACTIVE', 'OVERDUE', 'VIGENTE', 'VENCIDO', 'MORA')
+                THEN COALESCE(NULLIF(amount, 0), NULLIF(capital, 0), NULLIF(amount_borrowed, 0), 0)
+                ELSE 0 END
+            ), 0) AS total_active_capital,
+            COALESCE(SUM(
+              CASE WHEN UPPER(status) IN ('ACTIVE', 'OVERDUE', 'VIGENTE', 'VENCIDO', 'MORA')
+                THEN GREATEST(0, COALESCE(NULLIF(total_amount, 0), NULLIF(total_to_pay, 0), 0) - COALESCE(paid_amount, 0))
+                ELSE 0 END
+            ), 0) AS total_remaining_amount,
+            MIN(COALESCE(
+              due_date,
+              start_date + COALESCE(NULLIF(payment_days, 0), NULLIF(days_agreed, 0), NULLIF(days, 0), 20)::integer
+            )) FILTER (
+              WHERE UPPER(status) IN ('ACTIVE', 'OVERDUE', 'VIGENTE', 'VENCIDO', 'MORA')
+                AND GREATEST(0, COALESCE(NULLIF(total_amount, 0), NULLIF(total_to_pay, 0), 0) - COALESCE(paid_amount, 0)) > 0
+            ) AS next_due_date
+          FROM loans
+          WHERE COALESCE(is_archived, 0) = 0
+          GROUP BY client_id::text
+        ) ls ON ls.client_id = c.id::text
+        LEFT JOIN (
+          SELECT
             client_id::text,
             SUM(amount) AS today_paid_amount,
             COUNT(id) AS today_payments_count
           FROM payments
-          WHERE (payment_date::date = $1::date OR date::date = $1::date)
+          WHERE COALESCE(payment_date, date) = ${PERU_TODAY_SQL}
             AND amount > 0
           GROUP BY client_id::text
         ) p_today ON p_today.client_id::text = c.id::text
-        ${isCobrador && userId && !isTodos ? 'WHERE c.assigned_to_user_id::text = $2' : ''}
+        ${isCobrador && userId && !isTodos ? 'WHERE c.assigned_to_user_id::text = $1' : ''}
         ORDER BY c.created_at DESC
       `;
-      const params = (isCobrador && userId && !isTodos) ? [todayStr, String(userId)] : [todayStr];
+      const params = (isCobrador && userId && !isTodos) ? [String(userId)] : [];
       const { rows } = await pool.query(query, params);
 
       const mappedRows = (rows || []).map(row => {
@@ -568,7 +651,17 @@ const loanController = {
           loan_due_date: calculatedDueDate,
           due_date: calculatedDueDate,
           loan_status: normalizeLoanStatus(row.loan_status),
-          loansCount: Number(row.active_loan_count || 0),
+          loansCount: Number(row.total_loans_count || 0),
+          totalLoansCount: Number(row.total_loans_count || 0),
+          total_loans_count: Number(row.total_loans_count || 0),
+          activeLoansCount: Number(row.active_loans_count || 0),
+          active_loans_count: Number(row.active_loans_count || 0),
+          totalActiveCapital: Number(row.total_active_capital || 0),
+          total_active_capital: Number(row.total_active_capital || 0),
+          totalRemainingAmount: Number(row.total_remaining_amount || 0),
+          total_remaining_amount: Number(row.total_remaining_amount || 0),
+          nextDueDate: toDateOnly(row.next_due_date),
+          next_due_date: toDateOnly(row.next_due_date),
           today_paid_amount: Number(row.today_paid_amount || 0),
           today_payments_count: Number(row.today_payments_count || 0)
         };
@@ -772,6 +865,24 @@ const loanController = {
         ? String(req.body.assigned_to_user_id ?? req.body.assignedToUserId ?? req.body.assignedTo)
         : (req.user?.id ? String(req.user.id) : null);
 
+      const rawAmount = req.body.amount ?? req.body.capital ?? req.body.amount_borrowed ?? req.body.monto;
+      const rawInterestRate = req.body.interest_rate ?? req.body.interestRate ?? req.body.interes ?? 20;
+      const rawDays = req.body.payment_days ?? req.body.paymentDays ?? req.body.days_agreed ?? req.body.days;
+      const validatedAmount = Number(rawAmount);
+      const validatedInterestRate = Number(rawInterestRate);
+      const validatedDays = Number(rawDays);
+      if (!Number.isFinite(validatedAmount) || validatedAmount <= 0) {
+        await client.query('ROLLBACK'); transactionStarted = false;
+        return res.status(422).json({ error: 'El capital debe ser un número mayor a 0' });
+      }
+      if (!Number.isFinite(validatedInterestRate) || validatedInterestRate < 0) {
+        await client.query('ROLLBACK'); transactionStarted = false;
+        return res.status(422).json({ error: 'La tasa de interés debe ser un número mayor o igual a 0' });
+      }
+      if (!Number.isInteger(validatedDays) || validatedDays <= 0) {
+        await client.query('ROLLBACK'); transactionStarted = false;
+        return res.status(422).json({ error: 'Los días de pago deben ser un entero mayor a 0' });
+      }
       if (finalClientId) {
         const existingClient = await client.query(
           `SELECT id, name FROM clients WHERE id::text = $1 LIMIT 1`,
@@ -818,38 +929,11 @@ const loanController = {
         }
       }
 
-      await client.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [finalClientId]);
-      const activeLoan = await client.query(`
-        SELECT id
-        FROM loans
-        WHERE client_id::text = $1
-          AND UPPER(status) IN ('ACTIVE', 'OVERDUE', 'VIGENTE', 'VENCIDO', 'MORA')
-          AND COALESCE(is_archived, 0) = 0
-        LIMIT 1
-      `, [finalClientId]);
-      if (activeLoan.rows.length > 0) {
-        await client.query('ROLLBACK');
-        transactionStarted = false;
-        return res.status(409).json({
-          error: 'El cliente ya tiene un préstamo activo o vencido',
-          loanId: String(activeLoan.rows[0].id),
-        });
-      }
-
-      const amount = Math.max(0, finiteNumber(
-        req.body.amount ?? req.body.capital ?? req.body.amount_borrowed ?? req.body.monto,
-        150
-      ));
-      const interestRate = Math.max(0, finiteNumber(
-        req.body.interest_rate ?? req.body.interestRate ?? req.body.interes,
-        20
-      ));
+      const amount = validatedAmount;
+      const interestRate = validatedInterestRate;
       const interestAmount = Number((amount * (interestRate / 100)).toFixed(2));
       const totalAmount = Number((amount + interestAmount).toFixed(2));
-      const days = Math.max(1, Math.round(finiteNumber(
-        req.body.payment_days ?? req.body.paymentDays ?? req.body.days_agreed ?? req.body.days,
-        20
-      )));
+      const days = validatedDays;
       const dailyAmount = Number((totalAmount / days).toFixed(2));
       const status = normalizeLoanStatus(req.body.status, 'ACTIVE');
       const startDate = toDateOnly(req.body.start_date ?? req.body.startDate)
@@ -857,6 +941,10 @@ const loanController = {
       const dueDate = toDateOnly(
         req.body.due_date ?? req.body.dueDate ?? req.body.fecha_vencimiento
       ) || addDays(startDate, days);
+      if (dueDate < startDate) {
+        await client.query('ROLLBACK'); transactionStarted = false;
+        return res.status(422).json({ error: 'La fecha de vencimiento no puede ser anterior a la fecha de inicio' });
+      }
 
       const clientSnapshot = await client.query(
         `SELECT phone, address FROM clients WHERE id::text = $1 LIMIT 1`,
@@ -931,6 +1019,21 @@ const loanController = {
       }
 
       const current = currentRes.rows[0];
+      const requestedAmount = req.body.amount ?? req.body.capital ?? req.body.amount_borrowed;
+      const requestedInterest = req.body.interest_rate ?? req.body.interestRate;
+      const requestedDays = req.body.payment_days ?? req.body.paymentDays ?? req.body.days_agreed ?? req.body.days;
+      if (requestedAmount !== undefined && (!Number.isFinite(Number(requestedAmount)) || Number(requestedAmount) <= 0)) {
+        await client.query('ROLLBACK');
+        return res.status(422).json({ error: 'El capital debe ser un número mayor a 0' });
+      }
+      if (requestedInterest !== undefined && (!Number.isFinite(Number(requestedInterest)) || Number(requestedInterest) < 0)) {
+        await client.query('ROLLBACK');
+        return res.status(422).json({ error: 'La tasa de interés debe ser mayor o igual a 0' });
+      }
+      if (requestedDays !== undefined && (!Number.isInteger(Number(requestedDays)) || Number(requestedDays) <= 0)) {
+        await client.query('ROLLBACK');
+        return res.status(422).json({ error: 'Los días deben ser un entero mayor a 0' });
+      }
       const amount = Math.max(0, firstNonZeroNumber([
         req.body.amount, req.body.capital, req.body.amount_borrowed,
         current.amount, current.capital, current.amount_borrowed,
@@ -953,12 +1056,22 @@ const loanController = {
         req.body.due_date ?? req.body.dueDate ?? req.body.fecha_vencimiento
       );
       const dueDate = explicitDueDate || addDays(startDate, days);
+      if (dueDate < startDate) {
+        await client.query('ROLLBACK');
+        return res.status(422).json({ error: 'La fecha de vencimiento no puede ser anterior a la fecha de inicio' });
+      }
       const paymentTotals = await client.query(`
         SELECT COALESCE(SUM(amount), 0)::numeric AS paid_amount
         FROM payments
         WHERE loan_id::text = $1
       `, [String(id)]);
       const paidAmount = Math.max(0, finiteNumber(paymentTotals.rows[0]?.paid_amount, 0));
+      if (paidAmount > totalAmount + 0.001) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          error: `El nuevo total S/ ${totalAmount.toFixed(2)} no puede ser menor que lo ya pagado S/ ${paidAmount.toFixed(2)}`,
+        });
+      }
       const paidDaysCount = Math.min(days, Math.max(0, Math.floor(paidAmount / Math.max(dailyAmount, 0.01))));
       const remainingAmount = Math.max(0, Number((totalAmount - paidAmount).toFixed(2)));
       const remainingDays = Math.max(0, days - paidDaysCount);
@@ -1046,7 +1159,7 @@ const loanController = {
         FROM payments p
         LEFT JOIN clients c ON p.client_id::text = c.id::text
         LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
-        ORDER BY p.payment_date DESC, p.id DESC
+        ORDER BY COALESCE(p.payment_date, p.date) DESC, p.created_at DESC NULLS LAST, p.id DESC
       `;
       const { rows } = await pool.query(query);
       return res.json((rows || []).map(mapRowToPayment));
@@ -1066,7 +1179,7 @@ const loanController = {
         FROM payments p
         LEFT JOIN clients c ON p.client_id::text = c.id::text
         LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
-        ORDER BY p.payment_date DESC, p.id DESC
+        ORDER BY COALESCE(p.payment_date, p.date) DESC, p.created_at DESC NULLS LAST, p.id DESC
       `;
       const { rows } = await pool.query(query);
       return res.json((rows || []).map(mapRowToPayment));
@@ -1113,7 +1226,7 @@ const loanController = {
         loan.payment_days, loan.days_agreed, loan.days,
       ], 20)));
       const newPaidDaysCount = Math.min(paymentDays, Math.floor(newPaidAmount / dailyAmount));
-      const paymentDateResult = await client.query(`SELECT CURRENT_DATE::text AS today`);
+      const paymentDateResult = await client.query(`SELECT ${PERU_TODAY_SQL}::text AS today`);
       const todayStr = toDateOnly(req.body.payment_date ?? req.body.date)
         || paymentDateResult.rows[0].today;
       const paymentRes = await client.query(`
@@ -1132,9 +1245,13 @@ const loanController = {
       ]);
       const synchronizedLoan = await synchronizeLoanFromPayments(client, loan.id);
       await client.query('COMMIT');
+      const payment = mapRowToPayment(paymentRes.rows[0]);
+      const updatedLoan = mapRowToLoan(synchronizedLoan);
       return res.status(201).json({
-        ...mapRowToPayment(paymentRes.rows[0]),
-        loan: mapRowToLoan(synchronizedLoan),
+        ...payment,
+        payment,
+        loan: updatedLoan,
+        updatedLoan,
       });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -1198,6 +1315,32 @@ const loanController = {
         await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Monto debe ser mayor a 0' });
       }
+      const loanId = String(current.rows[0].loan_id);
+      const loanResult = await client.query(
+        `SELECT * FROM loans WHERE id::text = $1 FOR UPDATE`,
+        [loanId]
+      );
+      if (loanResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'El pago está asociado a un préstamo inexistente' });
+      }
+      const otherPayments = await client.query(`
+        SELECT COALESCE(SUM(amount), 0)::numeric AS paid_amount
+        FROM payments
+        WHERE loan_id::text = $1 AND id::text <> $2
+      `, [loanId, String(id)]);
+      const loanTotal = firstNonZeroNumber([
+        loanResult.rows[0].total_amount,
+        loanResult.rows[0].total_to_pay,
+      ], 0);
+      const alreadyPaidByOthers = finiteNumber(otherPayments.rows[0]?.paid_amount, 0);
+      const maximumEditableAmount = Math.max(0, loanTotal - alreadyPaidByOthers);
+      if (numericAmount > maximumEditableAmount + 0.001) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `El pago excede el máximo permitido de S/ ${maximumEditableAmount.toFixed(2)}`,
+        });
+      }
       const paymentDate = toDateOnly(date) || toDateOnly(current.rows[0].payment_date || current.rows[0].date);
       const { rows } = await client.query(`
         UPDATE payments
@@ -1257,7 +1400,7 @@ const loanController = {
       const { rows: paymentsToday } = await pool.query(`
         SELECT loan_id::text, client_id::text, SUM(amount) AS total_paid
         FROM payments 
-        WHERE COALESCE(payment_date, date) = CURRENT_DATE AND amount > 0
+        WHERE COALESCE(payment_date, date) = ${PERU_TODAY_SQL} AND amount > 0
         GROUP BY loan_id::text, client_id::text
       `);
 
@@ -1265,12 +1408,11 @@ const loanController = {
       paymentsToday.forEach(p => {
         const val = Number(p.total_paid || 0);
         if (p.loan_id) paidMap.set(String(p.loan_id), val);
-        if (p.client_id) paidMap.set(`cli_${p.client_id}`, val);
       });
 
       const result = (loans || []).map(row => {
         const mappedLoan = mapRowToLoan(row);
-        const amountPaidToday = paidMap.get(mappedLoan.id) || paidMap.get(`cli_${mappedLoan.clientId}`) || 0;
+        const amountPaidToday = paidMap.get(mappedLoan.id) || 0;
         const isPaidToday = amountPaidToday > 0;
         return {
           loan: mappedLoan,
@@ -1396,26 +1538,9 @@ const loanController = {
 
   async getDashboardSummary(req, res) {
     try {
-      const { rows: lRows } = await pool.query(`
-        SELECT l.*, COALESCE(c.name, 'Cliente') AS client_name FROM loans l 
-        LEFT JOIN clients c ON l.client_id::text = c.id::text
-      `);
-      const loans = (lRows || []).map(mapRowToLoan);
-      const totalCapitalLent = loans.reduce((sum, l) => sum + Number(l.capital || 0), 0);
-      const totalEstimatedProfit = loans.reduce((sum, l) => sum + Number(l.interestAmount || 0), 0);
-
-      const { rows: sumRows } = await pool.query(
-        `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE COALESCE(payment_date, date) = CURRENT_DATE`
-      );
-      const collectedToday = Number(Number(sumRows[0]?.total || 0).toFixed(2));
-
-      return res.json({
-        totalCapitalLent, totalEstimatedProfit, collectedToday, todayCollected: collectedToday,
-        totalActiveLoansCount: loans.filter(l => l.status === 'ACTIVE').length,
-        recentLoans: loans.slice(0, 10), recentPayments: [], payments: []
-      });
+      return res.json(await buildDashboardSummary(pool));
     } catch (error) {
-      console.error('[ERROR GET /api/dashboard/summary]:', error);
+      console.error('[ERROR DASHBOARD SUMMARY]:', error);
       return res.status(500).json({ error: 'No se pudo cargar el resumen', details: error.message });
     }
   },
@@ -1437,7 +1562,8 @@ const loanController = {
         expensesList: expenses
       });
     } catch (error) {
-      return res.json({ period: 'WEEKLY', capitalInvested: 0, realCollected: 0, totalExpenses: 0, expensesList: [] });
+      console.error('[ERROR GET /api/reports/financial]:', error);
+      return res.status(500).json({ error: 'No se pudo generar el reporte financiero' });
     }
   },
 
@@ -1447,7 +1573,8 @@ const loanController = {
       const { rows } = await pool.query('SELECT * FROM expenses ORDER BY id DESC');
       return res.json((rows || []).map(mapRowToExpense));
     } catch (error) {
-      return res.json([]);
+      console.error('[ERROR GET /api/expenses]:', error);
+      return res.status(500).json({ error: 'No se pudieron cargar los gastos' });
     }
   },
 
@@ -1496,7 +1623,8 @@ const loanController = {
       `);
       return res.json({ clients: (cRows || []).map(mapRowToClient), loans: (lRows || []).map(mapRowToLoan) });
     } catch (error) {
-      return res.json({ clients: [], loans: [] });
+      console.error('[ERROR GET /api/trash]:', error);
+      return res.status(500).json({ error: 'No se pudo cargar la papelera' });
     }
   },
 
@@ -1543,6 +1671,11 @@ const loanController = {
 
   async seedDatabase(req, res) {
     try {
+      if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DESTRUCTIVE_SEED !== 'true') {
+        return res.status(403).json({
+          error: 'El borrado de datos de prueba está deshabilitado. Requiere ALLOW_DESTRUCTIVE_SEED=true fuera de producción.',
+        });
+      }
       await pool.query('DELETE FROM payments');
       await pool.query('DELETE FROM expenses');
       await pool.query('DELETE FROM loans');

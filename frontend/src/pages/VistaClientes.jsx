@@ -183,9 +183,9 @@ export function VistaClientes({
   };
 
   const activeSelectedClient = selectedClient ? ((clients || []).find((c) => c?.id === selectedClient?.id) || selectedClient) : null;
-  const clientLoans = activeSelectedClient ? (loans || []).filter((l) => l?.clientId === activeSelectedClient?.id || l?.client_id === activeSelectedClient?.id) : [];
+  const clientLoans = activeSelectedClient ? Array.from(new Map((loans || []).filter((l) => (l?.clientId === activeSelectedClient?.id || l?.client_id === activeSelectedClient?.id) && !l?.isArchived).map((loan) => [loan.id, loan])).values()) : [];
   const clientPayments = activeSelectedClient ? (payments || []).filter((p) => p?.clientId === activeSelectedClient?.id || p?.client_id === activeSelectedClient?.id) : [];
-  const activeLoans = clientLoans.filter((l) => l?.status !== 'PAID' && !l?.isArchived);
+  const activeLoans = clientLoans.filter((l) => l?.status === 'ACTIVE' || l?.status === 'OVERDUE');
   const paidLoans = clientLoans.filter((l) => l?.status === 'PAID' && !l?.isArchived);
 
   // collectorFilteredClients is defined above filteredClients
@@ -378,26 +378,23 @@ export function VistaClientes({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => {
-            const currentLoans = (loans || []).filter((l) => (l?.clientId === client?.id || l?.client_id === client?.id) && !l?.isArchived);
-            const currentActive = currentLoans.filter((l) => l?.status !== 'PAID');
-            const totalRemaining = currentActive.reduce((sum, l) => sum + (l?.remainingAmount || l?.remaining_amount || 0), 0);
+            const currentLoans = Array.from(new Map(
+              (loans || [])
+                .filter((l) => (l?.clientId === client?.id || l?.client_id === client?.id) && !l?.isArchived)
+                .map((loan) => [loan.id, loan])
+            ).values());
+            const currentActive = currentLoans.filter((l) => l?.status === 'ACTIVE' || l?.status === 'OVERDUE');
+            const totalRemaining = currentActive.reduce((sum, loan) => sum + Number(loan?.remainingAmount ?? loan?.remaining_amount ?? 0), 0);
             const hasOverdue = currentActive.some((l) => l?.status === 'OVERDUE');
             const isChecked = selectedClientIds.includes(client.id);
-
-            const activeLoan = currentActive[0] || client?.active_loan || client?.activeLoan;
-
-            const loanAmount = Number(
-              activeLoan?.amount ?? 
-              activeLoan?.monto ??
-              activeLoan?.capital ?? 
-              client?.amount ?? 
-              client?.monto ??
-              client?.loan_amount ?? 
-              client?.capital ?? 
-              (currentLoans.length > 0 ? currentLoans.reduce((sum, l) => sum + Number(l?.capital || l?.amount || l?.monto || 0), 0) : 0)
+            const activeLoan = [...currentActive].sort((a, b) =>
+              String(a?.dueDate || a?.due_date || '').localeCompare(String(b?.dueDate || b?.due_date || ''))
+            )[0];
+            const loanAmount = currentActive.reduce(
+              (sum, loan) => sum + Number(loan?.capital ?? loan?.amount ?? loan?.monto ?? 0),
+              0
             );
-
-            const dueDateFormatted = getDueDateFormattedSpanish(activeLoan || client);
+            const dueDateFormatted = activeLoan ? getDueDateFormattedSpanish(activeLoan) : 'Sin vencimiento';
 
             const now = new Date();
             const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -536,7 +533,7 @@ export function VistaClientes({
                 <div className="border-t border-[#E6DCD2]/60 pt-3 space-y-3">
                   <div className="grid grid-cols-2 gap-2 bg-[#FAF8F5] p-2.5 rounded-2xl border border-[#E6DCD2]/70 text-xs">
                     <div>
-                      <span className="text-[10px] text-[#6E615A] block">Monto Préstamo:</span>
+                      <span className="text-[10px] text-[#6E615A] block">Monto Prestado:</span>
                       {activeLoan ? (
                         <strong className="font-extrabold text-[#2C221E]">
                           {formatCurrency(loanAmount)}
@@ -642,20 +639,31 @@ export function VistaClientes({
 
             {/* Active Loan Quick Details Banner */}
             {(() => {
-              const activeSelectedLoan = activeLoans[0] || activeSelectedClient?.active_loan || activeSelectedClient?.activeLoan;
+              const activeSelectedLoan = [...activeLoans].sort((a, b) =>
+                String(a?.dueDate || a?.due_date || '').localeCompare(String(b?.dueDate || b?.due_date || ''))
+              )[0];
+              const activeCapital = activeLoans.reduce(
+                (sum, loan) => sum + Number(loan?.capital ?? loan?.amount ?? loan?.monto ?? 0),
+                0
+              );
+              const activeRemaining = activeLoans.reduce(
+                (sum, loan) => sum + Number(loan?.remainingAmount ?? loan?.remaining_amount ?? 0),
+                0
+              );
+              const hasOverdueLoan = activeLoans.some((loan) => loan?.status === 'OVERDUE');
               return (
                 <div className="mt-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/70">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[11px] font-bold text-[#D96B27] uppercase tracking-wider">
-                      Detalles del Préstamo Activo
+                      Resumen de Préstamos Vigentes
                     </span>
                     {activeSelectedLoan ? (
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                        activeSelectedLoan.status === 'OVERDUE'
+                        hasOverdueLoan
                           ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
                           : 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30'
                       }`}>
-                        {activeSelectedLoan.status === 'OVERDUE' ? 'EN MORA' : 'VIGENTE'}
+                        {hasOverdueLoan ? 'EN MORA' : 'VIGENTE'}
                       </span>
                     ) : (
                       <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300">
@@ -667,19 +675,19 @@ export function VistaClientes({
                   {activeSelectedLoan ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white p-2.5 rounded-xl border border-[#E6DCD2]/60">
                       <div>
-                        <span className="text-[#6E615A] block text-[10px]">Monto Préstamo:</span>
+                        <span className="text-[#6E615A] block text-[10px]">Monto Prestado:</span>
                         <strong className="text-[#2C221E] font-extrabold">
-                          {formatCurrency(Number(activeSelectedLoan.capital ?? activeSelectedLoan.amount ?? activeSelectedLoan.monto ?? 0))}
+                          {formatCurrency(activeCapital)}
                         </strong>
                       </div>
                       <div>
-                        <span className="text-[#6E615A] block text-[10px]">Interés / Tasa:</span>
+                        <span className="text-[#6E615A] block text-[10px]">Préstamos Vigentes:</span>
                         <strong className="text-[#D96B27] font-extrabold">
-                          {Number(activeSelectedLoan.interestRate ?? activeSelectedLoan.interest_rate ?? activeSelectedLoan.interes ?? 20)}%
+                          {activeLoans.length}
                         </strong>
                       </div>
                       <div>
-                        <span className="text-[#6E615A] block text-[10px]">Fecha de Vencimiento:</span>
+                        <span className="text-[#6E615A] block text-[10px]">Próximo Vencimiento:</span>
                         <strong className="text-[#2C221E] font-extrabold">
                           {getDueDateFormattedSpanish(activeSelectedLoan)}
                         </strong>
@@ -687,7 +695,7 @@ export function VistaClientes({
                       <div>
                         <span className="text-[#6E615A] block text-[10px]">Saldo Restante:</span>
                         <strong className="text-[#C84B31] font-extrabold">
-                          {formatCurrency(Number(activeSelectedLoan.remainingAmount ?? activeSelectedLoan.remaining_amount ?? (Number(activeSelectedLoan.totalToPay ?? activeSelectedLoan.total_amount ?? 0) - Number(activeSelectedLoan.paidAmount ?? activeSelectedLoan.paid_amount ?? 0))))}
+                          {formatCurrency(activeRemaining)}
                         </strong>
                       </div>
                     </div>

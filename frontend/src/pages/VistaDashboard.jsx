@@ -15,6 +15,25 @@ import {
 
 import { EditPaymentModal } from '../components/EditPaymentModal';
 
+const PERU_TIME_ZONE = 'America/Lima';
+
+function dateKeyInPeru(value) {
+  if (!value) return '';
+  const text = String(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return text.split('T')[0];
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: PERU_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day}`;
+}
+
 export function VistaDashboard({
   summary = {},
   recentLoans = [],
@@ -55,13 +74,19 @@ export function VistaDashboard({
   };
 
   const formatDateWithTime = (dateStr, createdAtStr) => {
-    const str = createdAtStr || dateStr;
+    if (!createdAtStr) return dateStr ? formatDatePE(dateStr) : '';
+    const str = createdAtStr;
     if (!str) return '';
     const d = new Date(str);
     if (isNaN(d.getTime())) return dateStr || '';
-    const day = d.getDate();
-    const month = d.toLocaleString('es-ES', { month: 'long' });
-    const time = d.toLocaleString('es-ES', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const day = d.toLocaleString('es-PE', { timeZone: PERU_TIME_ZONE, day: 'numeric' });
+    const month = d.toLocaleString('es-PE', { timeZone: PERU_TIME_ZONE, month: 'long' });
+    const time = d.toLocaleString('es-PE', {
+      timeZone: PERU_TIME_ZONE,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
     return `${day} ${month} || ${time.toLowerCase()}`;
   };
 
@@ -255,8 +280,20 @@ export function VistaDashboard({
 
           <div className="space-y-2">
             {(() => {
-              const rawPayments = summary?.recentPayments || summary?.cobros || summary?.payments || summary?.recent_payments || recentPayments || [];
-              const sortedPayments = [...rawPayments].sort((a, b) => {
+              const summaryPayments = Array.isArray(summary?.recentPayments)
+                ? summary.recentPayments
+                : summary?.cobros || summary?.payments || summary?.recent_payments;
+              const peruToday = dateKeyInPeru(new Date());
+              const rawPayments = Array.isArray(summaryPayments)
+                ? summaryPayments
+                : (recentPayments || []).filter((payment) => (
+                  dateKeyInPeru(payment?.payment_date || payment?.date || payment?.createdAt || payment?.created_at) === peruToday
+                ));
+              const uniquePayments = Array.from(new Map(rawPayments.map((payment, index) => {
+                const key = payment?.id || `${payment?.loanId || payment?.loan_id || 'unknown'}_${payment?.payment_date || payment?.date || 'unknown'}_${payment?.amount || 0}_${index}`;
+                return [String(key), payment];
+              })).values());
+              const sortedPayments = uniquePayments.sort((a, b) => {
                 const dateA = new Date(a?.createdAt || a?.created_at || a?.payment_date || a?.date || 0).getTime();
                 const dateB = new Date(b?.createdAt || b?.created_at || b?.payment_date || b?.date || 0).getTime();
                 if (dateB !== dateA) return dateB - dateA;
@@ -272,9 +309,9 @@ export function VistaDashboard({
                   </div>
                 );
               }
-              return sortedPayments.slice(0, 5).map((payment) => (
+              return sortedPayments.slice(0, 5).map((payment, index) => (
                 <div
-                  key={payment.id || `pay_${Math.random()}`}
+                  key={payment.id || `pay_${payment.loanId || payment.loan_id || 'unknown'}_${payment.payment_date || payment.date || 'unknown'}_${index}`}
                   className="p-3 bg-[#FAF8F5] dark:bg-[#24211E] rounded-2xl border border-[#E6DCD2]/60 dark:border-[#332F2C] flex items-center justify-between text-xs"
                 >
                   <div>

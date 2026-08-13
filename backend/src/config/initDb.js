@@ -139,7 +139,6 @@ export async function initDb() {
     try { await pool.query(`ALTER TABLE loans ALTER COLUMN amount DROP NOT NULL`); } catch (_) {}
     try { await pool.query(`ALTER TABLE loans ALTER COLUMN total_amount DROP NOT NULL`); } catch (_) {}
     try { await pool.query(`ALTER TABLE payments ALTER COLUMN date DROP NOT NULL`); } catch (_) {}
-    try { await pool.query(`ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_loan_id_fkey`); } catch (_) {}
 
     // Asegurar columnas adicionales en clients
     await safeAddColumn('clients', 'alias', 'VARCHAR(100) NULL');
@@ -209,8 +208,8 @@ export async function initDb() {
     const { rows } = await pool.query('SELECT COUNT(*) AS count FROM users');
     const userCount = Number(rows[0]?.count ?? 0);
 
-    if (userCount === 0) {
-      const defaultPassword = 'admin123';
+    if (userCount === 0 && process.env.INITIAL_ADMIN_PASSWORD) {
+      const defaultPassword = process.env.INITIAL_ADMIN_PASSWORD;
       const passwordHash = await bcrypt.hash(defaultPassword, 10);
       const userId = generateUUID();
 
@@ -218,7 +217,9 @@ export async function initDb() {
         `INSERT INTO users (id, name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5)`,
         [userId, 'Administrador Leo', 'admin@prestamosleo.com', passwordHash, 'ADMIN']
       );
-      console.log('✅ Usuario por defecto creado: admin@prestamosleo.com / admin123');
+      console.log('✅ Usuario administrador inicial creado desde variables de entorno.');
+    } else if (userCount === 0) {
+      console.warn('⚠️ No se creó administrador: configura INITIAL_ADMIN_PASSWORD para inicializarlo.');
     }
 
     console.log('✅ Tablas y columnas inicializadas correctamente en PostgreSQL / Supabase.');

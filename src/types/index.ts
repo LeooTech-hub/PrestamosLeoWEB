@@ -31,6 +31,17 @@ export interface Client {
   today_status?: 'COBRADO' | 'PENDIENTE';
   activeLoan?: Partial<Loan> | null;
   active_loan?: Partial<Loan> | null;
+  loansCount?: number;
+  totalLoansCount?: number;
+  total_loans_count?: number;
+  activeLoansCount?: number;
+  active_loans_count?: number;
+  totalActiveCapital?: number;
+  total_active_capital?: number;
+  totalRemainingAmount?: number;
+  total_remaining_amount?: number;
+  nextDueDate?: string;
+  next_due_date?: string;
 }
 
 export interface Loan {

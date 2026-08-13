@@ -15,7 +15,7 @@ interface PaymentModalProps {
     amount: number,
     notes?: string,
     lateFee?: number
-  ) => Promise<{ updatedLoan: Loan }>;
+  ) => Promise<{ updatedLoan?: Loan; loan?: Loan }>;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -36,14 +36,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const targetAmount = paymentType === 'FULL' ? loan.dailyPaymentAmount : customAmount;
 
   const handleRegister = async () => {
-    if (!targetAmount || targetAmount <= 0) {
+    if (!loan?.id || !targetAmount || targetAmount <= 0) {
       alert('Por favor ingrese un monto de pago válido');
+      return;
+    }
+    if (targetAmount > loan.remainingAmount) {
+      alert('El monto supera el saldo restante. Máximo a cobrar: ' + formatCurrency(loan.remainingAmount) + '.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const { updatedLoan } = await onConfirmPayment(loan.id, targetAmount, notes, lateFee || 0);
+      const result = await onConfirmPayment(loan.id, targetAmount, notes, lateFee || 0);
+      const updatedLoan = result.updatedLoan || result.loan;
+      if (!updatedLoan?.id) {
+        throw new Error('La respuesta del pago no contiene el préstamo actualizado');
+      }
 
       // Trigger Confetti
       try {

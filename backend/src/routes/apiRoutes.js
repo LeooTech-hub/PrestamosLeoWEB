@@ -77,6 +77,6 @@ router.put('/admin/assign-portfolio', verifyToken, requireAdmin, safe(loanContro
 router.get('/admin/portfolio/filter', verifyToken, requireAdmin, safe(loanController?.getPortfolioByCollector));
 
 // SEED
-router.post('/seed', verifyToken, safe(loanController?.seedDatabase));
+router.post('/seed', verifyToken, requireAdmin, safe(loanController?.seedDatabase));
 
 export default router;
