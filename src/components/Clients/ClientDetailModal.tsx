@@ -272,8 +272,13 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                     const loanPayments = payments.filter((p) => p.loanId === loan.id || p.loan_id === loan.id);
                     const mora = Number(loan.mora ?? loan.penaltyAmount ?? loan.penalty_amount ?? 0);
                     const amount = Number(loan.capital ?? loan.amount ?? (loan as any).monto ?? 0);
-                    const interestRate = Number(loan.interestRate ?? loan.interest_rate ?? (loan as any).interes ?? 20);
-                    const interest = Number(loan.interestAmount ?? loan.interest ?? (loan as any).interest_amount ?? Math.round(amount * (interestRate / 100)));
+                    const storedInterest = Number(loan.interestAmount ?? loan.interest ?? (loan as any).interest_amount ?? 0);
+                    const storedInterestRate = Number(loan.interestRate ?? loan.interest_rate ?? (loan as any).interes ?? 0);
+                    const interestRate = storedInterestRate > 0 || storedInterest <= 0
+                      ? storedInterestRate
+                      : Number(((storedInterest / Math.max(amount, 0.01)) * 100).toFixed(2));
+                    const interest = Number(loan.interestAmount ?? loan.interest ?? (loan as any).interest_amount
+                      ?? Number((amount * (interestRate / 100)).toFixed(2)));
                     const total = Number(loan.totalToPay ?? loan.total_amount ?? (amount + interest));
                     const remaining = Number(loan.remainingAmount ?? loan.remaining_amount ?? Math.max(0, total - Number(loan.paidAmount || 0)));
                     const percent = total > 0 ? Math.round((loan.paidAmount / total) * 100) : 0;

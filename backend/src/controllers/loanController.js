@@ -325,9 +325,13 @@ function mapRowToLoan(row) {
     row.amount, row.capital, row.amount_borrowed, row.monto
   ], 0);
 
-  const interestRate = firstFiniteNumber([
+  const storedInterestRate = firstFiniteNumber([
     row.interest_rate, row.interes
   ], 20);
+  const storedInterestAmount = firstNonZeroNumber([row.interest_amount], 0);
+  const interestRate = storedInterestRate > 0 || storedInterestAmount <= 0 || capital <= 0
+    ? storedInterestRate
+    : Number(((storedInterestAmount / capital) * 100).toFixed(2));
 
   const interestAmount = firstNonZeroNumber([
     row.interest_amount
@@ -1020,7 +1024,7 @@ const loanController = {
 
       const current = currentRes.rows[0];
       const requestedAmount = req.body.amount ?? req.body.capital ?? req.body.amount_borrowed;
-      const requestedInterest = req.body.interest_rate ?? req.body.interestRate;
+      const requestedInterest = req.body.interest_rate ?? req.body.interestRate ?? req.body.interes;
       const requestedDays = req.body.payment_days ?? req.body.paymentDays ?? req.body.days_agreed ?? req.body.days;
       if (requestedAmount !== undefined && (!Number.isFinite(Number(requestedAmount)) || Number(requestedAmount) <= 0)) {
         await client.query('ROLLBACK');
@@ -1038,12 +1042,25 @@ const loanController = {
         req.body.amount, req.body.capital, req.body.amount_borrowed,
         current.amount, current.capital, current.amount_borrowed,
       ], 0));
+      const currentInterestRate = finiteNumber(current.interest_rate, 0);
+      const currentInterestAmount = finiteNumber(current.interest_amount, 0);
+      const currentCapital = firstNonZeroNumber([
+        current.amount, current.capital, current.amount_borrowed,
+      ], amount);
+      const inferredCurrentRate = currentInterestRate > 0 || currentInterestAmount <= 0 || currentCapital <= 0
+        ? currentInterestRate
+        : Number(((currentInterestAmount / currentCapital) * 100).toFixed(2));
       const interestRate = Math.max(0, finiteNumber(
-        req.body.interest_rate ?? req.body.interestRate ?? current.interest_rate,
+        requestedInterest ?? inferredCurrentRate,
         20
       ));
       const interestAmount = Number((amount * (interestRate / 100)).toFixed(2));
-      const totalAmount = Number((amount + interestAmount).toFixed(2));
+      const penaltyAmount = Math.max(0, finiteNumber(
+        req.body.penalty_amount ?? req.body.penaltyAmount ?? req.body.mora
+          ?? current.penalty_amount ?? current.mora,
+        0
+      ));
+      const totalAmount = Number((amount + interestAmount + penaltyAmount).toFixed(2));
       const days = Math.max(1, Math.round(firstNonZeroNumber([
         req.body.payment_days, req.body.paymentDays, req.body.days_agreed, req.body.days,
         current.payment_days, current.days_agreed, current.days,
@@ -1065,7 +1082,13 @@ const loanController = {
         FROM payments
         WHERE loan_id::text = $1
       `, [String(id)]);
-      const paidAmount = Math.max(0, finiteNumber(paymentTotals.rows[0]?.paid_amount, 0));
+      // Preserve legacy paid balances even when their historical payment rows
+      // were not migrated. A payment sum can raise this value, never reset it.
+      const paidAmount = Math.max(
+        0,
+        finiteNumber(current.paid_amount, 0),
+        finiteNumber(paymentTotals.rows[0]?.paid_amount, 0)
+      );
       if (paidAmount > totalAmount + 0.001) {
         await client.query('ROLLBACK');
         return res.status(409).json({
@@ -1076,40 +1099,44 @@ const loanController = {
       const remainingAmount = Math.max(0, Number((totalAmount - paidAmount).toFixed(2)));
       const remainingDays = Math.max(0, days - paidDaysCount);
       const status = normalizeLoanStatus(req.body.status ?? current.status, 'ACTIVE');
+      const notes = String(req.body.notes ?? req.body.observaciones ?? current.notes ?? '').trim();
 
       const { rows } = await client.query(`
         UPDATE loans SET
-          amount = $1,
-          capital = $1,
-          amount_borrowed = $1,
-          interest_rate = $2,
-          interest_amount = $3,
-          total_amount = $4,
-          total_to_pay = $4,
-          payment_days = $5,
-          days_agreed = $5,
-          days = $5,
-          daily_payment_amount = $6,
-          daily_payment = $6,
-          daily_amount = $6,
-          start_date = $7,
-          due_date = $8,
-          remaining_amount = $9,
-          remaining_days = $10,
-          paid_amount = $11,
-          paid_days_count = $12,
+          amount = $1::numeric,
+          capital = $1::numeric,
+          amount_borrowed = $1::numeric,
+          interest_rate = $2::numeric,
+          interest_amount = $3::numeric,
+          penalty_amount = $4::numeric,
+          mora = $4::numeric,
+          total_amount = $5::numeric,
+          total_to_pay = $5::numeric,
+          payment_days = $6::integer,
+          days_agreed = $6::integer,
+          days = $6::integer,
+          daily_payment_amount = $7::numeric,
+          daily_payment = $7::numeric,
+          daily_amount = $7::numeric,
+          start_date = $8::date,
+          due_date = $9::date,
+          remaining_amount = $10::numeric,
+          remaining_days = $11::integer,
+          paid_amount = $12::numeric,
+          paid_days_count = $13::integer,
+          notes = $14::text,
           status = CASE
-            WHEN $9 <= 0 THEN 'PAID'
-            WHEN $13 = 'INACTIVE' THEN 'INACTIVE'
-            WHEN $8 < CURRENT_DATE THEN 'OVERDUE'
+            WHEN $15::numeric <= 0::numeric THEN 'PAID'
+            WHEN $16::text = 'INACTIVE' THEN 'INACTIVE'
+            WHEN $17::date < CURRENT_DATE THEN 'OVERDUE'
             ELSE 'ACTIVE'
           END
-        WHERE id::text = $14
+        WHERE id::text = $18::text
         RETURNING *
       `, [
-        amount, interestRate, interestAmount, totalAmount, days, dailyAmount,
-        startDate, dueDate, remainingAmount, remainingDays, paidAmount, paidDaysCount,
-        status, String(id)
+        amount, interestRate, interestAmount, penaltyAmount, totalAmount, days, dailyAmount,
+        startDate, dueDate, remainingAmount, remainingDays, paidAmount, paidDaysCount, notes,
+        remainingAmount, status, dueDate, String(id)
       ]);
 
       await client.query('COMMIT');

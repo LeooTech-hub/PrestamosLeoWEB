@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Loan } from '@/types';
-import { formatCurrency, formatDatePE } from '@/services/loanService';
-import { X, CheckCircle2, CalendarDays, Percent, AlertCircle } from 'lucide-react';
+import { calculateCustomLoan, formatCurrency, formatDatePE } from '@/services/loanService';
+import { X, CheckCircle2, CalendarDays, Percent } from 'lucide-react';
 
 /* ─────────────────────────────────────────────── types ── */
 interface EditLoanModalProps {
@@ -15,7 +15,15 @@ interface EditLoanModalProps {
     data: {
       capital: number;
       amount?: number;
+      amount_borrowed?: number;
+      interestRate: number;
+      interest_rate: number;
+      interes?: number;
+      interest_amount?: number;
       paymentDays: number;
+      payment_days?: number;
+      days?: number;
+      days_agreed?: number;
       duration_days?: number;
       startDate: string;
       dueDate?: string;
@@ -26,9 +34,13 @@ interface EditLoanModalProps {
       penalty_amount?: number;
       mora?: number;
       total_amount?: number;
+      total_to_pay?: number;
+      totalPay?: number;
       totalToPay?: number;
       remaining_amount?: number;
       daily_amount?: number;
+      daily_payment?: number;
+      daily_payment_amount?: number;
       notes?: string;
     }
   ) => Promise<void>;
@@ -40,20 +52,43 @@ function toISO(d: Date) {
   return d.toISOString().split('T')[0];
 }
 
+function toUTCDate(dateISO: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateISO);
+  if (!match) return null;
+  return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+}
+
 /** startDate + days → dueDate (YYYY-MM-DD) */
 function addDays(startISO: string, days: number): string {
   if (!startISO || !days) return '';
-  const d = new Date(startISO);
-  d.setDate(d.getDate() + days);
+  const d = toUTCDate(startISO);
+  if (!d) return '';
+  d.setUTCDate(d.getUTCDate() + days);
   return toISO(d);
 }
 
 /** dueDate − startDate → days (integer) */
 function diffDays(startISO: string, dueISO: string): number {
   if (!startISO || !dueISO) return 20;
-  const start = new Date(startISO).getTime();
-  const due = new Date(dueISO).getTime();
+  const start = toUTCDate(startISO)?.getTime();
+  const due = toUTCDate(dueISO)?.getTime();
+  if (start === undefined || due === undefined) return 20;
   return Math.max(1, Math.round((due - start) / 86_400_000));
+}
+
+function getLoanInterestRate(loan: Loan | null): number {
+  if (!loan) return 20;
+  const explicitRate = Number(loan.interestRate ?? loan.interest_rate ?? loan.interes);
+  const interestAmount = Number(loan.interestAmount ?? loan.interest_amount ?? loan.interest ?? 0);
+  const capital = Number(loan.capital ?? loan.amount ?? 0);
+
+  if (Number.isFinite(explicitRate) && (explicitRate > 0 || interestAmount <= 0)) {
+    return explicitRate;
+  }
+  if (capital > 0 && interestAmount > 0) {
+    return Number(((interestAmount / capital) * 100).toFixed(2));
+  }
+  return 20;
 }
 
 /* ─────────────────────────────────────── component ── */
@@ -70,8 +105,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
   );
   const [startDate, setStartDate] = useState<string>(loan?.startDate || '');
   const [dueDateInput, setDueDateInput] = useState<string>(loan?.dueDate || '');
-  const [commissionInput, setCommissionInput] = useState<string>('');
-  const [useCustomCommission, setUseCustomCommission] = useState<boolean>(false);
+  const [interestRate, setInterestRate] = useState<number>(getLoanInterestRate(loan));
   const [penaltyInput, setPenaltyInput] = useState<string>(String(loan?.penaltyAmount || 0));
   const [notes, setNotes] = useState<string>(loan?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -84,16 +118,9 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
     setPaymentDaysInput(String(loan.paymentDays || 20));
     setStartDate(loan.startDate);
     setDueDateInput(loan.dueDate || addDays(loan.startDate, loan.paymentDays || 20));
+    setInterestRate(getLoanInterestRate(loan));
     setPenaltyInput(String(loan.penaltyAmount || 0));
     setNotes(loan.notes || '');
-
-    if (loan.interestAmount != null && loan.interestAmount !== Math.round((loan.capital || 0) * 0.20)) {
-      setUseCustomCommission(true);
-      setCommissionInput(String(loan.interestAmount));
-    } else {
-      setUseCustomCommission(false);
-      setCommissionInput('');
-    }
   }
 
   if (!isOpen || !loan) return null;
@@ -125,13 +152,14 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
   };
 
   /* ── Live summary calculations ── */
-  const defaultInterest = Math.round(capital * 0.20);
-  const customCommission = parseFloat(commissionInput) || 0;
-  const effectiveInterest = useCustomCommission ? customCommission : defaultInterest;
+  const breakdown = calculateCustomLoan(capital, parsedPaymentDays, interestRate);
+  const effectiveInterest = breakdown.interestAmount;
   const moraNum = Math.max(0, parseFloat(penaltyInput) || 0);
 
-  const totalToPay = capital + effectiveInterest + moraNum;
-  const dailyPayment = parsedPaymentDays > 0 ? Math.ceil(totalToPay / parsedPaymentDays) : 0;
+  const totalToPay = Number((breakdown.totalToPay + moraNum).toFixed(2));
+  const dailyPayment = parsedPaymentDays > 0
+    ? Number((totalToPay / parsedPaymentDays).toFixed(2))
+    : 0;
 
   /* ── Computed dueDate for display ── */
   const computedDueDate = dueDateInput || addDays(startDate, parsedPaymentDays);
@@ -154,20 +182,34 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
       await onConfirmEditLoan(loan.id, {
         capital,
         amount: capital,
+        amount_borrowed: capital,
+        interestRate,
+        interest_rate: interestRate,
+        interes: interestRate,
+        interest_amount: effectiveInterest,
         paymentDays: parsedPaymentDays,
+        payment_days: parsedPaymentDays,
+        days: parsedPaymentDays,
+        days_agreed: parsedPaymentDays,
         duration_days: parsedPaymentDays,
         startDate,
         dueDate: computedDueDate || undefined,
         due_date: computedDueDate || undefined,
-        commission: useCustomCommission ? customCommission : undefined,
         interest: effectiveInterest,
         penaltyAmount: moraNum,
         penalty_amount: moraNum,
         mora: moraNum,
         total_amount: totalToPay,
+        total_to_pay: totalToPay,
+        totalPay: totalToPay,
         totalToPay,
-        remaining_amount: Math.max(0, totalToPay - (loan.paidAmount || 0)),
+        remaining_amount: Number(Math.max(
+          0,
+          totalToPay - Number(loan.paidAmount ?? loan.paid_amount ?? 0)
+        ).toFixed(2)),
         daily_amount: dailyPayment,
+        daily_payment: dailyPayment,
+        daily_payment_amount: dailyPayment,
         notes: notes.trim(),
       });
       onClose();
@@ -288,56 +330,41 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
             </div>
           </div>
 
-          {/* ── Comisión / Interés Personalizado ── */}
+          {/* ── Tasa de interés ── */}
           <div className="bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl p-3.5">
             <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-1.5">
                 <Percent className="w-3.5 h-3.5 text-[#E89D4F]" />
                 <span className="text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] uppercase tracking-wider">
-                  Comisión / Interés (S/.)
+                  Tasa de interés
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setUseCustomCommission((v) => !v);
-                  if (!useCustomCommission && !commissionInput) {
-                    setCommissionInput(String(defaultInterest));
-                  }
-                }}
-                className={`text-[10px] font-black px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
-                  useCustomCommission
-                    ? 'bg-[#E89D4F] text-white border-[#E89D4F]'
-                    : 'bg-white dark:bg-[#26221F] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E] hover:border-[#E89D4F] hover:text-[#E89D4F]'
-                }`}
+                onClick={() => setInterestRate(20)}
+                className="text-[10px] font-black px-2.5 py-1 rounded-full border transition-all cursor-pointer bg-white dark:bg-[#26221F] text-[#6E615A] dark:text-[#C2B29F] border-[#E6DCD2] dark:border-[#3D352E] hover:border-[#E89D4F] hover:text-[#E89D4F]"
               >
-                {useCustomCommission ? 'Personalizado ✓' : 'Auto (20%)'}
+                Restaurar 20%
               </button>
             </div>
 
-            {useCustomCommission ? (
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-[#E89D4F]">
-                  S/.
-                </span>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={commissionInput}
-                  onChange={(e) => setCommissionInput(e.target.value)}
-                  placeholder="Ingrese comisión personalizada"
-                  className="w-full pl-11 pr-3 py-2.5 bg-white dark:bg-[#26221F] border border-[#E89D4F]/50 rounded-xl text-sm font-bold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#E89D4F]/40 focus:border-[#E89D4F]"
-                />
-              </div>
-            ) : (
-              <p className="text-xs text-[#6E615A] dark:text-[#C2B29F]">
-                Calculado (20% del capital):{' '}
-                <strong className="text-[#E89D4F]">
-                  {formatCurrency(defaultInterest)}
-                </strong>
-              </p>
-            )}
+            <div className="relative">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={interestRate}
+                onChange={(e) => setInterestRate(e.target.value === '' ? 0 : Number(e.target.value))}
+                placeholder="20"
+                className="w-full px-3 pr-9 py-2.5 bg-white dark:bg-[#26221F] border border-[#E89D4F]/50 rounded-xl text-sm font-bold text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#E89D4F]/40 focus:border-[#E89D4F]"
+                required
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-[#E89D4F]">%</span>
+            </div>
+            <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-2">
+              Interés calculado: <strong className="text-[#E89D4F]">{formatCurrency(effectiveInterest)}</strong>
+            </p>
           </div>
 
           {/* ── Mora / Cargo Adicional ── */}
@@ -374,7 +401,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
 
             <div className="flex justify-between items-center">
               <span className="text-[#6E615A] dark:text-[#C2B29F]">
-                {useCustomCommission ? 'Comisión Personalizada:' : 'Interés / Comisión (20%):'}
+                Interés / Comisión ({interestRate}%):
               </span>
               <strong className="text-[#E89D4F]">+{formatCurrency(effectiveInterest)}</strong>
             </div>

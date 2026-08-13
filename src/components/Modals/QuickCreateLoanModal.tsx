@@ -367,7 +367,7 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
             {/* Breakdown Card */}
             <div className="bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl p-3.5 text-xs space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-[#6E615A] dark:text-[#C2B29F]">Interés (20%):</span>
+                <span className="text-[#6E615A] dark:text-[#C2B29F]">Interés ({interestRate}%):</span>
                 <strong className="text-[#E89D4F]">+{formatCurrency(breakdown.interestAmount)}</strong>
               </div>
               <div className="flex justify-between">

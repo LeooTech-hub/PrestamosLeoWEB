@@ -128,7 +128,7 @@ export function calculateCustomLoan(capital: number, paymentDays: number, intere
   const interestAmount = Number((cap * (rate / 100)).toFixed(2));
   const totalToPay = Number((cap + interestAmount).toFixed(2));
   const days = paymentDays && paymentDays > 0 ? Number(paymentDays) : 20;
-  const dailyPaymentAmount = Math.ceil(totalToPay / (days || 1));
+  const dailyPaymentAmount = Number((totalToPay / (days || 1)).toFixed(2));
 
   return {
     capital: cap,
@@ -146,7 +146,7 @@ export function calculate20PercentLoan(capital: number, paymentDays: number, int
 
 export function formatCurrency(amount?: number) {
   return `S/. ${new Intl.NumberFormat('es-PE', {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount || 0)}`;
 }
