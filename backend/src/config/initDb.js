@@ -149,6 +149,9 @@ export async function initDb() {
     await safeAddColumn('clients', 'created_by_user_id', 'VARCHAR(255) NULL');
     await safeAddColumn('clients', 'assigned_to', 'VARCHAR(255) NULL');
     await safeAddColumn('clients', 'created_by', 'VARCHAR(255) NULL');
+    await safeAddColumn('clients', 'mora', 'DECIMAL(10,2) DEFAULT 0.00');
+    await safeAddColumn('clients', 'penalty_amount', 'DECIMAL(10,2) DEFAULT 0.00');
+    await safeAddColumn('clients', 'late_fee', 'DECIMAL(10,2) DEFAULT 0.00');
 
     // Asegurar todas las columnas en loans
     await safeAddColumn('loans', 'capital', 'DECIMAL(10,2) DEFAULT 0.00');

@@ -272,10 +272,12 @@ export default function App() {
 
   const handleUpdateClient = async (id, data) => {
     try {
-      await api.put(`/clients/${id}`, data);
+      const res = await api.put(`/clients/${id}`, data);
       await loadData();
+      return res.data;
     } catch (err) {
       console.error('Error actualizando cliente:', err);
+      throw err;
     }
   };
 

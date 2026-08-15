@@ -410,6 +410,11 @@ export function VistaClientes({
               return pDateStr === localTodayStr;
             });
 
+            const currentMora = currentActive.reduce(
+              (sum, loan) => sum + Number(loan?.mora ?? loan?.penaltyAmount ?? loan?.penalty_amount ?? loan?.late_fee ?? 0),
+              0
+            ) || Number(client?.mora ?? client?.loan_mora ?? client?.penaltyAmount ?? client?.penalty_amount ?? client?.late_fee ?? 0);
+
             const isPaidToday = hasPaymentToday || Boolean(client.isPaidToday && Number(client.todayPaidAmount || client.today_paid_amount || 0) > 0);
 
             return (
@@ -553,6 +558,15 @@ export function VistaClientes({
                         <span className="text-[11px] text-[#6E615A] italic font-medium">Sin Préstamo Activo</span>
                       )}
                     </div>
+
+                    {currentMora > 0 && (
+                      <div className="col-span-2 pt-1 border-t border-[#E6DCD2]/60 flex justify-between items-center text-[#C84B31]">
+                        <span className="text-[10px] font-bold flex items-center gap-1">
+                          ⚠️ Mora / Recargo:
+                        </span>
+                        <strong className="font-extrabold text-xs">+{formatCurrency(currentMora)}</strong>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -650,6 +664,10 @@ export function VistaClientes({
                 (sum, loan) => sum + Number(loan?.remainingAmount ?? loan?.remaining_amount ?? 0),
                 0
               );
+              const activeMora = activeLoans.reduce(
+                (sum, loan) => sum + Number(loan?.mora ?? loan?.penaltyAmount ?? loan?.penalty_amount ?? loan?.late_fee ?? 0),
+                0
+              ) || Number(activeSelectedClient?.mora ?? activeSelectedClient?.loan_mora ?? activeSelectedClient?.penaltyAmount ?? activeSelectedClient?.penalty_amount ?? activeSelectedClient?.late_fee ?? 0);
               const hasOverdueLoan = activeLoans.some((loan) => loan?.status === 'OVERDUE');
               return (
                 <div className="mt-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/70">
@@ -673,7 +691,7 @@ export function VistaClientes({
                   </div>
 
                   {activeSelectedLoan ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white p-2.5 rounded-xl border border-[#E6DCD2]/60">
+                    <div className={`grid ${activeMora > 0 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'} gap-2 text-xs bg-white p-2.5 rounded-xl border border-[#E6DCD2]/60`}>
                       <div>
                         <span className="text-[#6E615A] block text-[10px]">Monto Prestado:</span>
                         <strong className="text-[#2C221E] font-extrabold">
@@ -686,6 +704,14 @@ export function VistaClientes({
                           {activeLoans.length}
                         </strong>
                       </div>
+                      {activeMora > 0 && (
+                        <div>
+                          <span className="text-[#6E615A] block text-[10px]">Mora / Recargo:</span>
+                          <strong className="text-[#C84B31] font-extrabold">
+                            +{formatCurrency(activeMora)}
+                          </strong>
+                        </div>
+                      )}
                       <div>
                         <span className="text-[#6E615A] block text-[10px]">Próximo Vencimiento:</span>
                         <strong className="text-[#2C221E] font-extrabold">
@@ -694,7 +720,7 @@ export function VistaClientes({
                       </div>
                       <div>
                         <span className="text-[#6E615A] block text-[10px]">Saldo Restante:</span>
-                        <strong className="text-[#C84B31] font-extrabold">
+                        <strong className={hasOverdueLoan ? "text-[#C84B31] font-extrabold" : "text-[#2D7A5D] font-extrabold"}>
                           {formatCurrency(activeRemaining)}
                         </strong>
                       </div>

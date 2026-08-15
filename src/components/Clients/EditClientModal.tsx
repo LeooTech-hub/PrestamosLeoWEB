@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Client } from '@/types';
-import { X, CheckCircle2, User, Phone, MapPin, FileText } from 'lucide-react';
+import { X, CheckCircle2, User, Phone, MapPin, FileText, AlertCircle } from 'lucide-react';
 
 interface EditClientModalProps {
   client: Client | null;
@@ -10,7 +10,21 @@ interface EditClientModalProps {
   onClose: () => void;
   onConfirmEdit: (
     id: string,
-    data: { name: string; alias?: string; phone: string; address: string; identification?: string; notes?: string }
+    data: {
+      name: string;
+      alias?: string;
+      phone: string;
+      address: string;
+      identification?: string;
+      dni?: string;
+      notes?: string;
+      mora?: number;
+      late_fee?: number;
+      lateFee?: number;
+      penaltyAmount?: number;
+      penalty_amount?: number;
+      recargo?: number;
+    }
   ) => Promise<void>;
 }
 
@@ -20,36 +34,65 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
   onClose,
   onConfirmEdit,
 }) => {
-  const [name, setName] = useState<string>(client?.name || '');
-  const [alias, setAlias] = useState<string>(client?.alias || '');
-  const [phone, setPhone] = useState<string>(client?.phone || '');
-  const [address, setAddress] = useState<string>(client?.address || '');
-  const [identification, setIdentification] = useState<string>(client?.identification || '');
-  const [notes, setNotes] = useState<string>(client?.notes || '');
+  const [formData, setFormData] = useState({
+    name: client?.name || '',
+    alias: client?.alias || '',
+    phone: client?.phone || '',
+    address: client?.address || '',
+    identification: client?.identification || client?.dni || '',
+    notes: client?.notes || '',
+    mora: (client as any)?.mora ?? (client as any)?.loan_mora ?? (client as any)?.penaltyAmount ?? (client as any)?.penalty_amount ?? (client as any)?.activeLoan?.mora ?? (client as any)?.activeLoan?.penaltyAmount ?? (client as any)?.activeLoan?.penalty_amount ?? (client as any)?.late_fee ?? 0,
+  });
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (client) {
+      setFormData({
+        name: client.name || '',
+        alias: client.alias || '',
+        phone: client.phone || '',
+        address: client.address || '',
+        identification: client.identification || client.dni || '',
+        notes: client.notes || '',
+        mora: (client as any)?.mora ?? (client as any)?.loan_mora ?? (client as any)?.penaltyAmount ?? (client as any)?.penalty_amount ?? (client as any)?.activeLoan?.mora ?? (client as any)?.activeLoan?.penaltyAmount ?? (client as any)?.activeLoan?.penalty_amount ?? (client as any)?.late_fee ?? 0,
+      });
+    }
+  }, [client]);
 
   if (!isOpen || !client) return null;
 
+  const handleChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
+    if (!formData.name.trim()) {
       alert('Por favor ingrese el nombre del cliente');
       return;
     }
-    if (!phone.trim()) {
+    if (!formData.phone.trim()) {
       alert('Por favor ingrese el teléfono del cliente');
       return;
     }
 
     try {
       setIsSubmitting(true);
+      const moraNum = parseFloat(String(formData.mora)) || 0;
       await onConfirmEdit(client.id, {
-        name: name.trim(),
-        alias: alias.trim() || undefined,
-        phone: phone.trim(),
-        address: address.trim(),
-        identification: identification.trim(),
-        notes: notes.trim(),
+        name: formData.name.trim(),
+        alias: formData.alias.trim() || undefined,
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        identification: formData.identification.trim() || undefined,
+        dni: formData.identification.trim() || undefined,
+        notes: formData.notes.trim() || undefined,
+        mora: moraNum,
+        late_fee: moraNum,
+        lateFee: moraNum,
+        penaltyAmount: moraNum,
+        penalty_amount: moraNum,
+        recargo: moraNum,
       });
       onClose();
     } catch (error) {
@@ -90,8 +133,8 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
                 <User className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
                   placeholder="Nombre completo"
                   className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                   required
@@ -105,8 +148,8 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
               </label>
               <input
                 type="text"
-                value={alias}
-                onChange={(e) => setAlias(e.target.value)}
+                value={formData.alias}
+                onChange={(e) => handleChange('alias', e.target.value)}
                 placeholder=""
                 className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
               />
@@ -121,8 +164,8 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
               <Phone className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={formData.phone}
+                onChange={(e) => handleChange('phone', e.target.value)}
                 placeholder="Número de teléfono"
                 className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                 required
@@ -138,8 +181,8 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
               <MapPin className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                value={formData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
                 placeholder="Dirección o referencia"
                 className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
                 required
@@ -155,12 +198,34 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
               <FileText className="w-4 h-4 text-[#A89B92] dark:text-[#C2B29F] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                value={identification}
-                onChange={(e) => setIdentification(e.target.value)}
+                value={formData.identification}
+                onChange={(e) => handleChange('identification', e.target.value)}
                 placeholder="Número de DNI"
                 className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
               />
             </div>
+          </div>
+
+          {/* Mora / Recargo Adicional */}
+          <div>
+            <label className="block text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F] mb-1">
+              Mora / Recargo (S/.):
+            </label>
+            <div className="relative">
+              <AlertCircle className="w-4 h-4 text-[#C84B31] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={formData.mora}
+                onChange={(e) => handleChange('mora', e.target.value === '' ? '' : e.target.value)}
+                placeholder="0.00"
+                className="w-full pl-9 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs sm:text-sm font-bold text-[#C84B31] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
+              />
+            </div>
+            <p className="text-[10px] text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
+              Aplica recargo o penalidad adicional a la cuenta o préstamo del cliente.
+            </p>
           </div>
 
           <div>
@@ -169,8 +234,8 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
             </label>
             <input
               type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              value={formData.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
               placeholder="Observaciones de cobro"
               className="w-full px-3 py-2 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-xs font-medium text-[#2C221E] dark:text-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 dark:focus:ring-[#E07A5F]/40"
             />

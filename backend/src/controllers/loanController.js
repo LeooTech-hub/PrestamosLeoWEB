@@ -192,6 +192,11 @@ function mapRowToClient(row) {
     }
   }
 
+  const numericPenaltyAmount = Math.max(0, finiteNumber(
+    row.loan_penalty_amount ?? row.loan_mora ?? row.penalty_amount ?? row.penaltyAmount ?? row.mora ?? row.late_fee ?? row.lateFee ?? row.recargo,
+    0
+  ));
+
   const hasActiveLoan = Boolean(row.loan_id);
   const activeLoan = hasActiveLoan ? {
     id: String(row.loan_id),
@@ -201,6 +206,12 @@ function mapRowToClient(row) {
     interestRate: numericInterestRate,
     interest_rate: numericInterestRate,
     interes: numericInterestRate,
+    penaltyAmount: numericPenaltyAmount,
+    penalty_amount: numericPenaltyAmount,
+    mora: numericPenaltyAmount,
+    lateFee: numericPenaltyAmount,
+    late_fee: numericPenaltyAmount,
+    recargo: numericPenaltyAmount,
     totalAmount: numericTotalAmount,
     total_amount: numericTotalAmount,
     totalToPay: numericTotalAmount,
@@ -231,6 +242,12 @@ function mapRowToClient(row) {
     interestRate: 20,
     interest_rate: 20,
     interes: 20,
+    penaltyAmount: 0,
+    penalty_amount: 0,
+    mora: 0,
+    lateFee: 0,
+    late_fee: 0,
+    recargo: 0,
     totalAmount: 0,
     total_amount: 0,
     totalToPay: 0,
@@ -278,6 +295,13 @@ function mapRowToClient(row) {
     monto: numericAmount,
     capital: numericAmount,
     loan_amount: numericAmount,
+
+    penaltyAmount: numericPenaltyAmount,
+    penalty_amount: numericPenaltyAmount,
+    mora: numericPenaltyAmount,
+    lateFee: numericPenaltyAmount,
+    late_fee: numericPenaltyAmount,
+    recargo: numericPenaltyAmount,
 
     total_amount: numericTotalAmount,
     totalAmount: numericTotalAmount,
@@ -337,9 +361,14 @@ function mapRowToLoan(row) {
     row.interest_amount
   ], Number((capital * (interestRate / 100)).toFixed(2)));
 
+  const penaltyAmount = Math.max(0, finiteNumber(
+    row.penalty_amount ?? row.penaltyAmount ?? row.mora ?? row.late_fee ?? row.lateFee ?? row.recargo,
+    0
+  ));
+
   const totalToPay = firstNonZeroNumber([
     row.total_amount, row.total_to_pay
-  ], Number((capital + interestAmount).toFixed(2)));
+  ], Number((capital + interestAmount + penaltyAmount).toFixed(2)));
 
   const paymentDays = Math.max(1, Math.round(firstNonZeroNumber([
     row.payment_days, row.days_agreed, row.days, row.duration, row.total_installments
@@ -386,6 +415,13 @@ function mapRowToLoan(row) {
     interestAmount,
     interest_amount: interestAmount,
     interest: interestAmount,
+
+    penaltyAmount,
+    penalty_amount: penaltyAmount,
+    mora: penaltyAmount,
+    lateFee: penaltyAmount,
+    late_fee: penaltyAmount,
+    recargo: penaltyAmount,
 
     totalToPay,
     totalAmount: totalToPay,
@@ -544,6 +580,8 @@ const loanController = {
           COALESCE(NULLIF(l.total_amount, 0), NULLIF(l.total_to_pay, 0), 0) AS loan_total_amount,
           COALESCE(NULLIF(l.daily_amount, 0), NULLIF(l.daily_payment_amount, 0), NULLIF(l.daily_payment, 0), 0) AS loan_daily_amount,
           COALESCE(l.interest_rate, 20) AS loan_interest_rate,
+          COALESCE(l.penalty_amount, l.mora, c.mora, 0) AS loan_penalty_amount,
+          COALESCE(l.mora, l.penalty_amount, c.mora, 0) AS loan_mora,
           COALESCE(l.paid_amount, 0) AS loan_paid_amount,
           GREATEST(
             0,
@@ -643,6 +681,7 @@ const loanController = {
         const mapped = mapRowToClient ? mapRowToClient(row) : row;
 
         const calculatedDueDate = toDateOnly(row.loan_due_date || mapped.loan_due_date || mapped.due_date);
+        const effectiveMora = Number(row.loan_mora || row.loan_penalty_amount || row.penalty_amount || row.mora || mapped.mora || 0);
 
         return {
           ...mapped,
@@ -651,6 +690,13 @@ const loanController = {
           loan_capital: Number(row.loan_capital || 0),
           loan_total_amount: Number(row.loan_total_amount || 0),
           loan_daily_amount: Number(row.loan_daily_amount || 0),
+          loan_penalty_amount: effectiveMora,
+          loan_mora: effectiveMora,
+          penaltyAmount: effectiveMora,
+          penalty_amount: effectiveMora,
+          mora: effectiveMora,
+          lateFee: effectiveMora,
+          late_fee: effectiveMora,
           loan_start_date: row.loan_start_date,
           loan_due_date: calculatedDueDate,
           due_date: calculatedDueDate,
@@ -705,23 +751,183 @@ const loanController = {
   },
 
   async updateClient(req, res) {
+    const client = await pool.connect();
     try {
       const { id } = req.params;
       const name = req.body.name || req.body.nombre || '';
       const alias = req.body.alias || req.body.apodo || '';
       const phone = req.body.phone || req.body.telefono || '';
       const address = req.body.address || req.body.direccion || '';
-      const dni = req.body.dni || req.body.documento || '';
+      const dni = req.body.dni || req.body.documento || req.body.identification || '';
       const notes = req.body.notes || req.body.observaciones || '';
+      const moraRaw = req.body.mora ?? req.body.late_fee ?? req.body.lateFee ?? req.body.recargo ?? req.body.penalty ?? req.body.penalty_amount ?? req.body.penaltyAmount;
+      const moraVal = (moraRaw !== undefined && moraRaw !== null && moraRaw !== '') ? Math.max(0, parseFloat(moraRaw) || 0) : null;
+
+      await client.query('BEGIN');
+
       const query = `
-        UPDATE clients SET name = $1, alias = $2, phone = $3, address = $4, dni = $5, notes = $6 
-        WHERE id::text = $7 RETURNING *
+        UPDATE clients SET 
+          name = $1, 
+          alias = $2, 
+          phone = $3, 
+          address = $4, 
+          dni = $5, 
+          notes = $6,
+          mora = COALESCE($7, mora),
+          penalty_amount = COALESCE($7, penalty_amount)
+        WHERE id::text = $8 RETURNING *
       `;
-      const result = await pool.query(query, [name.trim(), alias.trim(), phone.trim(), address.trim(), dni.trim(), notes.trim(), String(id)]);
-      if (result.rowCount === 0) return res.status(404).json({ error: 'Cliente no encontrado' });
-      return res.json({ success: true, client: mapRowToClient(result.rows[0]) });
+      const result = await client.query(query, [
+        name.trim(),
+        alias.trim(),
+        phone.trim(),
+        address.trim(),
+        dni.trim(),
+        notes.trim(),
+        moraVal,
+        String(id)
+      ]);
+
+      if (result.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Cliente no encontrado' });
+      }
+
+      await client.query(`
+        UPDATE loans SET
+          client_name = $1,
+          client_phone = $2,
+          client_address = $3
+        WHERE client_id::text = $4
+      `, [name.trim(), phone.trim(), address.trim(), String(id)]);
+
+      if (moraVal !== null) {
+        const activeLoansRes = await client.query(`
+          SELECT * FROM loans
+          WHERE client_id::text = $1
+            AND COALESCE(is_archived, 0) = 0
+            AND UPPER(status) IN ('ACTIVE', 'OVERDUE', 'VIGENTE', 'VENCIDO', 'MORA')
+          ORDER BY created_at DESC
+        `, [String(id)]);
+
+        if (activeLoansRes.rows.length > 0) {
+          const loanRow = activeLoansRes.rows[0];
+          const capital = Math.max(0, firstNonZeroNumber([loanRow.capital, loanRow.amount, loanRow.amount_borrowed], 0));
+          const storedInterestRate = firstFiniteNumber([loanRow.interest_rate, loanRow.interes], 20);
+          const storedInterestAmount = firstNonZeroNumber([loanRow.interest_amount], 0);
+          const interestRate = storedInterestRate > 0 || storedInterestAmount <= 0 || capital <= 0
+            ? storedInterestRate
+            : Number(((storedInterestAmount / capital) * 100).toFixed(2));
+          const interestAmount = firstNonZeroNumber([loanRow.interest_amount], Number((capital * (interestRate / 100)).toFixed(2)));
+
+          const newPenalty = moraVal;
+          const newTotalAmount = Number((capital + interestAmount + newPenalty).toFixed(2));
+          const days = Math.max(1, Math.round(firstNonZeroNumber([loanRow.payment_days, loanRow.days_agreed, loanRow.days], 20)));
+          const dailyPayment = Number((newTotalAmount / days).toFixed(2));
+          const paidAmount = Math.max(0, finiteNumber(loanRow.paid_amount, 0));
+          const remainingAmount = Math.max(0, Number((newTotalAmount - paidAmount).toFixed(2)));
+          const paidDaysCount = Math.min(days, Math.max(0, Math.floor(paidAmount / Math.max(dailyPayment, 0.01))));
+          const remainingDays = Math.max(0, days - paidDaysCount);
+
+          await client.query(`
+            UPDATE loans SET
+              penalty_amount = $1::numeric,
+              mora = $1::numeric,
+              total_amount = $2::numeric,
+              total_to_pay = $2::numeric,
+              daily_payment_amount = $3::numeric,
+              daily_payment = $3::numeric,
+              daily_amount = $3::numeric,
+              remaining_amount = $4::numeric,
+              remaining_days = $5::integer,
+              paid_days_count = $6::integer,
+              status = CASE
+                WHEN $4::numeric <= 0::numeric THEN 'PAID'
+                WHEN due_date < CURRENT_DATE THEN 'OVERDUE'
+                WHEN $1::numeric > 0 AND status = 'OVERDUE' THEN 'OVERDUE'
+                ELSE status
+              END
+            WHERE id::text = $7::text
+          `, [newPenalty, newTotalAmount, dailyPayment, remainingAmount, remainingDays, paidDaysCount, String(loanRow.id)]);
+        }
+      }
+
+      await client.query('COMMIT');
+
+      const fullClientRes = await pool.query(`
+        SELECT
+          c.*,
+          COALESCE(u.name, 'Sin Asignar') AS assigned_to_name,
+          l.id AS loan_id,
+          COALESCE(NULLIF(l.amount, 0), NULLIF(l.capital, 0), NULLIF(l.amount_borrowed, 0), 0) AS loan_amount,
+          COALESCE(NULLIF(l.amount, 0), NULLIF(l.capital, 0), NULLIF(l.amount_borrowed, 0), 0) AS loan_capital,
+          COALESCE(NULLIF(l.total_amount, 0), NULLIF(l.total_to_pay, 0), 0) AS loan_total_amount,
+          COALESCE(NULLIF(l.daily_amount, 0), NULLIF(l.daily_payment_amount, 0), NULLIF(l.daily_payment, 0), 0) AS loan_daily_amount,
+          COALESCE(l.interest_rate, 20) AS loan_interest_rate,
+          COALESCE(l.penalty_amount, l.mora, c.mora, 0) AS loan_penalty_amount,
+          COALESCE(l.mora, l.penalty_amount, c.mora, 0) AS loan_mora,
+          COALESCE(l.paid_amount, 0) AS loan_paid_amount,
+          GREATEST(
+            0,
+            COALESCE(NULLIF(l.total_amount, 0), NULLIF(l.total_to_pay, 0), 0)
+              - COALESCE(l.paid_amount, 0)
+          ) AS loan_remaining_amount,
+          COALESCE(NULLIF(l.payment_days, 0), NULLIF(l.days_agreed, 0), NULLIF(l.days, 0), 20)::integer AS loan_days,
+          GREATEST(
+            0,
+            COALESCE(NULLIF(l.payment_days, 0), NULLIF(l.days_agreed, 0), NULLIF(l.days, 0), 20)::integer
+            - COALESCE(l.paid_days_count, 0)::integer
+          ) AS loan_remaining_days,
+          COALESCE(l.start_date, l.created_at::date, c.created_at::date) AS loan_start_date,
+          COALESCE(l.start_date, l.created_at::date, c.created_at::date) AS start_date,
+          COALESCE(
+            l.due_date,
+            COALESCE(l.start_date, l.created_at::date, c.created_at::date)
+              + COALESCE(NULLIF(l.payment_days, 0), NULLIF(l.days_agreed, 0), NULLIF(l.days, 0), 20)::integer
+          ) AS loan_due_date,
+          COALESCE(
+            l.due_date,
+            COALESCE(l.start_date, l.created_at::date, c.created_at::date)
+              + COALESCE(NULLIF(l.payment_days, 0), NULLIF(l.days_agreed, 0), NULLIF(l.days, 0), 20)::integer
+          ) AS due_date,
+          l.status AS loan_status
+        FROM clients c
+        LEFT JOIN users u ON c.assigned_to_user_id::text = u.id::text
+        LEFT JOIN (
+          SELECT DISTINCT ON (client_id::text)
+            loans.*
+          FROM loans
+          WHERE COALESCE(is_archived, 0) = 0
+            AND UPPER(status) IN ('ACTIVE', 'OVERDUE', 'VIGENTE', 'VENCIDO', 'MORA')
+          ORDER BY
+            client_id::text,
+            created_at DESC
+        ) l ON l.client_id::text = c.id::text
+        WHERE c.id::text = $1
+      `, [String(id)]);
+
+      const clientRow = fullClientRes.rows[0] || result.rows[0];
+      const mapped = mapRowToClient(clientRow);
+      const effectiveMora = Number(clientRow.loan_mora ?? clientRow.mora ?? moraVal ?? 0);
+      return res.json({ 
+        success: true, 
+        client: {
+          ...mapped,
+          loan_penalty_amount: effectiveMora,
+          loan_mora: effectiveMora,
+          penaltyAmount: effectiveMora,
+          penalty_amount: effectiveMora,
+          mora: effectiveMora,
+          late_fee: effectiveMora,
+          lateFee: effectiveMora,
+        }
+      });
     } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('[ERROR PUT /api/clients/:id]:', error);
       return res.status(500).json({ error: error.message });
+    } finally {
+      client.release();
     }
   },
 

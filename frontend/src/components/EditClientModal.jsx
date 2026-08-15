@@ -1,19 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fetchDniData } from '../utils/reniecHelper';
-import { X, User, Phone, MapPin, FileText, CheckCircle2, Search, Loader2 } from 'lucide-react';
+import { X, User, Phone, MapPin, FileText, CheckCircle2, Search, Loader2, AlertCircle } from 'lucide-react';
 
 export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
-  const [name, setName] = useState(client?.name || '');
-  const [alias, setAlias] = useState(client?.alias || '');
-  const [phone, setPhone] = useState(client?.phone || '');
-  const [address, setAddress] = useState(client?.address || '');
-  const [identification, setIdentification] = useState(client?.identification || '');
-  const [notes, setNotes] = useState(client?.notes || '');
+  const [formData, setFormData] = useState({
+    name: client?.name || '',
+    alias: client?.alias || '',
+    phone: client?.phone || '',
+    address: client?.address || '',
+    identification: client?.identification || client?.dni || client?.documento || '',
+    notes: client?.notes || '',
+    mora: client?.mora ?? client?.loan_mora ?? client?.penaltyAmount ?? client?.penalty_amount ?? client?.activeLoan?.mora ?? client?.activeLoan?.penaltyAmount ?? client?.activeLoan?.penalty_amount ?? client?.late_fee ?? 0,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearchingDni, setIsSearchingDni] = useState(false);
   const [dniStatusText, setDniStatusText] = useState('');
 
+  useEffect(() => {
+    if (client) {
+      setFormData({
+        name: client.name || '',
+        alias: client.alias || '',
+        phone: client.phone || '',
+        address: client.address || '',
+        identification: client.identification || client.dni || client.documento || '',
+        notes: client.notes || '',
+        mora: client.mora ?? client.loan_mora ?? client.penaltyAmount ?? client.penalty_amount ?? client.activeLoan?.mora ?? client.activeLoan?.penaltyAmount ?? client.activeLoan?.penalty_amount ?? client.late_fee ?? 0,
+      });
+    }
+  }, [client]);
+
   if (!isOpen || !client) return null;
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const handleDniSearch = async (dniToSearch) => {
     const clean = String(dniToSearch || '').replace(/\D/g, '').slice(0, 8);
@@ -24,7 +48,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
     try {
       const data = await fetchDniData(clean);
       if (data && data.fullName) {
-        setName(data.fullName);
+        handleChange('name', data.fullName);
         setDniStatusText('✓ Nombre autocompletado');
         setTimeout(() => setDniStatusText(''), 3500);
       }
@@ -39,7 +63,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
 
   const handleIdentificationChange = (val) => {
     const cleanVal = val.replace(/\D/g, '').slice(0, 8);
-    setIdentification(cleanVal);
+    handleChange('identification', cleanVal);
     if (cleanVal.length === 8) {
       handleDniSearch(cleanVal);
     }
@@ -47,17 +71,26 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!formData.name.trim()) return;
 
     setIsSubmitting(true);
     try {
+      const moraNum = parseFloat(formData.mora) || 0;
       await onConfirmEdit(client.id, {
-        name,
-        alias: alias || undefined,
-        phone,
-        address,
-        identification: identification || undefined,
-        notes: notes || undefined,
+        name: formData.name.trim(),
+        alias: formData.alias?.trim() || undefined,
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        identification: formData.identification?.trim() || undefined,
+        dni: formData.identification?.trim() || undefined,
+        notes: formData.notes?.trim() || undefined,
+        mora: moraNum,
+        late_fee: moraNum,
+        lateFee: moraNum,
+        penalty: moraNum,
+        penaltyAmount: moraNum,
+        penalty_amount: moraNum,
+        recargo: moraNum,
       });
       onClose();
     } catch (err) {
@@ -103,8 +136,8 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
                 <input
                   type="text"
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
                 />
               </div>
@@ -116,8 +149,8 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
               </label>
               <input
                 type="text"
-                value={alias}
-                onChange={(e) => setAlias(e.target.value)}
+                value={formData.alias}
+                onChange={(e) => handleChange('alias', e.target.value)}
                 placeholder=""
                 className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
@@ -134,8 +167,8 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
                 <input
                   type="text"
                   required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  value={formData.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
                 />
               </div>
@@ -162,11 +195,11 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
                 <input
                   type="text"
                   maxLength={8}
-                  value={identification}
+                  value={formData.identification}
                   onChange={(e) => handleIdentificationChange(e.target.value)}
                   onBlur={() => {
-                    if (identification.length === 8 && !isSearchingDni && !name) {
-                      handleDniSearch(identification);
+                    if (formData.identification.length === 8 && !isSearchingDni && !formData.name) {
+                      handleDniSearch(formData.identification);
                     }
                   }}
                   placeholder="Opcional"
@@ -174,8 +207,8 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
                 />
                 <button
                   type="button"
-                  onClick={() => handleDniSearch(identification)}
-                  disabled={isSearchingDni || identification.length !== 8}
+                  onClick={() => handleDniSearch(formData.identification)}
+                  disabled={isSearchingDni || formData.identification.length !== 8}
                   className="absolute right-2 top-2 p-0.5 text-[#6E615A] hover:text-[#D96B27] disabled:opacity-40 transition-colors"
                   title="Buscar DNI en RENIEC"
                 >
@@ -198,11 +231,34 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
               <input
                 type="text"
                 required
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                value={formData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>
+          </div>
+
+          {/* Mora / Recargo Adicional */}
+          <div>
+            <label className="block text-xs font-bold text-[#6E615A] mb-1">
+              Mora / Recargo (S/.):
+            </label>
+            <div className="relative">
+              <AlertCircle className="w-4 h-4 text-[#C84B31] absolute left-3 top-3" />
+              <input
+                type="number"
+                step="any"
+                min="0"
+                name="mora"
+                value={formData.mora}
+                onChange={(e) => handleChange('mora', e.target.value === '' ? '' : e.target.value)}
+                placeholder="0.00"
+                className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#C84B31] focus:outline-none focus:border-[#D96B27]"
+              />
+            </div>
+            <p className="text-[10px] text-[#6E615A] mt-0.5">
+              Aplica recargo o penalidad adicional a la cuenta o préstamo del cliente.
+            </p>
           </div>
 
           <div>
@@ -213,8 +269,8 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
               <FileText className="w-4 h-4 text-[#E89D4F] absolute left-3 top-3" />
               <textarea
                 rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                value={formData.notes}
+                onChange={(e) => handleChange('notes', e.target.value)}
                 placeholder="Observaciones de cobro"
                 className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
