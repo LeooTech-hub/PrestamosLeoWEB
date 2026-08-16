@@ -567,9 +567,28 @@ const loanController = {
   async getClients(req, res) {
     try {
       const isCobrador = req.user && String(req.user.role || '').toUpperCase() === 'COBRADOR';
-      const isTodos = req.query.filter === 'TODOS' || req.query.assignedTo === 'TODOS';
+      const isAdmin = !req.user || String(req.user.role || '').toUpperCase() === 'ADMIN';
+      const collectorIdParam = req.query.collector_id || req.query.collectorId || req.query.assignedTo || req.query.assigned_to_user_id || req.query.assigned_to;
+      const isTodos = req.query.filter === 'TODOS' || req.query.filter === 'ALL' || req.query.assignedTo === 'TODOS' || req.query.assignedTo === 'ALL' || collectorIdParam === 'ALL' || collectorIdParam === 'TODOS';
       const userId = req.user ? req.user.id : null;
       
+      const params = [];
+      const whereClauses = [];
+
+      if (isCobrador && userId && !isTodos) {
+        params.push(String(userId));
+        whereClauses.push(`c.assigned_to_user_id::text = $${params.length}`);
+      } else if (isAdmin && collectorIdParam && !isTodos) {
+        if (collectorIdParam === 'UNASSIGNED') {
+          whereClauses.push(`(c.assigned_to_user_id IS NULL OR c.assigned_to_user_id = '')`);
+        } else {
+          params.push(String(collectorIdParam));
+          whereClauses.push(`c.assigned_to_user_id::text = $${params.length}`);
+        }
+      }
+
+      const whereSQL = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
       const query = `
         SELECT
           c.*,
@@ -671,10 +690,9 @@ const loanController = {
             AND amount > 0
           GROUP BY client_id::text
         ) p_today ON p_today.client_id::text = c.id::text
-        ${isCobrador && userId && !isTodos ? 'WHERE c.assigned_to_user_id::text = $1' : ''}
+        ${whereSQL}
         ORDER BY c.created_at DESC
       `;
-      const params = (isCobrador && userId && !isTodos) ? [String(userId)] : [];
       const { rows } = await pool.query(query, params);
 
       const mappedRows = (rows || []).map(row => {
@@ -726,24 +744,72 @@ const loanController = {
   
   async createClient(req, res) {
     try {
-      const name = req.body.name || req.body.nombre || '';
-      const alias = req.body.alias || req.body.apodo || '';
-      const phone = req.body.phone || req.body.telefono || '';
-      const dni = req.body.dni || req.body.documento || '';
-      const address = req.body.address || req.body.direccion || '';
-      const notes = req.body.notes || req.body.observaciones || '';
-      const assigned_to_user_id = req.body.assigned_to_user_id || req.body.assignedTo || req.user?.id || null;
-      if (!name || !name.trim()) return res.status(400).json({ error: 'El nombre es obligatorio' });
+      const name = String(req.body.name || req.body.nombre || req.body.client_name || req.body.clientName || '').trim();
+      const alias = String(req.body.alias || req.body.apodo || req.body.client_alias || req.body.clientAlias || '').trim();
+      const phone = String(req.body.phone || req.body.telefono || req.body.client_phone || req.body.clientPhone || '').trim();
+      const dni = String(req.body.dni || req.body.documento || req.body.identification || req.body.clientIdentification || '').trim();
+      const address = String(req.body.address || req.body.direccion || req.body.client_address || req.body.clientAddress || '').trim();
+      const notes = String(req.body.notes || req.body.observaciones || '').trim();
+      
+      let rawAssignedId = req.body.assigned_to_user_id || req.body.assignedToUserId || req.body.assignedTo || req.body.assigned_to || (req.user?.role === 'COBRADOR' ? req.user?.id : null);
+      if (typeof rawAssignedId === 'object' && rawAssignedId !== null) rawAssignedId = rawAssignedId.id;
+      let assigned_to_user_id = rawAssignedId && String(rawAssignedId) !== '[object Object]' && String(rawAssignedId) !== 'unassigned' && String(rawAssignedId) !== 'Sin Asignar' ? String(rawAssignedId) : null;
+
+      if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
+
+      // Validate that assigned_to_user_id exists in users table if specified
+      let assignedToName = 'Sin Asignar';
+      if (assigned_to_user_id) {
+        const uRes = await pool.query(`SELECT id, name FROM users WHERE id::text = $1 LIMIT 1`, [assigned_to_user_id]);
+        if (uRes.rows.length > 0) {
+          assignedToName = uRes.rows[0].name;
+        } else {
+          assigned_to_user_id = null;
+        }
+      }
+
+      // Check if created_by_user_id exists in users table
+      let created_by_user_id = req.user?.id ? String(req.user.id) : null;
+      if (created_by_user_id) {
+        const uRes = await pool.query(`SELECT id FROM users WHERE id::text = $1 LIMIT 1`, [created_by_user_id]);
+        if (uRes.rows.length === 0) {
+          created_by_user_id = null;
+        }
+      }
+
+      const newId = generateUUID();
       const query = `
-        INSERT INTO clients (id, name, alias, phone, dni, address, notes, assigned_to_user_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO clients (
+          id, name, alias, phone, dni, documento,
+          address, notes, assigned_to_user_id, created_by_user_id
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `;
       const result = await pool.query(query, [
-        generateUUID(), name.trim(), alias.trim(), phone.trim(), dni.trim(), address.trim(), notes.trim(),
-        assigned_to_user_id ? String(assigned_to_user_id) : null
+        newId,
+        name,
+        alias || null,
+        phone || null,
+        dni || null,
+        dni || null,
+        address || null,
+        notes || null,
+        assigned_to_user_id,
+        created_by_user_id
       ]);
-      return res.status(201).json(mapRowToClient(result.rows[0]));
+
+      const clientRow = result.rows[0];
+      const mappedClient = mapRowToClient({
+        ...clientRow,
+        assigned_to_name: assignedToName,
+      });
+
+      return res.status(201).json({
+        ...mappedClient,
+        assignedToName,
+        assigned_to_name: assignedToName
+      });
     } catch (error) {
       console.error('[ERROR POST /api/clients]:', error);
       return res.status(500).json({ error: error.message });
@@ -1071,9 +1137,18 @@ const loanController = {
         req.body.alias ?? req.body.apodo ?? req.body.client_alias ?? req.body.clientAlias ?? ''
       ).trim();
       const notes = String(req.body.notes ?? req.body.observaciones ?? '').trim();
-      const assignedToUserId = req.body.assigned_to_user_id ?? req.body.assignedToUserId ?? req.body.assignedTo
-        ? String(req.body.assigned_to_user_id ?? req.body.assignedToUserId ?? req.body.assignedTo)
-        : (req.user?.id ? String(req.user.id) : null);
+      let rawAssignedId = req.body.assigned_to_user_id ?? req.body.assignedToUserId ?? req.body.assignedTo;
+      if (typeof rawAssignedId === 'object' && rawAssignedId !== null) rawAssignedId = rawAssignedId.id;
+      let assignedToUserId = rawAssignedId && String(rawAssignedId) !== '[object Object]' && String(rawAssignedId) !== 'unassigned' && String(rawAssignedId) !== 'Sin Asignar'
+        ? String(rawAssignedId)
+        : (req.user?.role === 'COBRADOR' && req.user?.id ? String(req.user.id) : null);
+
+      if (assignedToUserId) {
+        const uRes = await client.query(`SELECT id FROM users WHERE id::text = $1 LIMIT 1`, [assignedToUserId]);
+        if (uRes.rows.length === 0) {
+          assignedToUserId = null;
+        }
+      }
 
       const rawAmount = req.body.amount ?? req.body.capital ?? req.body.amount_borrowed ?? req.body.monto;
       const rawInterestRate = req.body.interest_rate ?? req.body.interestRate ?? req.body.interes ?? 20;
@@ -1129,10 +1204,10 @@ const loanController = {
           clientName = String(existingClientRes.rows[0].name || clientName);
         } else {
           const clientRes = await client.query(`
-            INSERT INTO clients (id, name, alias, phone, dni, address, notes, assigned_to_user_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id
+            INSERT INTO clients (id, name, alias, phone, dni, documento, address, notes, assigned_to_user_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
           `, [
-            generateUUID(), clientName, clientAlias, clientPhone, clientIdentification,
+            generateUUID(), clientName, clientAlias, clientPhone, clientIdentification, clientIdentification,
             clientAddress, notes, assignedToUserId
           ]);
           finalClientId = String(clientRes.rows[0].id);

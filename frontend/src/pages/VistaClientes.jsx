@@ -42,6 +42,9 @@ export function VistaClientes({
   onDeletePayment,
   onUpdatePayment,
   onAssignPortfolio,
+  onRefresh,
+  fetchClients,
+  onRefreshData,
   user,
 }) {
   const isAdmin = user && String(user.role || '').toUpperCase() === 'ADMIN';
@@ -101,6 +104,9 @@ export function VistaClientes({
     setSelectedClientIds([]);
     setIsSelectMode(false);
     if (onAssignPortfolio) await onAssignPortfolio();
+    if (fetchClients) await fetchClients();
+    if (onRefresh) await onRefresh();
+    if (onRefreshData) await onRefreshData();
   };
 
   const handleDeletePaymentClick = async (payment) => {
@@ -152,14 +158,21 @@ export function VistaClientes({
   }, [clients, isAdmin, collectorFilter]);
 
   const filteredClients = (collectorFilteredClients || []).filter((client) => {
+    if (!client) return false;
     const term = (searchTerm || '').toLowerCase().trim();
+    const name = String(client?.name || '').toLowerCase();
+    const alias = String(client?.alias || client?.apodo || '').toLowerCase();
+    const phone = String(client?.phone || client?.telefono || '').toLowerCase();
+    const address = String(client?.address || client?.direccion || '').toLowerCase();
+    const dni = String(client?.identification || client?.dni || client?.documento || '').toLowerCase();
+
     const matchesSearch =
       !term ||
-      (client?.name || '').toLowerCase().includes(term) ||
-      (client?.alias || '').toLowerCase().includes(term) ||
-      (client?.phone || '').includes(term) ||
-      (client?.address || '').toLowerCase().includes(term) ||
-      (client?.identification && String(client.identification).toLowerCase().includes(term));
+      name.includes(term) ||
+      alias.includes(term) ||
+      phone.includes(term) ||
+      address.includes(term) ||
+      dni.includes(term);
 
     if (!matchesSearch) return false;
 

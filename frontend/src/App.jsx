@@ -196,13 +196,26 @@ export default function App() {
   };
 
   // Handlers operacionales de préstamos, clientes, pagos
+  const handleCreateClient = async (clientData) => {
+    try {
+      const res = await api.post('/clients', clientData);
+      await loadData();
+      return res.data;
+    } catch (err) {
+      console.error('Error registrando cliente:', err);
+      throw err;
+    }
+  };
+
   const handleCreateLoan = async (formData) => {
     try {
-      await api.post('/loans', formData);
+      const res = await api.post('/loans', formData);
       await loadData();
       navigate('/prestamos');
+      return res.data;
     } catch (err) {
       console.error('Error registrando préstamo:', err);
+      throw err;
     }
   };
 
@@ -471,6 +484,9 @@ export default function App() {
                   <VistaNuevoCliente
                     clients={clients}
                     onSubmitLoan={handleCreateLoan}
+                    onCreateClient={handleCreateClient}
+                    onRefresh={loadData}
+                    fetchClients={loadData}
                   />
                 </PrivateRoute>
               }
@@ -528,6 +544,10 @@ export default function App() {
                     onDeletePayment={handleDeletePayment}
                     onUpdatePayment={handleUpdatePayment}
                     onAssignPortfolio={loadData}
+                    onCreateClient={handleCreateClient}
+                    onRefresh={loadData}
+                    fetchClients={loadData}
+                    onRefreshData={loadData}
                     user={user}
                   />
                 </PrivateRoute>

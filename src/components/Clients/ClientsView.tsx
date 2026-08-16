@@ -64,7 +64,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   }, [clients]);
 
   // Active unarchived clients
-  const activeClients = clients.filter((c) => c.status === 'ACTIVE');
+  const activeClients = (clients || []).filter((c) => !c?.isArchived && c?.status !== 'INACTIVE');
 
   const counts = React.useMemo(() => {
     let all = 0;
@@ -74,14 +74,14 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
     activeClients.forEach((c) => {
       all++;
-      const cLoans = loans.filter((l) => l.clientId === c.id && !l.isArchived);
-      const hasOverdue = cLoans.some((l) => l.status === 'OVERDUE');
-      const hasActive = cLoans.some((l) => l.status === 'ACTIVE');
+      const cLoans = loans.filter((l) => (l?.clientId === c?.id || (l as any)?.client_id === c?.id) && !l?.isArchived);
+      const hasOverdue = cLoans.some((l) => l?.status === 'OVERDUE');
+      const hasActive = cLoans.some((l) => l?.status === 'ACTIVE');
       if (hasOverdue) {
         overdue++;
       } else if (hasActive) {
         upToDate++;
-      } else if (cLoans.length > 0 && cLoans.every((l) => l.status === 'PAID')) {
+      } else if (cLoans.length > 0 && cLoans.every((l) => l?.status === 'PAID')) {
         paid++;
       }
     });
@@ -90,27 +90,34 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   }, [activeClients, loans]);
 
   // Search filter
-  const filteredClients = activeClients.filter((client) => {
+  const filteredClients = (activeClients || []).filter((client) => {
+    if (!client) return false;
     const q = searchQuery.toLowerCase().trim();
+    const name = String(client.name || '').toLowerCase();
+    const alias = String(client.alias || (client as any).apodo || '').toLowerCase();
+    const phone = String(client.phone || (client as any).telefono || '').toLowerCase();
+    const address = String(client.address || (client as any).direccion || '').toLowerCase();
+    const dni = String(client.identification || (client as any).dni || (client as any).documento || '').toLowerCase();
+
     const matchesSearch =
       !q ||
-      client.name.toLowerCase().includes(q) ||
-      (client.alias && client.alias.toLowerCase().includes(q)) ||
-      client.phone.includes(q) ||
-      client.address.toLowerCase().includes(q) ||
-      (client.identification && client.identification.includes(q));
+      name.includes(q) ||
+      alias.includes(q) ||
+      phone.includes(q) ||
+      address.includes(q) ||
+      dni.includes(q);
 
     if (!matchesSearch) return false;
 
-    const cLoans = loans.filter((l) => l.clientId === client.id && !l.isArchived);
+    const cLoans = loans.filter((l) => (l?.clientId === client?.id || (l as any)?.client_id === client?.id) && !l?.isArchived);
     if (statusFilter === 'UP_TO_DATE') {
-      const hasActive = cLoans.some((l) => l.status === 'ACTIVE');
-      const hasOverdue = cLoans.some((l) => l.status === 'OVERDUE');
+      const hasActive = cLoans.some((l) => l?.status === 'ACTIVE');
+      const hasOverdue = cLoans.some((l) => l?.status === 'OVERDUE');
       return hasActive && !hasOverdue;
     } else if (statusFilter === 'OVERDUE') {
-      return cLoans.some((l) => l.status === 'OVERDUE');
+      return cLoans.some((l) => l?.status === 'OVERDUE');
     } else if (statusFilter === 'PAID') {
-      return cLoans.length > 0 && cLoans.every((l) => l.status === 'PAID');
+      return cLoans.length > 0 && cLoans.every((l) => l?.status === 'PAID');
     }
 
     return true;

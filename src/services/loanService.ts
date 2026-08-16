@@ -47,6 +47,8 @@ async function fetchAPI(endpoint: string, options?: RequestInit) {
 // Service functions
 export const loanService = {
   getClients: () => fetchAPI('/clients'),
+  createClient: (data: Record<string, unknown>) =>
+    fetchAPI('/clients', { method: 'POST', body: JSON.stringify(data) }),
   updateClient: (id: string, data: Record<string, unknown>) =>
     fetchAPI(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   restoreClient: (id: string) =>
