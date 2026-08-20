@@ -172,21 +172,27 @@ export default function App() {
 
   // Carga reactiva de datos al autenticar o cambiar reportPeriod utilizando bandera de montaje (isMounted)
   useEffect(() => {
-    let isMounted = true;
+  let isMounted = true;
 
-    if (isAuthenticated) {
-      const executeLoad = async () => {
-        if (isMounted) {
-          await loadData();
-        }
-      };
-      executeLoad();
-    }
-
+  // Mientras se esté verificando el token, NO consultar endpoints protegidos.
+  if (isAuthChecking || !isAuthenticated) {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, loadData]);
+  }
+
+  const executeLoad = async () => {
+    if (isMounted) {
+      await loadData();
+    }
+  };
+
+  executeLoad();
+
+  return () => {
+    isMounted = false;
+  };
+}, [isAuthChecking, isAuthenticated, loadData]);
 
   const handleLoginSuccess = (newToken, newUser) => {
     setToken(newToken);
