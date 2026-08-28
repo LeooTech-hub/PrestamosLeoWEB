@@ -92,15 +92,30 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
 
     setIsSubmitting(true);
     try {
+      // El backend acepta una tasa; este formulario trabaja con un monto de
+      // comisión. Enviamos ambos valores para que la edición conserve siempre
+      // el interés mostrado, incluso en préstamos antiguos.
+      const interestRate = capNum > 0
+        ? Number(((effectiveInterest / capNum) * 100).toFixed(6))
+        : 0;
+
       await onConfirmEditLoan(loan.id, {
         capital: capNum,
         amount: capNum,
+        amount_borrowed: capNum,
         paymentDays,
+        payment_days: paymentDays,
+        days_agreed: paymentDays,
+        days: paymentDays,
         duration_days: paymentDays,
         startDate,
+        start_date: startDate,
         dueDate,
         due_date: dueDate,
+        interestRate,
+        interest_rate: interestRate,
         commission: useCustomCommission ? customCommission : undefined,
+        interest_amount: effectiveInterest,
         interest: effectiveInterest,
         penaltyAmount: moraNum,
         penalty_amount: moraNum,
@@ -114,6 +129,7 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
       onClose();
     } catch (err) {
       console.error('Error al actualizar el préstamo:', err);
+      alert(err?.response?.data?.error || err?.message || 'No se pudo actualizar el préstamo. Inténtalo nuevamente.');
     } finally {
       setIsSubmitting(false);
     }

@@ -1306,7 +1306,8 @@ const loanController = {
       const current = currentRes.rows[0];
       const requestedAmount = req.body.amount ?? req.body.capital ?? req.body.amount_borrowed;
       const requestedInterest = req.body.interest_rate ?? req.body.interestRate ?? req.body.interes;
-      const requestedDays = req.body.payment_days ?? req.body.paymentDays ?? req.body.days_agreed ?? req.body.days;
+      const requestedInterestAmount = req.body.interest_amount ?? req.body.interestAmount ?? req.body.commission ?? req.body.interest;
+      const requestedDays = req.body.payment_days ?? req.body.paymentDays ?? req.body.days_agreed ?? req.body.days ?? req.body.duration_days;
       if (requestedAmount !== undefined && (!Number.isFinite(Number(requestedAmount)) || Number(requestedAmount) <= 0)) {
         await client.query('ROLLBACK');
         return res.status(422).json({ error: 'El capital debe ser un número mayor a 0' });
@@ -1335,7 +1336,12 @@ const loanController = {
         requestedInterest ?? inferredCurrentRate,
         20
       ));
-      const interestAmount = Number((amount * (interestRate / 100)).toFixed(2));
+      // La versión anterior del formulario enviaba la comisión como monto
+      // (commission/interest), no como porcentaje. Aceptamos ambos formatos
+      // para que los préstamos existentes sí se puedan editar.
+      const interestAmount = requestedInterestAmount !== undefined && requestedInterest === undefined
+        ? Math.max(0, Number(finiteNumber(requestedInterestAmount, 0).toFixed(2)))
+        : Number((amount * (interestRate / 100)).toFixed(2));
       const penaltyAmount = Math.max(0, finiteNumber(
         req.body.penalty_amount ?? req.body.penaltyAmount ?? req.body.mora
           ?? current.penalty_amount ?? current.mora,
@@ -1343,7 +1349,7 @@ const loanController = {
       ));
       const totalAmount = Number((amount + interestAmount + penaltyAmount).toFixed(2));
       const days = Math.max(1, Math.round(firstNonZeroNumber([
-        req.body.payment_days, req.body.paymentDays, req.body.days_agreed, req.body.days,
+        req.body.payment_days, req.body.paymentDays, req.body.days_agreed, req.body.days, req.body.duration_days,
         current.payment_days, current.days_agreed, current.days,
       ], 20)));
       const dailyAmount = Number((totalAmount / days).toFixed(2));
