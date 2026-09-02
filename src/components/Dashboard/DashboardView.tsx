@@ -10,13 +10,11 @@ import {
   CheckCircle2,
   Clock,
   UserPlus,
-  Zap,
   AlertTriangle,
   Users,
   ChevronRight,
   ArrowUpRight,
   Receipt,
-  Sparkles,
 } from 'lucide-react';
 import { TabType } from '../Navigation';
 
