@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { DashboardSummary, Loan, Payment } from '@/types';
 import { formatCurrency, formatDatePE } from '@/services/loanService';
 import {
@@ -46,62 +47,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-24 md:pb-12">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#D96B27] via-[#C25A19] to-[#2C221E] dark:from-[#B85324] dark:via-[#9C431B] dark:to-[#26221F] text-white rounded-2xl p-4 sm:p-6 shadow-md relative overflow-hidden transition-colors duration-300">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-15 bg-[radial-gradient(#FFFFFF_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+      {/* Premium light hero */}
+      <section className="relative overflow-hidden rounded-[28px] border border-[#eee5dc] bg-white px-5 py-6 shadow-[0_14px_40px_rgba(77,45,18,.08)] sm:px-8 sm:py-7">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_50%,rgba(222,175,72,.12),transparent_24%),radial-gradient(circle_at_18%_100%,rgba(190,0,0,.09),transparent_28%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(165deg,transparent_0%,transparent_46%,rgba(190,0,0,.08)_46.5%,rgba(190,0,0,.02)_58%,transparent_58.5%)]" />
+        <div className="relative z-10 grid items-center gap-6 lg:grid-cols-[1fr_auto_auto]">
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-white/20 text-[#FFFFFF] border border-white/30 text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full mb-1.5 sm:mb-2">
-              <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#FFFFFF]" />
-              <span>Resumen de Cobranzas Hoy</span>
+            <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#b40000]">Resumen general</p>
+            <h2 className="text-3xl font-black tracking-tight text-[#171717] sm:text-4xl">Panel de <span className="text-[#b40000]">Préstamos</span></h2>
+            <p className="mt-2 max-w-md text-sm leading-6 text-[#686868]">Resumen de préstamos, ingresos y gestión general del sistema.</p>
+          </div>
+
+          <div className="hidden min-w-[230px] items-center justify-center lg:flex">
+            <div className="relative flex h-36 w-56 items-end justify-center">
+              <div className="absolute bottom-0 h-12 w-44 rounded-[50%] border border-[#ead9b5] bg-[radial-gradient(circle,#fff_15%,#f7f2e9_70%)] shadow-[0_18px_34px_rgba(162,122,45,.15)]" />
+              <div className="absolute bottom-7 rounded-full bg-white/70 p-2 shadow-[0_10px_30px_rgba(190,147,54,.15)]">
+                <Image src="/Logo_PrestamosLeo.png" alt="Logo PrestamosLeo" width={118} height={118} className="h-28 w-28 object-contain" />
+              </div>
             </div>
-            <h2 className="text-xl sm:text-2xl uppercase font-extrabold tracking-wide text-white">
-              PANEL DE PRÉSTAMOS
-            </h2>
-            <p className="hidden md:block text-xs sm:text-sm text-[#FFFFFF] opacity-95 mt-0.5 sm:mt-1 max-w-md">
-              Control de préstamos del 20% en Soles (S/.) por días de pago.
-            </p>
           </div>
 
-          {/* Quick Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
-            <button
-              onClick={() => setActiveTab('newClient')}
-              className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 text-[#FFFFFF] border border-white/30 text-xs font-semibold shadow-sm active:scale-95 transition-all"
-            >
-              <UserPlus className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#FFFFFF]" />
-              <span>+ Crear Nuevo Préstamo</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('dailyRoute')}
-              className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#2C221E] dark:text-[#1C1917] hover:bg-[#FAF8F5] text-xs font-semibold shadow-sm active:scale-95 transition-all"
-            >
-              <Zap className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#D96B27]" />
-              <span>Cobro Rápido</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setActiveTab('newClient')}
+            className="premium-action flex h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a00000] via-[#c00000] to-[#9a0000] px-7 text-sm font-extrabold text-white shadow-[0_12px_30px_rgba(174,0,0,.22)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(174,0,0,.30)] active:translate-y-0"
+          >
+            <UserPlus className="h-5 w-5" />
+            Crear Nuevo Préstamo
+            <ArrowUpRight className="h-4 w-4" />
+          </button>
         </div>
+      </section>
 
-        {/* Collection Progress */}
-        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-white/20">
-          <div className="flex justify-between items-center text-xs mb-1.5">
-            <span className="text-[#FFFFFF] font-medium flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#FFFFFF]" />
-              Meta de recaudo del día
-            </span>
-            <span className="font-bold text-[#FFFFFF]">
-              {summary.collectionProgressPercent}% completado
-            </span>
-          </div>
-          <div className="w-full bg-white/20 rounded-full h-2 sm:h-2.5 overflow-hidden">
-            <div
-              className="bg-white h-2 sm:h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${summary.collectionProgressPercent}%` }}
-            />
-          </div>
+      {/* Collection progress card */}
+      <section className="rounded-2xl border border-[#eee5dc] bg-white px-5 py-4 shadow-[0_8px_24px_rgba(77,45,18,.05)]">
+        <div className="mb-2 flex items-center justify-between text-xs font-semibold">
+          <span className="text-[#444]">Progreso de Cobranza del Día</span>
+          <span className="font-black text-[#b40000]">{summary.collectionProgressPercent}%</span>
         </div>
-      </div>
+        <div className="h-2.5 overflow-hidden rounded-full bg-[#f1ece6]">
+          <div className="h-full rounded-full bg-gradient-to-r from-[#a00000] via-[#c40000] to-[#ed4a1d] transition-all duration-700" style={{ width: `${summary.collectionProgressPercent}%` }} />
+        </div>
+      </section>
 
       {/* Main KPI Summary Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
