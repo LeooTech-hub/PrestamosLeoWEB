@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { LayoutDashboard, Route, CreditCard, Banknote, UserPlus, BarChart3, Users, Settings, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Route, CreditCard, UserPlus, BarChart3, Users, Settings, LogOut, ShieldCheck } from 'lucide-react';
 import { TabType } from './Navigation';
 
 interface AdminSidebarProps {
