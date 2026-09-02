@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Bell, CalendarDays, Search, Sun, Moon, ChevronDown } from 'lucide-react';
+import { Bell, Search, Sun, Moon, ChevronDown } from 'lucide-react';
 import { AlertNotification } from '@/types';
 import { getInitialTheme, applyTheme } from '@/lib/themeUtils';
 
