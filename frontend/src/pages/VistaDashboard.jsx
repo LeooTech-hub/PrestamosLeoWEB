@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { EditPaymentModal } from '../components/EditPaymentModal';
+import { LOGO_LR_TRANSPARENT } from '../assets/logoLR';
 
 const PERU_TIME_ZONE = 'America/Lima';
 
@@ -93,7 +94,7 @@ export function VistaDashboard({
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="terracotta-gradient text-white p-4 sm:p-8 rounded-2xl shadow-sm relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="premium-hero text-white p-5 sm:p-8 rounded-[28px] shadow-[0_18px_50px_rgba(120,0,0,.15)] relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#D7A93D]/40">
         <div className="relative z-10 space-y-1">
           <span className="hidden sm:inline-block bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             PRESTAMOS LEITOTECH
@@ -106,10 +107,18 @@ export function VistaDashboard({
           </p>
         </div>
 
+        <div className="hidden md:flex absolute right-44 lg:right-52 top-1/2 -translate-y-1/2 z-10">
+          <img
+            src={LOGO_LR_TRANSPARENT}
+            alt="Logo LR PrestamosLeo"
+            className="h-28 w-28 lg:h-32 lg:w-32 object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,.22)]"
+          />
+        </div>
+
         <div className="flex items-center gap-2 flex-wrap relative z-10">
           <button
             onClick={() => navigate('/nuevo-cliente')}
-            className="bg-white text-[#D96B27] px-5 py-3 rounded-2xl font-extrabold text-xs shadow-sm hover:bg-[#FAF8F5] active:scale-95 transition-all flex items-center gap-2"
+            className="premium-action bg-white text-[#950000] px-5 py-3 rounded-2xl font-extrabold text-xs shadow-[0_10px_26px_rgba(86,0,0,.12)] hover:bg-[#FFF9F5] hover:-translate-y-0.5 active:scale-95 transition-all flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             <span>Crear Nuevo Préstamo</span>
@@ -119,7 +128,7 @@ export function VistaDashboard({
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-2 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-[24px] border border-[#EEE3D8] dark:border-[#332F2C] warm-shadow space-y-2 transition-all duration-300 hover:-translate-y-0.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#E5E7EB] uppercase tracking-wider">
             MONTO PRESTAMOS TOTALES
@@ -136,7 +145,7 @@ export function VistaDashboard({
           </p>
         </div>
 
-        <div className="bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-2 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-[24px] border border-[#EEE3D8] dark:border-[#332F2C] warm-shadow space-y-2 transition-all duration-300 hover:-translate-y-0.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#E5E7EB] uppercase tracking-wider">
               Ganancia
@@ -153,7 +162,7 @@ export function VistaDashboard({
           </p>
         </div>
 
-        <div className="bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-2 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-[24px] border border-[#EEE3D8] dark:border-[#332F2C] warm-shadow space-y-2 transition-all duration-300 hover:-translate-y-0.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#E5E7EB] uppercase tracking-wider">
               Recaudado Hoy
@@ -170,7 +179,7 @@ export function VistaDashboard({
           </p>
         </div>
 
-        <div className="bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-2 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#1E1E1E] p-4 sm:p-5 rounded-[24px] border border-[#EEE3D8] dark:border-[#332F2C] warm-shadow space-y-2 transition-all duration-300 hover:-translate-y-0.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#6E615A] dark:text-[#E5E7EB] uppercase tracking-wider">
               Clientes Activos
@@ -189,7 +198,7 @@ export function VistaDashboard({
       </div>
 
       {/* Quick Action Route Bar */}
-      <div className="bg-white dark:bg-[#1E1E1E] p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-300">
+      <div className="premium-card bg-white dark:bg-[#1E1E1E] p-5 rounded-[26px] border border-[#EEE3D8] dark:border-[#332F2C] warm-shadow flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-300">
         <div className="flex-1 w-full space-y-1.5">
           <div className="flex items-center justify-between text-xs font-extrabold">
             <span className="text-[#2C221E] dark:text-[#F3F4F6]">Progreso de Cobranza del Día</span>
@@ -205,7 +214,7 @@ export function VistaDashboard({
 
         <button
           onClick={() => navigate('/ruta-diaria')}
-          className="w-full md:w-auto px-5 py-3 rounded-2xl bg-[#2C221E] dark:bg-[#332F2C] text-white font-extrabold text-xs shadow-xs hover:bg-[#D96B27] dark:hover:bg-[#E07A5F] transition-all flex items-center justify-center gap-2"
+          className="w-full md:w-auto px-5 py-3 rounded-2xl premium-action bg-gradient-to-r from-[#7E0000] to-[#A90000] dark:from-[#4C0E0E] dark:to-[#742020] text-white font-extrabold text-xs shadow-md hover:brightness-110 transition-all flex items-center justify-center gap-2"
         >
           <Route className="w-4 h-4" />
           <span>Ir a Ruta Diaria ({summary.pendingClientsTodayCount || 0} pendientes)</span>
@@ -214,7 +223,7 @@ export function VistaDashboard({
 
       {/* Tables Preview Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-[#1E1E1E] p-5 rounded-3xl border border-[#E6DCD2] dark:border-[#332F2C] warm-shadow space-y-4 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#1E1E1E] p-5 rounded-[26px] border border-[#EEE3D8] dark:border-[#332F2C] warm-shadow space-y-4 transition-colors duration-300">
           <div className="flex items-center justify-between">
             <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#F3F4F6] flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-[#D96B27] dark:text-[#E07A5F]" />

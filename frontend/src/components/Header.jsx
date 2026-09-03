@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Calendar, Bell, PlusCircle, Trash2, LogOut, User, Users, Sun, Moon } from 'lucide-react';
 import { NotificationDropdown } from './NotificationDropdown';
 import { getInitialTheme, applyTheme } from '../utils/themeUtils';
+import { LOGO_LR_TRANSPARENT } from '../assets/logoLR';
 
 export function Header({
   alerts = [],
@@ -54,24 +55,24 @@ export function Header({
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-[#FAF8F5]/95 dark:bg-[#181614]/95 backdrop-blur-md border-b border-[#E6DCD2] dark:border-[#332F2C] px-4 py-3 sm:px-6 transition-colors duration-300">
+      <header className="sticky top-0 z-30 bg-white/92 dark:bg-[#181614]/92 backdrop-blur-xl border-b border-[#EEE5DC] dark:border-[#332F2C] shadow-[0_10px_28px_rgba(82,46,20,.05)] px-4 py-3 sm:px-6 transition-colors duration-300">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           {/* Brand & Logo */}
           <div className="flex items-center gap-3 min-w-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/Logo_PrestamosLeo.png"
+              src={LOGO_LR_TRANSPARENT}
               alt="PrestamosLeo Logo"
               loading="eager"
-              className="w-9 h-9 object-contain rounded-full shadow-sm ring-2 ring-[#D96B27]/20 shrink-0"
+              className="w-12 h-12 object-contain drop-shadow-[0_6px_12px_rgba(181,137,31,.25)] shrink-0"
             />
             <div className="flex flex-col min-w-0">
               <h1 className="font-bold text-lg tracking-tight text-[#2C221E] truncate">
-                Prestamos<span className="text-[#D96B27]">Leo</span>
+                Prestamos<span className="text-[#B40000]">Leo</span>
               </h1>
               <div className="flex flex-col text-xs font-semibold text-stone-700 capitalize truncate mt-0.5">
                 <div className="flex items-center gap-1.5 truncate">
-                  <Calendar className="w-3.5 h-3.5 text-[#E89D4F] shrink-0" />
+                  <Calendar className="w-3.5 h-3.5 text-[#C89422] shrink-0" />
                   <span className="truncate">{dateLine1}</span>
                 </div>
                 <div className="flex items-center pl-[20px] truncate mt-[2px]">
@@ -87,7 +88,7 @@ export function Header({
             {/* 1º Notificaciones */}
             <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] hover:text-[#D96B27] hover:bg-[#FDF3ED] transition-all active:scale-95"
+              className="relative w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] hover:text-[#B40000] hover:bg-[#FDF3ED] transition-all active:scale-95"
               title="Centro de Alertas"
             >
               <Bell className="w-[18px] h-[18px] text-[#2C221E]" />
@@ -103,7 +104,7 @@ export function Header({
               <button
                 onClick={onOpenTrash}
                 title="Historial de Borrados"
-                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#E5E7EB] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all active:scale-95"
+                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#E5E7EB] hover:text-[#B40000] dark:hover:text-[#E07A5F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all active:scale-95"
               >
                 <Trash2 className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#E5E7EB]" />
               </button>
@@ -113,10 +114,10 @@ export function Header({
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Cambiar a Modo Día' : 'Cambiar a Modo Noche'}
-              className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#E5E7EB] hover:text-[#E89D4F] dark:hover:text-[#E89D4F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all active:scale-95"
+              className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#E5E7EB] hover:text-[#C89422] dark:hover:text-[#C89422] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all active:scale-95"
             >
               {theme === 'dark' ? (
-                <Sun className="w-[18px] h-[18px] text-[#E89D4F]" />
+                <Sun className="w-[18px] h-[18px] text-[#C89422]" />
               ) : (
                 <Moon className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#E5E7EB]" />
               )}
@@ -137,7 +138,7 @@ export function Header({
                 type="button"
                 onClick={onOpenUserManagement}
                 title="Gestión de Usuarios"
-                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#E5E7EB] hover:text-[#D96B27] dark:hover:text-[#E07A5F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all active:scale-95"
+                className="w-8 h-8 p-1.5 flex items-center justify-center rounded-xl bg-transparent border-none text-[#6E615A] dark:text-[#E5E7EB] hover:text-[#B40000] dark:hover:text-[#E07A5F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all active:scale-95"
               >
                 <Users className="w-[18px] h-[18px] text-[#2C221E] dark:text-[#E5E7EB]" />
               </button>
@@ -149,7 +150,7 @@ export function Header({
                 type="button"
                 onClick={onOpenUserManagement}
                 title="Gestión de Usuarios"
-                className="bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer"
+                className="bg-[#FFF8E8] hover:bg-[#FFF1C7] text-[#8D650E] border border-[#D6AA43]/35 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer"
               >
                 ADMIN
               </button>

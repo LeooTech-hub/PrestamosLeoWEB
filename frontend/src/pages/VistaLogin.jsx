@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Wallet, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle, KeyRound, X } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle, KeyRound, X, ShieldCheck, BarChart3, UsersRound, BadgeCheck } from 'lucide-react';
 import api from '../api';
+import { LOGO_LR_TRANSPARENT } from '../assets/logoLR';
 
 export function VistaLogin({ onLoginSuccess }) {
   const [email, setEmail] = useState(() => localStorage.getItem('remembered_email') || '');
@@ -63,26 +64,48 @@ export function VistaLogin({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#181614] flex flex-col justify-center items-center p-4 sm:p-6 font-sans transition-colors duration-300">
-      <div className="w-full max-w-md">
-        {/* Header Logo Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl terracotta-gradient text-white shadow-lg ring-4 ring-[#D96B27]/15 mb-3 transform hover:scale-105 transition-transform duration-300">
-            <Wallet className="w-8 h-8" />
+    <div className="min-h-screen lg:grid lg:grid-cols-[48%_52%] bg-white dark:bg-[#181614] font-sans transition-colors duration-300">
+      <section className="hidden lg:flex relative overflow-hidden bg-[radial-gradient(circle_at_28%_10%,#d21616_0%,#8c0000_38%,#320505_100%)] text-white">
+        <div className="absolute inset-0 opacity-30 bg-[linear-gradient(120deg,transparent_0%,transparent_58%,rgba(255,208,92,.18)_58.3%,transparent_58.8%)]"></div>
+        <div className="absolute -right-14 top-0 h-full w-28 rounded-[50%] border-r-[5px] border-[#e1b43f] shadow-[18px_0_45px_rgba(255,190,54,.28)]"></div>
+        <div className="relative z-10 flex w-full flex-col justify-center px-[10%] py-12">
+          <div className="text-center">
+            <img src={LOGO_LR_TRANSPARENT} alt="Logo PrestamosLeo" className="brand-logo-glow mx-auto h-48 w-48 object-contain" />
+            <h1 className="mt-2 text-5xl font-black tracking-tight">Prestamos<span className="text-[#f2c24f]">Leo</span></h1>
+            <p className="mt-2 text-base font-medium text-white/90">Sistema de <span className="text-[#f2c24f]">Gestión Integral</span> de Préstamos (S/.)</p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2C221E] dark:text-[#F3F4F6] tracking-tight">
-            Prestamos<span className="text-[#D96B27] dark:text-[#E07A5F]">Leo</span>
+          <div className="mx-auto my-8 h-px w-4/5 bg-gradient-to-r from-transparent via-[#f2c24f] to-transparent"></div>
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold leading-tight">Control total de préstamos<br/><span className="text-[#f2c24f]">en un solo lugar</span></h2>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-white/85">Administra préstamos, cobros y clientes de manera eficiente, segura e inteligente.</p>
+          </div>
+          <div className="mt-9 grid grid-cols-4 gap-5 text-center">
+            <div><div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d8a72c] bg-black/10 text-[#f2c24f]"><ShieldCheck className="h-8 w-8"/></div><p className="font-bold text-[#f2c24f]">Seguro</p><p className="mt-1 text-xs text-white/80">Tu información protegida</p></div>
+            <div><div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d8a72c] bg-black/10 text-[#f2c24f]"><BarChart3 className="h-8 w-8"/></div><p className="font-bold text-[#f2c24f]">Eficiente</p><p className="mt-1 text-xs text-white/80">Procesos rápidos</p></div>
+            <div><div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d8a72c] bg-black/10 text-[#f2c24f]"><UsersRound className="h-8 w-8"/></div><p className="font-bold text-[#f2c24f]">Confiable</p><p className="mt-1 text-xs text-white/80">Información precisa</p></div>
+            <div><div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d8a72c] bg-black/10 text-[#f2c24f]"><BadgeCheck className="h-8 w-8"/></div><p className="font-bold text-[#f2c24f]">Profesional</p><p className="mt-1 text-xs text-white/80">Diseñado para tu negocio</p></div>
+          </div>
+          <div className="mt-10 rounded-2xl border border-[#a62b2b] bg-black/25 p-5">
+            <div className="flex items-center gap-4"><ShieldCheck className="h-12 w-12 text-[#20b653]"/><div><p className="font-bold text-[#20c256]">Conexión segura</p><p className="mt-1 text-xs leading-5 text-white/85">Tus datos están protegidos con cifrado seguro.</p></div></div>
+          </div>
+        </div>
+      </section>
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#fffdfb] px-5 py-10 dark:bg-[#181614]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(231,171,48,.10),transparent_23%),radial-gradient(circle_at_100%_100%,rgba(220,0,0,.06),transparent_26%)]"></div>
+        <div className="w-full max-w-xl">
+        {/* Header Logo Brand — visual only */}
+        <div className="text-center mb-7 lg:hidden">
+          <img src={LOGO_LR_TRANSPARENT} alt="PrestamosLeo" className="brand-logo-glow mx-auto h-28 w-28 object-contain" />
+          <h1 className="text-3xl font-black text-[#171717] dark:text-[#F3F4F6] tracking-tight">
+            Prestamos<span className="text-[#B40000] dark:text-[#F06A5C]">Leo</span>
           </h1>
-          <p className="text-xs sm:text-sm font-medium text-[#6E615A] dark:text-[#E5E7EB] mt-1">
-            Sistema de Gestión Integral de Préstamos (S/.)
-          </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white dark:bg-[#1E1E1E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-3xl p-6 sm:p-8 warm-shadow relative overflow-hidden transition-colors duration-300">
+        <div className="login-card bg-white/95 dark:bg-[#1E1E1E] border border-[#E8D7C5] dark:border-[#332F2C] rounded-[32px] p-7 sm:p-10 warm-shadow-lg relative overflow-hidden transition-colors duration-300 shadow-[0_24px_70px_rgba(91,55,25,.14)]">
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-[#2C221E] dark:text-[#F3F4F6]">Iniciar Sesión</h2>
-            <p className="text-xs text-[#6E615A] dark:text-[#E5E7EB] mt-1">
+            <h2 className="text-3xl sm:text-4xl font-black text-[#171717] dark:text-[#F3F4F6] text-center">Bienvenido de <span className="text-[#B40000] dark:text-[#F06A5C]">nuevo</span></h2>
+            <p className="text-sm text-[#6E615A] dark:text-[#E5E7EB] mt-3 text-center leading-6">
               Ingresa tus credenciales para acceder al panel de administración
             </p>
           </div>
@@ -111,7 +134,7 @@ export function VistaLogin({ onLoginSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ejemplo@prestamosleo.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27] transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#C89A2B]/20 focus:border-[#C89A2B] transition-all"
                 />
               </div>
             </div>
@@ -131,7 +154,7 @@ export function VistaLogin({ onLoginSuccess }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27] transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#C89A2B]/20 focus:border-[#C89A2B] transition-all"
                 />
                 <button
                   type="button"
@@ -174,7 +197,7 @@ export function VistaLogin({ onLoginSuccess }) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-3 px-4 rounded-xl terracotta-gradient text-white text-sm font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="premium-action w-full mt-2 py-4 px-4 rounded-2xl bg-gradient-to-r from-[#8F0000] via-[#B40000] to-[#8D0000] text-white text-sm font-extrabold shadow-[0_12px_28px_rgba(157,0,0,.24)] hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(157,0,0,.32)] active:translate-y-0 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -194,6 +217,8 @@ export function VistaLogin({ onLoginSuccess }) {
         {/* Demo Hint */}
         
       </div>
+
+      </section>
 
       {/* MODAL RECUPERACIÓN DE CONTRASEÑA */}
       {isForgotModalOpen && (
@@ -250,7 +275,7 @@ export function VistaLogin({ onLoginSuccess }) {
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="admin@prestamosleo.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 focus:border-[#D96B27]"
+                      className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-xl text-sm font-medium text-[#2C221E] dark:text-[#F3F4F6] placeholder-[#9E918A] dark:placeholder-[#6E615A] focus:outline-none focus:ring-2 focus:ring-[#C89A2B]/20 focus:border-[#C89A2B]"
                     />
                   </div>
                 </div>
