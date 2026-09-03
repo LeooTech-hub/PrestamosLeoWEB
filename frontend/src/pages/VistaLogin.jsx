@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle, KeyRound, X, ShieldCheck, BarChart3, UsersRound, BadgeCheck } from 'lucide-react';
 import api from '../api';
+import { LOGO_LR_TRANSPARENT } from '../assets/logoLR';
 
 export function VistaLogin({ onLoginSuccess }) {
   const [email, setEmail] = useState(() => localStorage.getItem('remembered_email') || '');
@@ -69,7 +70,7 @@ export function VistaLogin({ onLoginSuccess }) {
         <div className="absolute -right-14 top-0 h-full w-28 rounded-[50%] border-r-[5px] border-[#e1b43f] shadow-[18px_0_45px_rgba(255,190,54,.28)]"></div>
         <div className="relative z-10 flex w-full flex-col justify-center px-[10%] py-12">
           <div className="text-center">
-            <img src="/Logo_LR.svg" alt="Logo PrestamosLeo" className="brand-logo-glow mx-auto h-48 w-48 object-contain" />
+            <img src={LOGO_LR_TRANSPARENT} alt="Logo PrestamosLeo" className="brand-logo-glow mx-auto h-48 w-48 object-contain" />
             <h1 className="mt-2 text-5xl font-black tracking-tight">Prestamos<span className="text-[#f2c24f]">Leo</span></h1>
             <p className="mt-2 text-base font-medium text-white/90">Sistema de <span className="text-[#f2c24f]">Gestión Integral</span> de Préstamos (S/.)</p>
           </div>
@@ -94,7 +95,7 @@ export function VistaLogin({ onLoginSuccess }) {
         <div className="w-full max-w-xl">
         {/* Header Logo Brand — visual only */}
         <div className="text-center mb-7 lg:hidden">
-          <img src="/Logo_LR.svg" alt="PrestamosLeo" className="brand-logo-glow mx-auto h-28 w-28 object-contain" />
+          <img src={LOGO_LR_TRANSPARENT} alt="PrestamosLeo" className="brand-logo-glow mx-auto h-28 w-28 object-contain" />
           <h1 className="text-3xl font-black text-[#171717] dark:text-[#F3F4F6] tracking-tight">
             Prestamos<span className="text-[#B40000] dark:text-[#F06A5C]">Leo</span>
           </h1>
