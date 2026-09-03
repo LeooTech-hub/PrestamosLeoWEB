@@ -60,7 +60,7 @@ export function Header({
           <div className="flex items-center gap-3 min-w-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/Logo_PrestamosLeo.png"
+              src="/Logo_LR.svg"
               alt="PrestamosLeo Logo"
               loading="eager"
               className="w-11 h-11 object-contain rounded-full shadow-[0_8px_20px_rgba(181,137,31,.15)] ring-1 ring-[#D6AA43]/30 shrink-0"
