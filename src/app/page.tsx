@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Header } from '@/components/Header';
 import { Navigation, TabType } from '@/components/Navigation';
 import { DashboardView } from '@/components/Dashboard/DashboardView';
 import { CalculatorView } from '@/components/LoanCalculator/CalculatorView';
@@ -11,11 +12,9 @@ import { ClientsView } from '@/components/Clients/ClientsView';
 import { QuickCreateLoanModal } from '@/components/Modals/QuickCreateLoanModal';
 import { UserManagementModal } from '@/components/Modals/UserManagementModal';
 import { CollectorManagementView } from '@/components/Collectors/CollectorManagementView';
-import { LoginScreen } from '@/components/Auth/LoginScreen';
-import { AdminSidebar } from '@/components/AdminSidebar';
-import { AdminTopbar } from '@/components/AdminTopbar';
+import { Users } from 'lucide-react';
 import { loanService } from '@/services/loanService';
-import { AuthUser, clearAuth, getStoredToken, getStoredUser } from '@/lib/auth';
+import { getStoredUser } from '@/lib/auth';
 import {
   Client,
   Loan,
@@ -41,12 +40,9 @@ const defaultDashboardSummary: DashboardSummary = {
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [authReady, setAuthReady] = useState(false);
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [userRole, setUserRole] = useState<'ADMIN' | 'COBRADOR'>('COBRADOR');
   const isAdmin = userRole === 'ADMIN';
-
-  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState<boolean>(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -54,23 +50,22 @@ export default function Home() {
   const [alerts, setAlerts] = useState<AlertNotification[]>([]);
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('WEEKLY');
   const [financialReport, setFinancialReport] = useState<FinancialReportData | null>(null);
+
   const [todayCollections, setTodayCollections] = useState<
     { loan: Loan; isPaidToday: boolean; amountPaidToday: number }[]
   >([]);
-  const [isQuickCreateLoanOpen, setIsQuickCreateLoanOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showCollectors, setShowCollectors] = useState(false);
+  const [isQuickCreateLoanOpen, setIsQuickCreateLoanOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showCollectors, setShowCollectors] = useState<boolean>(false);
 
+  // Load all app data with fast fault tolerance and zero-delay rendering
   const loadData = useCallback(async () => {
-    if (!getStoredToken()) return;
-
-    setIsLoading(true);
     try {
       const fetchSafe = async <T,>(fn: () => Promise<T>, fallback: T): Promise<T> => {
         try {
           return await fn();
         } catch (err) {
-          console.error('Error cargando información:', err);
+          console.error('Error cargando iniciales:', err);
           return fallback;
         }
       };
@@ -101,6 +96,7 @@ export default function Home() {
         ),
       ]);
 
+      console.log("CLIENT DATA:", cList);
       setClients(cList);
       setLoans(lList);
       setPayments(pList);
@@ -108,6 +104,9 @@ export default function Home() {
       setTodayCollections(todayCol);
       setAlerts(alertList);
       setFinancialReport(report);
+    } catch (error) {
+      console.error('Error cargando iniciales (global catch):', error);
+      setSummary(defaultDashboardSummary);
     } finally {
       setIsLoading(false);
     }
@@ -115,45 +114,37 @@ export default function Home() {
 
   useEffect(() => {
     const user = getStoredUser();
-    const token = getStoredToken();
-
-    if (user && token) {
-      setAuthUser(user);
-      setUserRole(user.role);
-    } else {
-      clearAuth();
+    if (user?.role) {
+      setUserRole(user.role as 'ADMIN' | 'COBRADOR');
     }
-    setAuthReady(true);
-  }, []);
+    const handleAuth = () => {
+      const u = getStoredUser();
+      setUserRole((u?.role as 'ADMIN' | 'COBRADOR') || 'COBRADOR');
+    };
+    window.addEventListener('auth:updated', handleAuth);
+    
+    let isMounted = true;
+    const initLoad = async () => {
+      if (isMounted) {
+        await loadData();
+      }
+    };
+    initLoad();
+    
+    return () => {
+      isMounted = false;
+      window.removeEventListener('auth:updated', handleAuth);
+    };
+  }, [loadData]);
 
-  useEffect(() => {
-    if (!authUser || !getStoredToken()) return;
-    void loadData();
-  }, [authUser, loadData]);
-
-  const handleAuthenticated = (user: AuthUser) => {
-    setAuthUser(user);
-    setUserRole(user.role);
-    setActiveTab('dashboard');
-  };
-
-  const handleLogout = () => {
-    clearAuth();
-    setAuthUser(null);
-    setUserRole('COBRADOR');
-    setClients([]);
-    setLoans([]);
-    setPayments([]);
-    setAlerts([]);
-    setSummary(defaultDashboardSummary);
-  };
-
+  // Create new client & loan handler
   const handleCreateLoan = async (formData: NewClientLoanFormData) => {
     await loanService.createClientAndLoan(formData);
     await loadData();
     setActiveTab('loans');
   };
 
+  // Register payment handler
   const handleRegisterPayment = async (
     loanId: string,
     amount: number,
@@ -170,11 +161,13 @@ export default function Home() {
     await loadData();
   };
 
+  // Delete payment handler
   const handleDeletePayment = async (paymentId: string) => {
     await loanService.deletePayment(paymentId);
     await loadData();
   };
 
+  // Edit payment handler
   const handleUpdatePayment = async (
     id: string,
     data: { amount?: number; date?: string; notes?: string }
@@ -183,6 +176,7 @@ export default function Home() {
     await loadData();
   };
 
+  // Edit client handler
   const handleUpdateClient = async (
     id: string,
     data: { name: string; phone: string; address: string; identification?: string; notes?: string }
@@ -191,22 +185,29 @@ export default function Home() {
     await loadData();
   };
 
-  const handleUpdateLoan = async (id: string, data: any) => {
+  // Edit loan handler
+  const handleUpdateLoan = async (
+    id: string,
+    data: any
+  ) => {
     const result = await loanService.updateLoan(id, data);
     await loadData();
     return result;
   };
 
+  // Smart delete loan handler
   const handleDeleteLoan = async (loanId: string, mode: 'ARCHIVE' | 'PERMANENT') => {
     await loanService.deleteLoan(loanId, mode);
     await loadData();
   };
 
+  // Smart delete client handler
   const handleDeleteClient = async (clientId: string, mode: 'ARCHIVE' | 'PERMANENT') => {
     await loanService.deleteClient(clientId, mode);
     await loadData();
   };
 
+  // Add operational expense handler
   const handleAddExpense = async (
     amount: number,
     category: ExpenseCategory,
@@ -221,11 +222,13 @@ export default function Home() {
     await loadData();
   };
 
+  // Delete expense handler
   const handleDeleteExpense = async (id: string) => {
     await loanService.deleteExpense(id);
     await loadData();
   };
 
+  // Update expense handler
   const handleUpdateExpense = async (
     id: string,
     data: { amount?: number; category?: ExpenseCategory; description?: string; date?: string }
@@ -234,164 +237,220 @@ export default function Home() {
     await loadData();
   };
 
+  // Change financial report period
   const handlePeriodChange = async (period: ReportPeriod) => {
     setReportPeriod(period);
     try {
-      setFinancialReport(await loanService.getFinancialReport(period));
+      const report = await loanService.getFinancialReport(period);
+      setFinancialReport(report);
     } catch (err) {
-      console.error('Error cargando reporte:', err);
+      console.error('Error cargando iniciales (reporte):', err);
     }
   };
 
-  if (!authReady) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fffdf9]">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#b40000] border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!authUser || !getStoredToken()) {
-    return <LoginScreen onAuthenticated={handleAuthenticated} />;
-  }
+  // Reset to demo data
+  const handleResetDemoData = async () => {
+    if (confirm('¿Deseas restablecer los datos con la información de ejemplo (Perú S/.)?')) {
+      await loanService.resetToDemoData();
+      await loadData();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#fbfaf8] text-[#242424] dark:bg-[#151412] dark:text-[#f3eee8] transition-colors duration-300 lg:flex">
-      <AdminSidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+    <div className="min-h-screen flex flex-col bg-[#FBFAF8] dark:bg-[#171514] text-[#211E1C] dark:text-[#F4EEE8] transition-colors duration-300">
+      {/* Top Header */}
+      <Header
+        alerts={alerts}
+        onRefresh={loadData}
+        onResetDemo={handleResetDemoData}
+        onOpenQuickCreateLoan={() => setIsQuickCreateLoanOpen(true)}
+        onOpenTrash={() => alert('Historial de borrados')}
         onOpenUserManagement={() => setIsUserManagementOpen(true)}
-        onOpenCollectors={() => setShowCollectors(true)}
-        onLogout={handleLogout}
-        isAdmin={isAdmin}
-        userName={authUser.name || authUser.role}
+        userRole={userRole}
       />
 
-      <div className="min-w-0 flex-1">
-        <AdminTopbar
-          alerts={alerts}
-          userName={authUser.name || authUser.role}
-          userRole={userRole}
-        />
-
-        <div className="lg:hidden">
-          <Navigation
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            pendingCountToday={summary.pendingClientsTodayCount}
-            overdueCount={summary.overdueCount}
-            isAdmin={isAdmin}
-            onOpenUserManagement={() => setIsUserManagementOpen(true)}
-          />
+      {/* Navigation Tabs Bar en page.tsx con Pestañas ["Dashboard", "Ruta Diaria", "Préstamos", "Nuevo Cliente", "Reportes", "Clientes", "Usuarios"] */}
+      <nav className="bg-white/95 dark:bg-[#171514]/95 backdrop-blur-xl border-b border-[#EEE5DC] dark:border-[#3A312B] px-6 transition-colors duration-300 shadow-[0_8px_24px_rgba(70,45,20,0.04)]">
+        <div className="max-w-6xl mx-auto flex items-center gap-1 overflow-x-auto">
+          {[
+            { id: 'dashboard', label: 'Dashboard', adminOnly: false, cobradorHide: false },
+            { id: 'dailyRoute', label: 'Ruta Diaria', adminOnly: false, cobradorHide: false },
+            { id: 'loans', label: 'Préstamos', adminOnly: false, cobradorHide: false },
+            { id: 'newClient', label: 'Nuevo Cliente', adminOnly: false, cobradorHide: false },
+            { id: 'reports', label: 'Reportes', adminOnly: false, cobradorHide: true },
+            { id: 'clients', label: 'Clientes', adminOnly: false, cobradorHide: false },
+            { id: 'users', label: 'Usuarios', adminOnly: false, cobradorHide: true },
+            { id: 'collectors', label: '👥 Cobradores', adminOnly: true, cobradorHide: true },
+          ].filter(tab => {
+            if (userRole === 'COBRADOR' && tab.cobradorHide) return false;
+            if (tab.adminOnly && userRole !== 'ADMIN') return false;
+            return true;
+          }).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                if (tab.id === 'users') {
+                  setIsUserManagementOpen(true);
+                } else if (tab.id === 'collectors') {
+                  setShowCollectors(true);
+                } else {
+                  setActiveTab(tab.id as TabType);
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition-all relative whitespace-nowrap ${
+                (activeTab === tab.id) || (tab.id === 'users' && isUserManagementOpen) || (tab.id === 'collectors' && showCollectors)
+                  ? 'border-[#B40000] dark:border-[#F06A5C] text-[#B40000] dark:text-[#F06A5C] bg-[#FFF4F4] dark:bg-[#3B201C]/70 font-semibold'
+                  : 'border-transparent text-[#69615C] dark:text-[#CBBDB2] hover:text-[#B40000] dark:hover:text-[#F06A5C]'
+              }`}
+            >
+              {tab.id === 'users' ? (
+                <Users className="w-4 h-4 text-[#B40000] dark:text-[#F06A5C]" />
+              ) : null}
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
+      </nav>
 
-        <main className="mx-auto max-w-[1500px] px-3 py-5 sm:px-5 lg:px-7 lg:py-6">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-24">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#b40000] border-t-transparent" />
-              <p className="mt-3 text-xs font-semibold text-[#777]">Cargando PrestamosLeo...</p>
+      {/* Main Container */}
+      <main className="container mx-auto px-4 sm:px-6 py-6 max-w-[1500px]">
+        {/* Banner with Quick Action button */}
+        <div className="premium-hero mb-6 p-5 sm:p-6 rounded-[28px] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_18px_50px_rgba(120,0,0,0.14)] border border-[#D7A93D]/40">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center font-bold shadow-inner">
+              💰
             </div>
-          ) : (
-            <>
-              {activeTab === 'dashboard' && (
-                <DashboardView
-                  summary={summary || defaultDashboardSummary}
-                  recentLoans={loans}
-                  recentPayments={payments}
-                  setActiveTab={setActiveTab}
-                  isAdmin={isAdmin}
-                  onOpenUserManagement={() => setIsUserManagementOpen(true)}
-                />
-              )}
+            <div>
+              <h2 className="font-extrabold text-base sm:text-lg">Sistema de Gestión PrestamosLeoWEB</h2>
+              <p className="text-xs text-white/80">Control integral de préstamos, cobros diarios y rutas en Soles (S/.)</p>
+            </div>
+          </div>
 
-              {activeTab === 'dailyRoute' && (
-                <DailyRouteView
-                  todayCollections={todayCollections}
-                  onRegisterPayment={handleRegisterPayment}
-                  onReorderClients={handleReorderClients}
-                />
-              )}
-
-              {activeTab === 'loans' && (
-                <LoansListView
-                  loans={loans}
-                  onRegisterPayment={handleRegisterPayment}
-                  onUpdateLoan={handleUpdateLoan}
-                  onDeleteLoan={handleDeleteLoan}
-                  isAdmin={isAdmin}
-                />
-              )}
-
-              {activeTab === 'newClient' && (
-                <CalculatorView
-                  clients={clients}
-                  onSubmitLoan={handleCreateLoan}
-                />
-              )}
-
-              {activeTab === 'reports' && (
-                <FinancialReportView
-                  report={financialReport}
-                  period={reportPeriod}
-                  onPeriodChange={handlePeriodChange}
-                  onAddExpense={handleAddExpense}
-                  onUpdateExpense={handleUpdateExpense}
-                  onDeleteExpense={handleDeleteExpense}
-                />
-              )}
-
-              {activeTab === 'clients' && (
-                <ClientsView
-                  clients={clients}
-                  loans={loans}
-                  payments={payments}
-                  onNewLoanForClient={() => setActiveTab('newClient')}
-                  onOpenNewLoanModal={() => setActiveTab('newClient')}
-                  onUpdateClient={handleUpdateClient}
-                  onUpdateLoan={handleUpdateLoan}
-                  onDeleteClient={handleDeleteClient}
-                  onDeletePayment={handleDeletePayment}
-                  onUpdatePayment={handleUpdatePayment}
-                  isAdmin={isAdmin}
-                />
-              )}
-            </>
-          )}
-        </main>
-      </div>
-
-      {showCollectors && isAdmin && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#fbfaf8] dark:bg-[#151412]">
-          <div className="mx-auto max-w-6xl px-4 py-6">
-            <div className="mb-6 flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsQuickCreateLoanOpen(true)}
+              className="premium-action bg-white/14 hover:bg-white/22 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 cursor-pointer border border-white/25 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+            >
+              + Crear Nuevo Préstamo
+            </button>
+            {isAdmin && (
               <button
-                onClick={() => setShowCollectors(false)}
-                className="rounded-xl border border-[#e5ded6] bg-white px-4 py-2 text-sm font-semibold text-[#555] transition-all hover:border-[#d5a43b] hover:text-[#111]"
+                onClick={() => setShowCollectors(true)}
+                className="premium-action bg-white/14 hover:bg-white/22 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 cursor-pointer border border-white/25 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
               >
-                ← Volver
+                👥 Panel Cobradores
               </button>
-              <h1 className="text-xl font-black">Panel de Cobradores</h1>
-            </div>
-            <CollectorManagementView isAdmin={isAdmin} />
+            )}
           </div>
         </div>
-      )}
 
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-3">
+            <div className="w-10 h-10 border-4 border-[#D96B27] dark:border-[#E07A5F] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-xs font-semibold text-[#6E615A] dark:text-[#C2B29F]">Cargando PrestamosLeoWEB (Perú)...</p>
+          </div>
+        ) : (
+          <>
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                summary={summary || defaultDashboardSummary}
+                recentLoans={loans}
+                recentPayments={payments}
+                setActiveTab={setActiveTab}
+                isAdmin={userRole === 'ADMIN'}
+                onOpenUserManagement={() => setIsUserManagementOpen(true)}
+              />
+            )}
+
+            {activeTab === 'dailyRoute' && (
+              <DailyRouteView
+                todayCollections={todayCollections}
+                onRegisterPayment={handleRegisterPayment}
+                onReorderClients={handleReorderClients}
+              />
+            )}
+
+            {activeTab === 'loans' && (
+              <LoansListView
+                loans={loans}
+                onRegisterPayment={handleRegisterPayment}
+                onUpdateLoan={handleUpdateLoan}
+                onDeleteLoan={handleDeleteLoan}
+                isAdmin={userRole === 'ADMIN'}
+              />
+            )}
+
+            {activeTab === 'newClient' && (
+              <CalculatorView
+                clients={clients}
+                onSubmitLoan={handleCreateLoan}
+              />
+            )}
+
+            {activeTab === 'reports' && (
+              <FinancialReportView
+                report={financialReport}
+                period={reportPeriod}
+                onPeriodChange={handlePeriodChange}
+                onAddExpense={handleAddExpense}
+                onUpdateExpense={handleUpdateExpense}
+                onDeleteExpense={handleDeleteExpense}
+              />
+            )}
+
+            {activeTab === 'clients' && (
+              <ClientsView
+                clients={clients}
+                loans={loans}
+                payments={payments}
+                onNewLoanForClient={() => setActiveTab('newClient')}
+                onOpenNewLoanModal={() => setActiveTab('newClient')}
+                onUpdateClient={handleUpdateClient}
+                onUpdateLoan={handleUpdateLoan}
+                onDeleteClient={handleDeleteClient}
+                onDeletePayment={handleDeletePayment}
+                onUpdatePayment={handleUpdatePayment}
+                isAdmin={userRole === 'ADMIN'}
+              />
+            )}
+
+            {showCollectors && userRole === 'ADMIN' && (
+              <div className="fixed inset-0 z-40 bg-[#FAF8F5] dark:bg-[#1C1917] overflow-y-auto">
+                <div className="max-w-6xl mx-auto px-4 py-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <button
+                      onClick={() => setShowCollectors(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E6DCD2] dark:border-[#3D352E] text-[#6E615A] dark:text-[#C2B29F] hover:bg-[#FAF8F5] dark:hover:bg-[#242120] transition-all text-sm font-medium"
+                    >
+                      ← Volver
+                    </button>
+                    <h1 className="text-xl font-bold text-[#2C221E] dark:text-[#EAE0D5]">Panel de Cobradores</h1>
+                  </div>
+                  <CollectorManagementView isAdmin={userRole === 'ADMIN'} />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+
+      {/* Modals */}
       <QuickCreateLoanModal
         clients={clients}
         isOpen={isQuickCreateLoanOpen}
         onClose={() => setIsQuickCreateLoanOpen(false)}
         onSubmitLoan={handleCreateLoan}
-        onRedirectToNewClient={() => {
-          setIsQuickCreateLoanOpen(false);
-          setActiveTab('newClient');
-        }}
+        onRedirectToNewClient={() => setActiveTab('newClient')}
       />
-
       <UserManagementModal
         isOpen={isUserManagementOpen}
         onClose={() => setIsUserManagementOpen(false)}
       />
+
+      {/* Footer */}
+      <footer className="hidden md:block py-6 border-t border-[#EEE5DC] dark:border-[#3A312B] text-center text-xs text-[#746B65] dark:text-[#BFAFA3] bg-white dark:bg-[#171514] transition-colors duration-300">
+        <p>PrestamosLeoWEB</p>
+      </footer>
     </div>
   );
 }
