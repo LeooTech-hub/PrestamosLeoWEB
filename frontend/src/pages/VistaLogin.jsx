@@ -217,7 +217,7 @@ export function VistaLogin({ onLoginSuccess }) {
         
       </div>
 
-      </div></section>
+      </section>
 
       {/* MODAL RECUPERACIÓN DE CONTRASEÑA */}
       {isForgotModalOpen && (
