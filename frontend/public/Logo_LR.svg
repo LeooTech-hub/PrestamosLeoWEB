@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 360" role="img" aria-labelledby="t d">
+<title id="t">Logo LR PrestamosLeo</title><desc id="d">Emblema circular dorado con corona y letras LR plateada y dorada.</desc>
+<defs>
+  <radialGradient id="bg" cx="50%" cy="42%" r="68%"><stop offset="0" stop-color="#242424"/><stop offset="1" stop-color="#050505"/></radialGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset=".22" stop-color="#f7cc45"/><stop offset=".48" stop-color="#b87905"/><stop offset=".7" stop-color="#ffe47a"/><stop offset="1" stop-color="#8a5200"/></linearGradient>
+  <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".24" stop-color="#bfc1c5"/><stop offset=".5" stop-color="#5f6268"/><stop offset=".74" stop-color="#f2f3f5"/><stop offset="1" stop-color="#7b7d83"/></linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".55"/></filter>
+</defs>
+<rect width="420" height="360" rx="30" fill="url(#bg)"/>
+<g filter="url(#shadow)">
+  <circle cx="210" cy="198" r="132" fill="#090909" stroke="url(#gold)" stroke-width="18"/>
+  <circle cx="210" cy="198" r="112" fill="none" stroke="#d19a19" stroke-width="3" opacity=".75"/>
+  <g transform="translate(126 18)">
+    <path d="M22 82 10 28l39 30 25-46 26 46 38-30-12 54Z" fill="url(#gold)" stroke="#8b5b00" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="10" cy="28" r="7" fill="url(#gold)"/><circle cx="49" cy="58" r="6" fill="url(#gold)"/><circle cx="74" cy="12" r="7" fill="url(#gold)"/><circle cx="100" cy="58" r="6" fill="url(#gold)"/><circle cx="138" cy="28" r="7" fill="url(#gold)"/>
+    <path d="M24 84h100l-8 18H32Z" fill="url(#gold)" stroke="#8b5b00" stroke-width="3"/>
+  </g>
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="900">
+    <text x="120" y="270" font-size="150" fill="url(#silver)" stroke="#3e3f42" stroke-width="3" paint-order="stroke">L</text>
+    <text x="190" y="270" font-size="150" fill="url(#gold)" stroke="#704500" stroke-width="4" paint-order="stroke">R</text>
+  </g>
+  <path d="M142 284c33 15 103 16 137 0" fill="none" stroke="#d5a12a" stroke-width="6" stroke-linecap="round" opacity=".65"/>
+</g>
+</svg>
