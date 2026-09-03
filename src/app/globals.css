@@ -223,3 +223,40 @@ html.dark .sage-gradient {
     animation: none !important;
   }
 }
+
+
+/* PrestamosLeo premium visual layer — presentation only */
+.premium-hero {
+  background:
+    radial-gradient(circle at 88% 16%, rgba(255, 214, 112, .22), transparent 22%),
+    linear-gradient(135deg, #930000 0%, #b40000 46%, #dc3e22 100%);
+  position: relative;
+}
+
+.premium-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 0 56%, rgba(255,255,255,.08) 56.5%, transparent 57.5%),
+    linear-gradient(115deg, transparent 0 69%, rgba(237,191,79,.22) 69.4%, transparent 70.2%);
+}
+
+html.dark .premium-hero {
+  background:
+    radial-gradient(circle at 88% 16%, rgba(225, 176, 66, .14), transparent 20%),
+    linear-gradient(135deg, #3c0909 0%, #5c0f0d 45%, #2a1b17 100%);
+}
+
+.premium-card {
+  box-shadow:
+    0 14px 35px rgba(76, 47, 23, .06),
+    0 2px 8px rgba(76, 47, 23, .035);
+}
+
+html.dark .premium-card {
+  box-shadow:
+    0 14px 35px rgba(0,0,0,.28),
+    0 2px 8px rgba(0,0,0,.16);
+}
