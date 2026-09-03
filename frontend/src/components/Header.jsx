@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Calendar, Bell, PlusCircle, Trash2, LogOut, User, Users, Sun, Moon } from 'lucide-react';
 import { NotificationDropdown } from './NotificationDropdown';
 import { getInitialTheme, applyTheme } from '../utils/themeUtils';
+import { LOGO_LR_TRANSPARENT } from '../assets/logoLR';
 
 export function Header({
   alerts = [],
@@ -60,10 +61,10 @@ export function Header({
           <div className="flex items-center gap-3 min-w-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/Logo_LR.svg"
+              src={LOGO_LR_TRANSPARENT}
               alt="PrestamosLeo Logo"
               loading="eager"
-              className="w-11 h-11 object-contain rounded-full shadow-[0_8px_20px_rgba(181,137,31,.15)] ring-1 ring-[#D6AA43]/30 shrink-0"
+              className="w-12 h-12 object-contain drop-shadow-[0_6px_12px_rgba(181,137,31,.25)] shrink-0"
             />
             <div className="flex flex-col min-w-0">
               <h1 className="font-bold text-lg tracking-tight text-[#2C221E] truncate">
