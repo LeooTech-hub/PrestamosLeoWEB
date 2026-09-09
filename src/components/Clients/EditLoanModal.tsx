@@ -76,64 +76,6 @@ function diffDays(startISO: string, dueISO: string): number {
   return Math.max(1, Math.round((due - start) / 86_400_000));
 }
 
-type PenaltyDecision = 'pending' | 'applied' | 'waived';
-
-function calculateSuggestedPenalty(
-  capital: number,
-  dueDateISO: string,
-  today = new Date()
-) {
-  if (!dueDateISO || capital < 50) {
-    return {
-      isOverdue: false,
-      overdueDays: 0,
-      dailyPenalty: 0,
-      suggestedPenalty: 0,
-    };
-  }
-
-  const dueDate = toUTCDate(dueDateISO);
-  if (!dueDate) {
-    return {
-      isOverdue: false,
-      overdueDays: 0,
-      dailyPenalty: 0,
-      suggestedPenalty: 0,
-    };
-  }
-
-  const todayUTC = new Date(Date.UTC(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  ));
-
-  const diffMs = todayUTC.getTime() - dueDate.getTime();
-
-  if (diffMs <= 0) {
-    return {
-      isOverdue: false,
-      overdueDays: 0,
-      dailyPenalty: 0,
-      suggestedPenalty: 0,
-    };
-  }
-
-  const overdueDays = Math.floor(diffMs / 86_400_000);
-  const dailyPenalty = capital <= 400 ? 3 : 5;
-
-  return {
-    isOverdue: true,
-    overdueDays,
-    dailyPenalty,
-    suggestedPenalty: overdueDays * dailyPenalty,
-  };
-}
-
-function penaltyDecisionStorageKey(loanId: string) {
-  return `prestamosleo:penalty-decision:${loanId}`;
-}
-
 function getLoanInterestRate(loan: Loan | null): number {
   if (!loan) return 20;
   const explicitRate = Number(loan.interestRate ?? loan.interest_rate ?? loan.interes);
@@ -165,9 +107,6 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
   const [dueDateInput, setDueDateInput] = useState<string>(loan?.dueDate || '');
   const [interestRate, setInterestRate] = useState<number>(getLoanInterestRate(loan));
   const [penaltyInput, setPenaltyInput] = useState<string>(String(loan?.penaltyAmount || 0));
-  const [penaltyDecision, setPenaltyDecision] = useState<PenaltyDecision>(
-    Number(loan?.penaltyAmount || 0) > 0 ? 'applied' : 'pending'
-  );
   const [notes, setNotes] = useState<string>(loan?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [prevId, setPrevId] = useState<string | null>(null);
@@ -181,19 +120,6 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
     setDueDateInput(loan.dueDate || addDays(loan.startDate, loan.paymentDays || 20));
     setInterestRate(getLoanInterestRate(loan));
     setPenaltyInput(String(loan.penaltyAmount || 0));
-
-    const storedDecision = typeof window !== 'undefined'
-      ? localStorage.getItem(penaltyDecisionStorageKey(loan.id))
-      : null;
-    const nextDecision: PenaltyDecision = Number(loan.penaltyAmount || 0) > 0
-      ? 'applied'
-      : storedDecision === 'waived'
-        ? 'waived'
-        : storedDecision === 'applied'
-          ? 'applied'
-          : 'pending';
-    setPenaltyDecision(nextDecision);
-
     setNotes(loan.notes || '');
   }
 
@@ -225,40 +151,18 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
     }
   };
 
-  /* ── Computed dueDate + mora automática ── */
-  const computedDueDate = dueDateInput || addDays(startDate, parsedPaymentDays);
-  const penaltyInfo = calculateSuggestedPenalty(capital, computedDueDate);
-
   /* ── Live summary calculations ── */
   const breakdown = calculateCustomLoan(capital, parsedPaymentDays, interestRate);
   const effectiveInterest = breakdown.interestAmount;
-  const manualPenalty = Math.max(0, parseFloat(penaltyInput) || 0);
-  const moraNum = penaltyDecision === 'applied' && penaltyInfo.isOverdue
-    ? penaltyInfo.suggestedPenalty
-    : manualPenalty;
+  const moraNum = Math.max(0, parseFloat(penaltyInput) || 0);
 
   const totalToPay = Number((breakdown.totalToPay + moraNum).toFixed(2));
   const dailyPayment = parsedPaymentDays > 0
     ? Number((totalToPay / parsedPaymentDays).toFixed(2))
     : 0;
 
-  const applySuggestedPenalty = () => {
-    setPenaltyDecision('applied');
-    setPenaltyInput(String(penaltyInfo.suggestedPenalty));
-    localStorage.setItem(penaltyDecisionStorageKey(loan.id), 'applied');
-  };
-
-  const waiveSuggestedPenalty = () => {
-    setPenaltyDecision('waived');
-    setPenaltyInput('0');
-    localStorage.setItem(penaltyDecisionStorageKey(loan.id), 'waived');
-  };
-
-  const resetPenaltyDecision = () => {
-    setPenaltyDecision('pending');
-    setPenaltyInput('0');
-    localStorage.removeItem(penaltyDecisionStorageKey(loan.id));
-  };
+  /* ── Computed dueDate for display ── */
+  const computedDueDate = dueDateInput || addDays(startDate, parsedPaymentDays);
 
   /* ── Submit ── */
   const handleSubmit = async (e: React.FormEvent) => {
@@ -463,96 +367,23 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
             </p>
           </div>
 
-          {/* ── Mora automática con decisión manual ── */}
+          {/* ── Mora / Cargo Adicional ── */}
           <div>
-            <label className={labelCls}>Mora / Cargo Adicional:</label>
-
-            {!penaltyInfo.isOverdue ? (
-              <div className="p-3 rounded-xl bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E]">
-                <p className="text-xs text-[#6E615A] dark:text-[#C2B29F]">
-                  Este préstamo todavía no presenta días de atraso.
-                </p>
-              </div>
-            ) : (
-              <div className="p-3.5 rounded-2xl border border-[#E6DCD2] dark:border-[#3D352E] bg-[#FFF8F5] dark:bg-[#1C1917] space-y-3">
-                <div>
-                  <p className="text-xs font-black text-[#C84B31]">
-                    Préstamo vencido
-                  </p>
-                  <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-1">
-                    Tiene <strong>{penaltyInfo.overdueDays} días</strong> de atraso.
-                  </p>
-                </div>
-
-                <div className="text-xs space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-[#6E615A] dark:text-[#C2B29F]">Capital:</span>
-                    <strong>{formatCurrency(capital)}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#6E615A] dark:text-[#C2B29F]">Mora diaria:</span>
-                    <strong className="text-[#C84B31]">
-                      {formatCurrency(penaltyInfo.dailyPenalty)}
-                    </strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#6E615A] dark:text-[#C2B29F]">Mora sugerida:</span>
-                    <strong className="text-[#C84B31]">
-                      {formatCurrency(penaltyInfo.suggestedPenalty)}
-                    </strong>
-                  </div>
-                </div>
-
-                {penaltyDecision === 'pending' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={waiveSuggestedPenalty}
-                      className="py-2.5 rounded-xl border border-[#E6DCD2] dark:border-[#3D352E] text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] hover:bg-[#FAF8F5] dark:hover:bg-[#26221F] transition-colors cursor-pointer"
-                    >
-                      No aplicar mora
-                    </button>
-                    <button
-                      type="button"
-                      onClick={applySuggestedPenalty}
-                      className="py-2.5 rounded-xl bg-[#C84B31] text-white text-xs font-extrabold hover:brightness-110 transition-all cursor-pointer"
-                    >
-                      Aplicar {formatCurrency(penaltyInfo.suggestedPenalty)}
-                    </button>
-                  </div>
-                )}
-
-                {penaltyDecision === 'applied' && (
-                  <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#FFF0EB] dark:bg-[#2A1C18]">
-                    <span className="text-xs text-[#C84B31] font-bold">
-                      Mora aplicada: {formatCurrency(moraNum)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={resetPenaltyDecision}
-                      className="text-[10px] font-black underline text-[#C84B31] cursor-pointer"
-                    >
-                      Cambiar
-                    </button>
-                  </div>
-                )}
-
-                {penaltyDecision === 'waived' && (
-                  <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#F5F5F4] dark:bg-[#26221F]">
-                    <span className="text-xs text-[#6E615A] dark:text-[#C2B29F] font-bold">
-                      Decidiste no aplicar mora a este préstamo.
-                    </span>
-                    <button
-                      type="button"
-                      onClick={resetPenaltyDecision}
-                      className="text-[10px] font-black underline text-[#D96B27] dark:text-[#E07A5F] cursor-pointer"
-                    >
-                      Cambiar
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+            <label className={labelCls}>Mora / Cargo Adicional (S/.):</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-[#C84B31]">
+                S/.
+              </span>
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={penaltyInput}
+                onChange={(e) => setPenaltyInput(e.target.value)}
+                placeholder="0.00 (opcional)"
+                className="w-full pl-11 pr-3 py-2.5 bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-xl text-sm font-bold text-[#C84B31] focus:outline-none focus:ring-2 focus:ring-[#C84B31]/40 focus:border-[#C84B31]"
+              />
+            </div>
           </div>
 
           {/* ── Resumen en vivo en tiempo real ── */}
