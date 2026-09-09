@@ -62,23 +62,21 @@ export function WelcomeModal({ isOpen, user, onComplete }) {
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#2D7A5D] via-[#D96B27] to-[#2D7A5D]" />
 
         {/* Logo Image with Scale & Soft Glow */}
+        {/* Logo Image with Scale & Soft Glow */}
         <div className="relative inline-block my-2">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white dark:border-[#24211E] shadow-xl overflow-hidden ring-4 ring-[#2D7A5D]/25 mx-auto animate-welcomeGlow bg-[#FAF8F5] dark:bg-[#24211E] flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/Logo_PrestamosLeo.jpg"
-              alt="PrestamosLeo Logo"
-              loading="eager"
-              onError={(e) => {
-                e.currentTarget.src = '/Logo_PrestamosLeo.png';
-              }}
-              className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+        <div className="w-28 h-28 sm:w-32 sm:h-32 mx-auto flex items-center justify-center animate-welcomeGlow">
+          <img
+            src="/logo_lr.png"
+            alt="Logo PrestamosLeo"
+            loading="eager"
+            className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(180,130,20,.25)] transform hover:scale-105 transition-transform duration-500"
             />
           </div>
-          <div className="absolute bottom-0 right-0 bg-[#2D7A5D] text-white p-1.5 rounded-full ring-4 ring-white dark:ring-[#1E1E1E] shadow-md">
-            <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-        </div>
+
+  <div className="absolute bottom-0 right-0 bg-[#2D7A5D] text-white p-1.5 rounded-full ring-4 ring-white dark:ring-[#1E1E1E] shadow-md">
+    <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+  </div>
+</div>
 
         {/* Primary Header */}
         <div className="mt-4 mb-2">

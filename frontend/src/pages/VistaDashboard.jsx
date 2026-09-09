@@ -4,7 +4,6 @@ import { formatCurrency, formatDatePE, formatDueDate } from '../utils/loanHelper
 import {
   TrendingUp,
   Users,
-  ArrowUpRight,
   Plus,
   Route,
   CreditCard,
@@ -14,7 +13,6 @@ import {
 } from 'lucide-react';
 
 import { EditPaymentModal } from '../components/EditPaymentModal';
-import { LOGO_LR_TRANSPARENT } from '../assets/logoLR';
 
 const PERU_TIME_ZONE = 'America/Lima';
 
@@ -99,20 +97,14 @@ export function VistaDashboard({
           <span className="hidden sm:inline-block bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             PRESTAMOS LEITOTECH
           </span>
+
           <h2 className="text-xl sm:text-2xl uppercase font-extrabold tracking-wide text-white">
             PANEL DE PRÉSTAMOS
           </h2>
+
           <p className="hidden sm:block text-xs sm:text-sm text-white/90 max-w-xl">
             Resumen de prestamos, ingresos y gastos
           </p>
-        </div>
-
-        <div className="hidden md:flex absolute right-44 lg:right-52 top-1/2 -translate-y-1/2 z-10">
-          <img
-            src={LOGO_LR_TRANSPARENT}
-            alt="Logo LR PrestamosLeo"
-            className="h-28 w-28 lg:h-32 lg:w-32 object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,.22)]"
-          />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap relative z-10">

@@ -61,10 +61,9 @@ export function Header({
           <div className="flex items-center gap-3 min-w-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={LOGO_LR_TRANSPARENT}
-              alt="PrestamosLeo Logo"
-              loading="eager"
-              className="w-12 h-12 object-contain drop-shadow-[0_6px_12px_rgba(181,137,31,.25)] shrink-0"
+            src="/logo_lr.png"
+            alt="Logo PrestamosLeo"
+            className="w-12 h-12 object-contain shrink-0"
             />
             <div className="flex flex-col min-w-0">
               <h1 className="font-bold text-lg tracking-tight text-[#2C221E] truncate">
