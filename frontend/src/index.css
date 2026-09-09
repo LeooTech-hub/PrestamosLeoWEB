@@ -100,3 +100,67 @@ html.dark .warm-shadow-lg {
   animation: fadeOut 0.4s ease-out forwards;
 }
 
+
+
+/* PrestamosLeo premium visual layer — no business logic */
+@keyframes premiumShine {
+  0% { transform: translateX(-180%) skewX(-18deg); opacity: 0; }
+  20% { opacity: .65; }
+  100% { transform: translateX(280%) skewX(-18deg); opacity: 0; }
+}
+
+@keyframes brandBreathe {
+  0%, 100% { filter: drop-shadow(0 10px 20px rgba(218,165,45,.18)); transform: translateY(0) scale(1); }
+  50% { filter: drop-shadow(0 16px 30px rgba(218,165,45,.34)); transform: translateY(-2px) scale(1.012); }
+}
+
+.premium-action {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.premium-action::after {
+  content: "";
+  position: absolute;
+  inset: -35% auto -35% -25%;
+  width: 24%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.72), transparent);
+  animation: premiumShine 4.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.brand-logo-glow {
+  animation: brandBreathe 4.8s ease-in-out infinite;
+}
+
+.premium-hero {
+  background:
+    radial-gradient(circle at 86% 14%, rgba(255,214,112,.22), transparent 23%),
+    linear-gradient(135deg, #920000 0%, #b40000 48%, #dd3d20 100%);
+}
+
+.premium-card {
+  box-shadow:
+    0 14px 35px rgba(76,47,23,.06),
+    0 2px 8px rgba(76,47,23,.035);
+}
+
+html.dark .premium-hero {
+  background:
+    radial-gradient(circle at 86% 14%, rgba(225,176,66,.14), transparent 22%),
+    linear-gradient(135deg, #3b0909 0%, #5b0f0d 45%, #2a1b17 100%);
+}
+
+html.dark .premium-card {
+  box-shadow:
+    0 14px 35px rgba(0,0,0,.28),
+    0 2px 8px rgba(0,0,0,.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-action::after,
+  .brand-logo-glow {
+    animation: none !important;
+  }
+}

@@ -176,3 +176,87 @@ html.dark .sage-gradient {
 .animate-fadeIn {
   animation: fadeIn 0.18s ease-out both;
 }
+
+
+/* ─────────────────────────────────────────────────────────
+   PREMIUM PRESTAMOSLEO — motion & polish
+   ───────────────────────────────────────────────────────── */
+@keyframes premium-shine {
+  0%   { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+  18%  { opacity: .65; }
+  45%  { opacity: .15; }
+  100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+}
+
+@keyframes brand-breathe {
+  0%, 100% { filter: drop-shadow(0 10px 20px rgba(221, 170, 49, .20)); transform: translateY(0) scale(1); }
+  50% { filter: drop-shadow(0 16px 30px rgba(221, 170, 49, .34)); transform: translateY(-2px) scale(1.012); }
+}
+
+.premium-action {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.premium-action::after {
+  content: "";
+  position: absolute;
+  inset: -30% auto -30% -20%;
+  width: 24%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent);
+  animation: premium-shine 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.brand-logo-glow {
+  animation: brand-breathe 4.8s ease-in-out infinite;
+}
+
+.login-card {
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-action::after,
+  .brand-logo-glow {
+    animation: none !important;
+  }
+}
+
+
+/* PrestamosLeo premium visual layer — presentation only */
+.premium-hero {
+  background:
+    radial-gradient(circle at 88% 16%, rgba(255, 214, 112, .22), transparent 22%),
+    linear-gradient(135deg, #930000 0%, #b40000 46%, #dc3e22 100%);
+  position: relative;
+}
+
+.premium-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 0 56%, rgba(255,255,255,.08) 56.5%, transparent 57.5%),
+    linear-gradient(115deg, transparent 0 69%, rgba(237,191,79,.22) 69.4%, transparent 70.2%);
+}
+
+html.dark .premium-hero {
+  background:
+    radial-gradient(circle at 88% 16%, rgba(225, 176, 66, .14), transparent 20%),
+    linear-gradient(135deg, #3c0909 0%, #5c0f0d 45%, #2a1b17 100%);
+}
+
+.premium-card {
+  box-shadow:
+    0 14px 35px rgba(76, 47, 23, .06),
+    0 2px 8px rgba(76, 47, 23, .035);
+}
+
+html.dark .premium-card {
+  box-shadow:
+    0 14px 35px rgba(0,0,0,.28),
+    0 2px 8px rgba(0,0,0,.16);
+}

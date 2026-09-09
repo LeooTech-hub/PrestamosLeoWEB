@@ -47,12 +47,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-4 sm:space-y-6 pb-24 md:pb-12">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#D96B27] via-[#C25A19] to-[#2C221E] dark:from-[#B85324] dark:via-[#9C431B] dark:to-[#26221F] text-white rounded-2xl p-4 sm:p-6 shadow-md relative overflow-hidden transition-colors duration-300">
+      <div className="premium-hero text-white rounded-[28px] p-5 sm:p-7 shadow-[0_18px_50px_rgba(120,0,0,.16)] relative overflow-hidden transition-colors duration-300 border border-[#D7A93D]/40">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-15 bg-[radial-gradient(#FFFFFF_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-white/20 text-[#FFFFFF] border border-white/30 text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full mb-1.5 sm:mb-2">
+            <div className="inline-flex items-center gap-1.5 bg-white/12 text-white border border-[#F1CC71]/50 text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1 rounded-full mb-1.5 sm:mb-2 backdrop-blur-sm">
               <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#FFFFFF]" />
               <span>Resumen de Cobranzas Hoy</span>
             </div>
@@ -68,14 +68,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
             <button
               onClick={() => setActiveTab('newClient')}
-              className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 text-[#FFFFFF] border border-white/30 text-xs font-semibold shadow-sm active:scale-95 transition-all"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 rounded-full premium-action bg-white/12 hover:bg-white/20 text-white border border-white/25 text-xs font-semibold shadow-sm active:scale-95 transition-all hover:-translate-y-0.5"
             >
               <UserPlus className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#FFFFFF]" />
               <span>+ Crear Nuevo Préstamo</span>
             </button>
             <button
               onClick={() => setActiveTab('dailyRoute')}
-              className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#2C221E] dark:text-[#1C1917] hover:bg-[#FAF8F5] text-xs font-semibold shadow-sm active:scale-95 transition-all"
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-full premium-action bg-white text-[#8E0000] hover:bg-[#FFF8F5] text-xs font-semibold shadow-[0_8px_22px_rgba(77,0,0,.12)] active:scale-95 transition-all hover:-translate-y-0.5"
             >
               <Zap className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#D96B27]" />
               <span>Cobro Rápido</span>
@@ -106,7 +106,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Main KPI Summary Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Card 1: Capital Prestado */}
-        <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#211E1C] rounded-[22px] p-3 sm:p-5 border border-[#EEE3D8] dark:border-[#3B322C] warm-shadow hover:border-[#C7952F]/55 dark:hover:border-[#C7952F]/40 transition-all duration-300 hover:-translate-y-0.5">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 truncate">TOTAL PRESTADO</span>
             <div className="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-[#FDF3ED] dark:bg-[#E07A5F]/15 text-[#D96B27] dark:text-[#E07A5F] flex items-center justify-center shrink-0">
@@ -124,7 +124,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Card 2: Ganancia Estimada (20%) */}
         {isAdmin && (
-        <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#E89D4F]/40 dark:hover:border-[#E89D4F]/40 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#211E1C] rounded-[22px] p-3 sm:p-5 border border-[#EEE3D8] dark:border-[#3B322C] warm-shadow hover:border-[#C7952F]/55 dark:hover:border-[#C7952F]/40 transition-all duration-300 hover:-translate-y-0.5">
           <div className="flex items-center gap-2 mb-2 sm:mb-3">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#F4EBE1] dark:bg-[#3D352E] flex items-center justify-center">
               <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D96B27] dark:text-[#E07A5F]" />
@@ -145,7 +145,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
 
         {/* Card 3: Cobrado Hoy */}
-        <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#2D7A5D]/40 dark:hover:border-[#3D9970]/40 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#211E1C] rounded-[22px] p-3 sm:p-5 border border-[#EEE3D8] dark:border-[#3B322C] warm-shadow hover:border-[#2D7A5D]/50 dark:hover:border-[#3D9970]/45 transition-all duration-300 hover:-translate-y-0.5">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 truncate">RECAUDADO HOY</span>
             <div className="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-[#EEF6F2] dark:bg-[#3D9970]/15 text-[#2D7A5D] dark:text-[#3D9970] flex items-center justify-center shrink-0">
@@ -161,7 +161,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Card 4: Clientes Pendientes Hoy */}
-        <div className="bg-white dark:bg-[#26221F] rounded-2xl p-3 sm:p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow hover:border-[#C84B31]/40 dark:hover:border-[#C84B31]/40 transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#211E1C] rounded-[22px] p-3 sm:p-5 border border-[#EEE3D8] dark:border-[#3B322C] warm-shadow hover:border-[#B40000]/35 dark:hover:border-[#F06A5C]/35 transition-all duration-300 hover:-translate-y-0.5">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 truncate">PENDIENTES HOY</span>
             <div className="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-[#FDF2F0] dark:bg-[#C84B31]/15 text-[#C84B31] flex items-center justify-center shrink-0">
@@ -189,7 +189,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Middle Section: Active Loans Preview & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-[#26221F] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
+        <div className="lg:col-span-2 premium-card bg-white dark:bg-[#211E1C] rounded-[26px] p-5 border border-[#EEE3D8] dark:border-[#3B322C] warm-shadow transition-colors duration-300">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-bold text-base text-[#2C221E] dark:text-[#EAE0D5]">Préstamos Recientes</h3>
@@ -215,7 +215,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div
                     key={loan.id}
-                    className="p-3.5 rounded-2xl bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2]/80 dark:border-[#3D352E] hover:border-[#D96B27]/40 dark:hover:border-[#E07A5F]/40 transition-colors duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                    className="p-3.5 rounded-2xl bg-[#FFFDFC] dark:bg-[#191715] border border-[#EEE4DB] dark:border-[#3B322C] hover:border-[#C7952F]/45 dark:hover:border-[#C7952F]/35 transition-all duration-300 hover:shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -266,7 +266,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Recent Payments Feed */}
-        <div className="bg-white dark:bg-[#26221F] rounded-3xl p-5 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300">
+        <div className="premium-card bg-white dark:bg-[#211E1C] rounded-[26px] p-5 border border-[#EEE3D8] dark:border-[#3B322C] warm-shadow transition-colors duration-300">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-bold text-base text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-1.5">

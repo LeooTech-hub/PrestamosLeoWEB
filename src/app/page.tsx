@@ -257,7 +257,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F5] dark:bg-[#1C1917] text-[#2C221E] dark:text-[#EAE0D5] transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-[#FBFAF8] dark:bg-[#171514] text-[#211E1C] dark:text-[#F4EEE8] transition-colors duration-300">
       {/* Top Header */}
       <Header
         alerts={alerts}
@@ -270,7 +270,7 @@ export default function Home() {
       />
 
       {/* Navigation Tabs Bar en page.tsx con Pestañas ["Dashboard", "Ruta Diaria", "Préstamos", "Nuevo Cliente", "Reportes", "Clientes", "Usuarios"] */}
-      <nav className="bg-white dark:bg-[#1C1917] border-b border-[#E6DCD2] dark:border-[#3D352E] px-6 transition-colors duration-300">
+      <nav className="bg-white/95 dark:bg-[#171514]/95 backdrop-blur-xl border-b border-[#EEE5DC] dark:border-[#3A312B] px-6 transition-colors duration-300 shadow-[0_8px_24px_rgba(70,45,20,0.04)]">
         <div className="max-w-6xl mx-auto flex items-center gap-1 overflow-x-auto">
           {[
             { id: 'dashboard', label: 'Dashboard', adminOnly: false, cobradorHide: false },
@@ -299,12 +299,12 @@ export default function Home() {
               }}
               className={`flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition-all relative whitespace-nowrap ${
                 (activeTab === tab.id) || (tab.id === 'users' && isUserManagementOpen) || (tab.id === 'collectors' && showCollectors)
-                  ? 'border-[#D96B27] dark:border-[#E07A5F] text-[#D96B27] dark:text-[#E07A5F] bg-[#FDF3ED]/60 dark:bg-[#3D261A]/60 font-semibold'
-                  : 'border-transparent text-[#6E615A] dark:text-[#C2B29F] hover:text-[#2C221E] dark:hover:text-[#EAE0D5]'
+                  ? 'border-[#B40000] dark:border-[#F06A5C] text-[#B40000] dark:text-[#F06A5C] bg-[#FFF4F4] dark:bg-[#3B201C]/70 font-semibold'
+                  : 'border-transparent text-[#69615C] dark:text-[#CBBDB2] hover:text-[#B40000] dark:hover:text-[#F06A5C]'
               }`}
             >
               {tab.id === 'users' ? (
-                <Users className="w-4 h-4 text-[#D96B27] dark:text-[#E07A5F]" />
+                <Users className="w-4 h-4 text-[#B40000] dark:text-[#F06A5C]" />
               ) : null}
               <span>{tab.label}</span>
             </button>
@@ -313,11 +313,11 @@ export default function Home() {
       </nav>
 
       {/* Main Container */}
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
+      <main className="container mx-auto px-4 sm:px-6 py-6 max-w-[1500px]">
         {/* Banner with Quick Action button */}
-        <div className="mb-6 p-4 rounded-3xl terracotta-gradient text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+        <div className="premium-hero mb-6 p-5 sm:p-6 rounded-[28px] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_18px_50px_rgba(120,0,0,0.14)] border border-[#D7A93D]/40">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center font-bold">
+            <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center font-bold shadow-inner">
               💰
             </div>
             <div>
@@ -329,14 +329,14 @@ export default function Home() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setIsQuickCreateLoanOpen(true)}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer"
+              className="premium-action bg-white/14 hover:bg-white/22 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 cursor-pointer border border-white/25 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
             >
               + Crear Nuevo Préstamo
             </button>
             {isAdmin && (
               <button
                 onClick={() => setShowCollectors(true)}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer"
+                className="premium-action bg-white/14 hover:bg-white/22 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 cursor-pointer border border-white/25 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
               >
                 👥 Panel Cobradores
               </button>
@@ -448,7 +448,7 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer className="hidden md:block py-6 border-t border-[#E6DCD2] dark:border-[#3D352E] text-center text-xs text-[#6E615A] dark:text-[#C2B29F] bg-white dark:bg-[#1C1917] transition-colors duration-300">
+      <footer className="hidden md:block py-6 border-t border-[#EEE5DC] dark:border-[#3A312B] text-center text-xs text-[#746B65] dark:text-[#BFAFA3] bg-white dark:bg-[#171514] transition-colors duration-300">
         <p>PrestamosLeoWEB</p>
       </footer>
     </div>
