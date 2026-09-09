@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
-import { X, Calendar, FileText, CheckCircle2, Calculator, Percent, AlertCircle } from 'lucide-react';
+import { X, Calendar, FileText, CheckCircle2, Calculator, Percent } from 'lucide-react';
 
 function addDays(startISO, days) {
   if (!startISO || !days) return '';
@@ -16,6 +16,67 @@ function diffDays(startISO, dueISO) {
   return Math.max(1, Math.round((due - start) / (1000 * 60 * 60 * 24)));
 }
 
+function toUTCDate(dateISO) {
+  if (!dateISO) return null;
+  const clean = String(dateISO).split('T')[0];
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(clean);
+  if (!match) return null;
+  return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+}
+
+function calculateSuggestedPenalty(capital, dueDateISO, today = new Date()) {
+  const capitalAmount = Number(capital) || 0;
+
+  if (!dueDateISO || capitalAmount < 50) {
+    return {
+      isOverdue: false,
+      overdueDays: 0,
+      dailyPenalty: 0,
+      suggestedPenalty: 0,
+    };
+  }
+
+  const dueDate = toUTCDate(dueDateISO);
+  if (!dueDate) {
+    return {
+      isOverdue: false,
+      overdueDays: 0,
+      dailyPenalty: 0,
+      suggestedPenalty: 0,
+    };
+  }
+
+  const todayUTC = new Date(Date.UTC(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  ));
+
+  const diffMs = todayUTC.getTime() - dueDate.getTime();
+  if (diffMs <= 0) {
+    return {
+      isOverdue: false,
+      overdueDays: 0,
+      dailyPenalty: 0,
+      suggestedPenalty: 0,
+    };
+  }
+
+  const overdueDays = Math.floor(diffMs / 86_400_000);
+  const dailyPenalty = capitalAmount <= 400 ? 3 : 5;
+
+  return {
+    isOverdue: true,
+    overdueDays,
+    dailyPenalty,
+    suggestedPenalty: overdueDays * dailyPenalty,
+  };
+}
+
+function penaltyDecisionStorageKey(loanId) {
+  return `prestamosleo:penalty-decision:${loanId}`;
+}
+
 export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
   const [capital, setCapital] = useState(500);
   const [paymentDays, setPaymentDays] = useState(20);
@@ -24,6 +85,7 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
   const [useCustomCommission, setUseCustomCommission] = useState(false);
   const [commissionInput, setCommissionInput] = useState('');
   const [penaltyAmount, setPenaltyAmount] = useState(0);
+  const [penaltyDecision, setPenaltyDecision] = useState('pending');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,7 +98,22 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
         const start = loan.startDate || new Date().toISOString().split('T')[0];
         setStartDate(start);
         setDueDate(loan.dueDate || addDays(start, days));
-        setPenaltyAmount(loan.penaltyAmount || 0);
+
+        const existingPenalty = Number(loan.penaltyAmount || 0);
+        setPenaltyAmount(existingPenalty);
+
+        const savedDecision = typeof window !== 'undefined'
+          ? localStorage.getItem(penaltyDecisionStorageKey(loan.id))
+          : null;
+
+        if (existingPenalty > 0) {
+          setPenaltyDecision('applied');
+        } else if (savedDecision === 'applied' || savedDecision === 'waived') {
+          setPenaltyDecision(savedDecision);
+        } else {
+          setPenaltyDecision('pending');
+        }
+
         setNotes(loan.notes || '');
         if (loan.interestAmount != null && loan.interestAmount !== Math.round((loan.capital || 0) * 0.20)) {
           setUseCustomCommission(true);
@@ -81,10 +158,40 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
   const defaultInterest = Math.round(capNum * 0.20);
   const customCommission = parseFloat(commissionInput) || 0;
   const effectiveInterest = useCustomCommission ? customCommission : defaultInterest;
-  const moraNum = Math.max(0, Number(penaltyAmount) || 0);
+  const penaltyInfo = calculateSuggestedPenalty(capNum, dueDate);
+  const storedPenalty = Math.max(0, Number(penaltyAmount) || 0);
+  const moraNum = penaltyDecision === 'applied' && penaltyInfo.isOverdue
+    ? penaltyInfo.suggestedPenalty
+    : penaltyDecision === 'waived'
+      ? 0
+      : storedPenalty;
 
   const totalToPay = capNum + effectiveInterest + moraNum;
   const dailyPaymentAmount = Math.ceil(totalToPay / (paymentDays || 1));
+
+  const applySuggestedPenalty = () => {
+    setPenaltyDecision('applied');
+    setPenaltyAmount(penaltyInfo.suggestedPenalty);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(penaltyDecisionStorageKey(loan.id), 'applied');
+    }
+  };
+
+  const waiveSuggestedPenalty = () => {
+    setPenaltyDecision('waived');
+    setPenaltyAmount(0);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(penaltyDecisionStorageKey(loan.id), 'waived');
+    }
+  };
+
+  const resetPenaltyDecision = () => {
+    setPenaltyDecision('pending');
+    setPenaltyAmount(0);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(penaltyDecisionStorageKey(loan.id));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -279,20 +386,89 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
             )}
           </div>
 
-          {/* Mora / Cargo Adicional */}
+          {/* Mora automática */}
           <div>
             <label className="block text-xs font-bold text-[#6E615A] mb-1">
-              Mora / Cargo Adicional (S/.):
+              Mora / Cargo Adicional:
             </label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              value={penaltyAmount}
-              onChange={(e) => setPenaltyAmount(e.target.value === '' ? '' : Number(e.target.value))}
-              placeholder="S/. 0 (opcional)"
-              className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#C84B31] focus:outline-none focus:border-[#D96B27]"
-            />
+
+            {!penaltyInfo.isOverdue ? (
+              <div className="p-3 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl">
+                <p className="text-xs text-[#6E615A]">
+                  Este préstamo todavía no presenta días de atraso.
+                </p>
+              </div>
+            ) : (
+              <div className="p-3 bg-[#FFF8F5] border border-[#E6DCD2] rounded-2xl space-y-2.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-extrabold text-[#C84B31]">Préstamo vencido</p>
+                    <p className="text-[11px] text-[#6E615A] mt-0.5">
+                      {penaltyInfo.overdueDays} {penaltyInfo.overdueDays === 1 ? 'día' : 'días'} de atraso
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-black px-2 py-1 rounded-full bg-white border border-[#E6DCD2] text-[#C84B31]">
+                    S/. {penaltyInfo.dailyPenalty} / día
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs border-t border-[#E6DCD2]/70 pt-2">
+                  <span className="text-[#6E615A]">Mora sugerida:</span>
+                  <strong className="text-[#C84B31] text-sm">
+                    {formatCurrency(penaltyInfo.suggestedPenalty)}
+                  </strong>
+                </div>
+
+                {penaltyDecision === 'pending' && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={waiveSuggestedPenalty}
+                      className="py-2 rounded-xl border border-[#E6DCD2] bg-white text-[11px] font-bold text-[#6E615A] hover:bg-[#FAF8F5] transition-all cursor-pointer"
+                    >
+                      No aplicar mora
+                    </button>
+                    <button
+                      type="button"
+                      onClick={applySuggestedPenalty}
+                      className="py-2 rounded-xl bg-[#C84B31] text-white text-[11px] font-extrabold hover:brightness-110 transition-all cursor-pointer"
+                    >
+                      Aplicar {formatCurrency(penaltyInfo.suggestedPenalty)}
+                    </button>
+                  </div>
+                )}
+
+                {penaltyDecision === 'applied' && (
+                  <div className="flex items-center justify-between gap-3 p-2 bg-[#FFF0EB] rounded-xl">
+                    <span className="text-[11px] font-bold text-[#C84B31]">
+                      Mora aplicada: {formatCurrency(moraNum)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={resetPenaltyDecision}
+                      className="text-[10px] font-black text-[#C84B31] underline cursor-pointer"
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+                )}
+
+                {penaltyDecision === 'waived' && (
+                  <div className="flex items-center justify-between gap-3 p-2 bg-[#FAF8F5] rounded-xl">
+                    <span className="text-[11px] font-bold text-[#6E615A]">
+                      Decidiste no aplicar mora a este préstamo.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={resetPenaltyDecision}
+                      className="text-[10px] font-black text-[#D96B27] underline cursor-pointer"
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Resumen del Préstamo en Tiempo Real */}
