@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDniData } from '../utils/reniecHelper';
 import { X, User, Phone, MapPin, FileText, CheckCircle2, Search, Loader2, AlertCircle } from 'lucide-react';
+import { ClientDniDocuments } from './ClientDniDocuments';
 
 export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
   const [formData, setFormData] = useState({
@@ -15,6 +16,14 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearchingDni, setIsSearchingDni] = useState(false);
   const [dniStatusText, setDniStatusText] = useState('');
+
+  const storedUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch (_) {
+      return null;
+    }
+  })();
 
   useEffect(() => {
     if (client) {
@@ -102,7 +111,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 border border-[#E6DCD2] warm-shadow-lg relative overflow-hidden">
+      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 border border-[#E6DCD2] warm-shadow-lg relative overflow-y-auto max-h-[92vh]">
         <div className="flex items-center justify-between border-b border-[#E6DCD2] pb-4 mb-4">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-[#FDF3ED] text-[#D96B27] flex items-center justify-center font-bold">
@@ -113,7 +122,7 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
                 Editar Datos del Cliente
               </h3>
               <p className="text-xs text-[#6E615A]">
-                Actualiza el teléfono, dirección u observaciones.
+                Actualiza los datos y documentos del cliente.
               </p>
             </div>
           </div>
@@ -238,7 +247,6 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
             </div>
           </div>
 
-          {/* Mora / Recargo Adicional */}
           <div>
             <label className="block text-xs font-bold text-[#6E615A] mb-1">
               Mora / Recargo (S/.):
@@ -275,6 +283,10 @@ export function EditClientModal({ client, isOpen, onClose, onConfirmEdit }) {
                 className="w-full pl-9 pr-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-medium text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
               />
             </div>
+          </div>
+
+          <div className="border-t border-[#E6DCD2] pt-4 mt-4">
+            <ClientDniDocuments clientId={client.id} user={storedUser} />
           </div>
 
           <div className="border-t border-[#E6DCD2] pt-4 mt-4 flex items-center justify-end gap-2">
