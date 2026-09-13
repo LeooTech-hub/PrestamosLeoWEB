@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 import apiRoutes from './routes/apiRoutes.js';
+import dniRoutes from './routes/dniRoutes.js';
 import pool from './config/db.js';
 import { initDb } from './config/initDb.js';
 
@@ -57,6 +58,8 @@ app.use((_req, res, next) => {
 });
 
 // API Routes
+// DNI routes are isolated so image bodies can use route-local raw parsing.
+app.use('/api', dniRoutes);
 app.use('/api', apiRoutes);
 
 // Health check endpoint con verificación de BD
@@ -72,6 +75,9 @@ app.get('/health', async (req, res) => {
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, _next) => {
   console.error('Error interno en el servidor:', err);
+  if (err?.type === 'entity.too.large') {
+    return res.status(413).json({ status: 'error', message: 'La imagen supera el máximo permitido de 5 MB' });
+  }
   res.status(500).json({ status: 'error', message: err.message || 'Error interno del servidor' });
 });
 
