@@ -5,6 +5,8 @@ import {
   formatDueDate,
   getDaysDifferenceInfo,
   getOrCalculateDueDate,
+  getLoanPaymentTerms,
+  formatPaymentAmount,
   generateWhatsAppReminderMessage
 } from '../utils/loanHelpers';
 
@@ -297,6 +299,7 @@ export function VistaPrestamos({
             );
 
             const nickname = getLoanNickname(loan);
+            const paymentTerms = getLoanPaymentTerms(loan);
 
             return (
 
@@ -443,14 +446,11 @@ export function VistaPrestamos({
                     <div className="flex justify-between">
 
                       <span className="text-[#6E615A]">
-                        Cuota Diaria ({loan.paymentDays} días):
+                        {paymentTerms.label}{paymentTerms.frequency === 'AGREED_DATE' ? '' : ' (' + paymentTerms.periods + ' ' + paymentTerms.unit + ')'}:
                       </span>
 
                       <strong className="text-[#2D7A5D]">
-                        {formatCurrency(
-                          loan.dailyPaymentAmount
-                        )}
-                        /día
+                        {formatPaymentAmount(paymentTerms.amount)}
                       </strong>
 
                     </div>

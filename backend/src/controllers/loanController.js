@@ -429,6 +429,8 @@ function mapRowToLoan(row) {
     total_to_pay: totalToPay,
 
     paymentDays,
+    paymentFrequency: row.payment_frequency || 'AGREED_DATE',
+    payment_frequency: row.payment_frequency || 'AGREED_DATE',
     payment_days: paymentDays,
     days_agreed: paymentDays,
     days: paymentDays,
@@ -1156,6 +1158,11 @@ const loanController = {
       const validatedAmount = Number(rawAmount);
       const validatedInterestRate = Number(rawInterestRate);
       const validatedDays = Number(rawDays);
+      const paymentFrequency = req.body.paymentFrequency ?? req.body.payment_frequency ?? 'AGREED_DATE';
+      if (!['DAILY', 'WEEKLY', 'AGREED_DATE'].includes(paymentFrequency)) {
+        await client.query('ROLLBACK'); transactionStarted = false;
+        return res.status(422).json({ error: 'Frecuencia de pago inválida' });
+      }
       if (!Number.isFinite(validatedAmount) || validatedAmount <= 0) {
         await client.query('ROLLBACK'); transactionStarted = false;
         return res.status(422).json({ error: 'El capital debe ser un número mayor a 0' });
@@ -1245,7 +1252,7 @@ const loanController = {
           amount, capital, amount_borrowed,
           interest_rate, interest_amount,
           total_amount, total_to_pay,
-          payment_days, days_agreed, days,
+          payment_days, days_agreed, days, payment_frequency,
           daily_payment_amount, daily_payment, daily_amount,
           paid_amount, remaining_amount, paid_days_count, remaining_days,
           start_date, due_date, status, assigned_to_user_id, assigned_to, is_archived
@@ -1254,7 +1261,7 @@ const loanController = {
           $6, $6, $6,
           $7, $8,
           $9, $9,
-          $10, $10, $10,
+          $10, $10, $10, $17,
           $11, $11, $11,
           0, $9, 0, $10,
           $12, $13, $14, $15, $16, 0
@@ -1262,7 +1269,7 @@ const loanController = {
       `, [
         loanId, finalClientId, clientName, loanClientPhone, loanClientAddress,
         amount, interestRate, interestAmount, totalAmount,
-        days, dailyAmount, startDate, dueDate, status, assignedToUserId, assignedToUserId
+        days, dailyAmount, startDate, dueDate, status, assignedToUserId, assignedToUserId, paymentFrequency
       ]);
       const fullLoanRes = await client.query(`
         SELECT l.*, COALESCE(c.name, 'Cliente') AS client_name, c.alias AS client_alias, c.phone AS client_phone, c.address AS client_address
@@ -1308,6 +1315,11 @@ const loanController = {
       const requestedInterest = req.body.interest_rate ?? req.body.interestRate ?? req.body.interes;
       const requestedInterestAmount = req.body.interest_amount ?? req.body.interestAmount ?? req.body.commission ?? req.body.interest;
       const requestedDays = req.body.payment_days ?? req.body.paymentDays ?? req.body.days_agreed ?? req.body.days ?? req.body.duration_days;
+      const paymentFrequency = req.body.paymentFrequency ?? req.body.payment_frequency ?? current.payment_frequency ?? 'AGREED_DATE';
+      if (!['DAILY', 'WEEKLY', 'AGREED_DATE'].includes(paymentFrequency)) {
+        await client.query('ROLLBACK');
+        return res.status(422).json({ error: 'Frecuencia de pago inválida' });
+      }
       if (requestedAmount !== undefined && (!Number.isFinite(Number(requestedAmount)) || Number(requestedAmount) <= 0)) {
         await client.query('ROLLBACK');
         return res.status(422).json({ error: 'El capital debe ser un número mayor a 0' });
@@ -1400,6 +1412,7 @@ const loanController = {
           total_amount = $5::numeric,
           total_to_pay = $5::numeric,
           payment_days = $6::integer,
+          payment_frequency = $19::text,
           days_agreed = $6::integer,
           days = $6::integer,
           daily_payment_amount = $7::numeric,
@@ -1423,7 +1436,7 @@ const loanController = {
       `, [
         amount, interestRate, interestAmount, penaltyAmount, totalAmount, days, dailyAmount,
         startDate, dueDate, remainingAmount, remainingDays, paidAmount, paidDaysCount, notes,
-        remainingAmount, status, dueDate, String(id)
+        remainingAmount, status, dueDate, String(id), paymentFrequency
       ]);
 
       await client.query('COMMIT');
@@ -1756,6 +1769,8 @@ const loanController = {
           SELECT
             l.id,
             l.client_id,
+            l.payment_frequency, l.start_date,
+            COALESCE(NULLIF(l.payment_days, 0), NULLIF(l.days_agreed, 0), NULLIF(l.days, 0), 20)::integer AS payment_days,
             COALESCE(c.name, l.client_name, 'Cliente sin Nombre') AS client_name,
             COALESCE(c.dni, c.documento, '') AS client_dni,
             COALESCE(c.phone, l.client_phone, '') AS client_phone,
@@ -1797,6 +1812,7 @@ const loanController = {
         SELECT
           *,
           (effective_due_date - CURRENT_DATE)::integer AS days_remaining,
+          ${PERU_TODAY_SQL}::text AS peru_today,
           CASE
             WHEN effective_due_date < CURRENT_DATE THEN 'OVERDUE'
             WHEN effective_due_date = CURRENT_DATE THEN 'DUE_TODAY'
@@ -1805,7 +1821,7 @@ const loanController = {
         FROM alert_candidates
         WHERE remaining_amount > 0
           AND effective_due_date IS NOT NULL
-          AND effective_due_date <= CURRENT_DATE + 1
+          AND (effective_due_date <= CURRENT_DATE + 1 OR payment_frequency IN ('DAILY', 'WEEKLY'))
         ORDER BY
           CASE
             WHEN effective_due_date < CURRENT_DATE THEN 0
@@ -1816,12 +1832,33 @@ const loanController = {
           client_name ASC
       `, params);
 
-      return res.json(rows.map((row) => {
-        const dueDate = toDateOnly(row.effective_due_date);
+      return res.json(rows.flatMap((row) => {
+        const loanDueDate = toDateOnly(row.effective_due_date);
+        let installmentDate = null;
+        const frequency = row.payment_frequency || 'AGREED_DATE';
+        const startDate = toDateOnly(row.start_date);
+        const today = toDateOnly(row.peru_today);
+        if (startDate && today && loanDueDate && loanDueDate > today
+          && ['DAILY', 'WEEKLY'].includes(frequency)) {
+          const interval = frequency === 'WEEKLY' ? 7 : 1;
+          const periods = Math.max(1, Math.ceil(Number(row.payment_days) / interval));
+          const paid = Math.max(0, finiteNumber(row.paid_amount, 0));
+          const total = Math.max(0, finiteNumber(row.total_to_pay, 0));
+          for (let index = 1; index <= periods; index++) {
+            const coveredAmount = Math.round(total * index / periods * 100) / 100;
+            if (paid + 0.005 < coveredAmount) {
+              const scheduled = addDays(startDate, Math.min(index * interval, Number(row.payment_days)));
+              if (scheduled && scheduled <= today) installmentDate = scheduled;
+              break;
+            }
+          }
+        }
+        if (!installmentDate && !row.alert_type) return [];
+        const dueDate = installmentDate || loanDueDate;
         const remainingAmount = Math.max(0, finiteNumber(row.remaining_amount, 0));
         const totalToPay = Math.max(0, finiteNumber(row.total_to_pay, remainingAmount));
         const daysRemaining = finiteNumber(row.days_remaining, 0);
-        return {
+        return [{
           id: `alert_${row.id}`,
           loanId: String(row.id),
           loan_id: String(row.id),
@@ -1841,8 +1878,9 @@ const loanController = {
           daysRemaining,
           days_remaining: daysRemaining,
           daysDifference: daysRemaining,
-          type: row.alert_type,
-        };
+          type: installmentDate ? 'INSTALLMENT_OVERDUE' : row.alert_type,
+          paymentFrequency: installmentDate ? frequency : undefined,
+        }];
       }));
     } catch (error) {
       console.error('[ERROR GET /api/alerts]:', error);

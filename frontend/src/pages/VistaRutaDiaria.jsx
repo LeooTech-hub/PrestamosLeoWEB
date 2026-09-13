@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatCurrency, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
+import { formatCurrency, formatPaymentAmount, getLoanPaymentTerms, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
 import { PaymentModal } from '../components/PaymentModal';
 import { Route, Search, Phone, MapPin, CheckCircle2, MessageSquare, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -232,9 +232,9 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment, onRe
 
                   <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]/60 space-y-1.5 text-xs mb-4">
                     <div className="flex justify-between">
-                      <span className="text-[#6E615A]">Cuota Diaria Acordada:</span>
+                      <span className="text-[#6E615A]">{getLoanPaymentTerms(loan).label}:</span>
                       <strong className="text-[#2C221E] font-extrabold">
-                        {formatCurrency(loan.dailyPaymentAmount)}
+                        {formatPaymentAmount(getLoanPaymentTerms(loan).amount)}
                       </strong>
                     </div>
 

@@ -819,7 +819,7 @@ export function VistaClientes({
                                       : `Capital: ${formatCurrency(amount)} + Int (${interestRate}%): ${formatCurrency(interest)} = ${formatCurrency(total)}`}
                                   </strong>
                                   <span className="text-xs text-[#6E615A]">
-                                    Modalidad: {loan.paymentDays || loan.days || loan.duration || 20} Días de Pago ({formatCurrency(loan.dailyPaymentAmount || loan.daily_amount)}/día)
+                                    Modalidad: {loan.paymentFrequency === 'DAILY' ? 'Pago diario' : loan.paymentFrequency === 'WEEKLY' ? 'Pago semanal' : 'Fecha acordada'} · {loan.paymentDays || loan.days || loan.duration || 20} Días de Pago
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">

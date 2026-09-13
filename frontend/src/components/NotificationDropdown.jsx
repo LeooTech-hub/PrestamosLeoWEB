@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCurrency, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
+import { formatCurrency, formatDatePE, generateWhatsAppReminderMessage } from '../utils/loanHelpers';
 import { Bell, X, MessageSquare } from 'lucide-react';
 
 export function NotificationDropdown({ alerts = [], isOpen, onClose }) {
@@ -37,9 +37,9 @@ export function NotificationDropdown({ alerts = [], isOpen, onClose }) {
             </div>
           ) : (
             alerts.map((alert) => {
-              const isOverdue = alert.type === 'OVERDUE';
+              const isOverdue = alert.type === 'OVERDUE' || alert.type === 'INSTALLMENT_OVERDUE';
               const isToday = alert.type === 'DUE_TODAY';
-              const statusLabel = isOverdue ? 'VENCIDO' : isToday ? 'VENCE HOY' : 'VENCE MAÑANA';
+              const statusLabel = alert.type === 'INSTALLMENT_OVERDUE' ? (alert.paymentFrequency === 'WEEKLY' ? 'CUOTA SEMANAL VENCIDA' : 'CUOTA DIARIA VENCIDA') : isOverdue ? 'VENCIDO' : isToday ? 'VENCE HOY' : 'VENCE MAÑANA';
 
               return (
                 <div
@@ -75,6 +75,9 @@ export function NotificationDropdown({ alerts = [], isOpen, onClose }) {
                     </span>
                   </div>
 
+                  {alert.type === 'INSTALLMENT_OVERDUE' && (
+                    <span className="text-[11px] text-[#6E615A]">Fecha de la cuota: {formatDatePE(alert.dueDate ?? alert.due_date)}</span>
+                  )}
                   <div className="flex justify-between items-center bg-white p-2 rounded-xl border border-[#E6DCD2]/60">
                     <div>
                       <span className="text-[10px] text-[#6E615A] block">Saldo Restante:</span>

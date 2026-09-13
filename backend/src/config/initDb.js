@@ -59,6 +59,7 @@ export async function initDb() {
         total_to_pay DECIMAL(10,2) NOT NULL,
         total_amount DECIMAL(10,2) NULL,
         payment_days INT DEFAULT 20,
+        payment_frequency VARCHAR(20) NOT NULL DEFAULT 'AGREED_DATE',
         days_agreed INT NULL,
         daily_payment_amount DECIMAL(10,2) NOT NULL,
         daily_payment DECIMAL(10,2) NULL,
@@ -164,6 +165,7 @@ export async function initDb() {
     await safeAddColumn('loans', 'total_to_pay', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'total_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('loans', 'payment_days', 'INT DEFAULT 20');
+    await safeAddColumn('loans', 'payment_frequency', "VARCHAR(20) NOT NULL DEFAULT 'AGREED_DATE'");
     await safeAddColumn('loans', 'days_agreed', 'INT NULL');
     await safeAddColumn('loans', 'days', 'INT DEFAULT 20');
     await safeAddColumn('loans', 'daily_payment_amount', 'DECIMAL(10,2) DEFAULT 0.00');

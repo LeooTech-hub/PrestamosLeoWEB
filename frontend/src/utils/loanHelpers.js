@@ -28,6 +28,27 @@ export function calculateCustomLoan(capital, paymentDays, interestRate = 20) {
   };
 }
 
+export function getLoanPaymentTerms(loan) {
+  const frequency = loan.paymentFrequency || loan.payment_frequency || 'AGREED_DATE';
+  const days = Math.max(1, Number(loan.paymentDays ?? loan.payment_days ?? loan.days ?? 20) || 20);
+  const total = Math.max(0, Number(loan.totalToPay ?? loan.totalAmount ?? loan.total_amount ?? loan.total_to_pay ?? 0) || 0);
+  const periods = frequency === 'WEEKLY' ? Math.max(1, Math.ceil(days / 7)) : days;
+  return {
+    frequency,
+    periods,
+    amount: Number((total / (frequency === 'AGREED_DATE' ? 1 : periods)).toFixed(2)),
+    label: frequency === 'DAILY' ? 'Cuota Diaria' : frequency === 'WEEKLY' ? 'Cuota Semanal' : 'Pago en Fecha Acordada',
+    unit: frequency === 'DAILY' ? 'días' : 'semanas',
+  };
+}
+
+export function formatPaymentAmount(amount) {
+  return 'S/. ' + new Intl.NumberFormat('es-PE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(amount) || 0);
+}
+
 export function calculate20PercentLoan(capital, paymentDays, interestRate = 20) {
   return calculateCustomLoan(capital, paymentDays, interestRate);
 }
@@ -356,8 +377,11 @@ export function generateLoanConstanciaMessage(loan) {
   const penalty = loan.penaltyAmount && loan.penaltyAmount > 0 ? `\n⚠️ *Mora / Cargo Adicional:* ${formatCurrency(loan.penaltyAmount)}` : '';
   const totalToPay = formatCurrency(loan.totalToPay);
   const dueDate = formatDatePE(loan.dueDate);
-  const dailyPayment = formatCurrency(loan.dailyPaymentAmount);
-  const days = loan.paymentDays || 20;
+  const terms = getLoanPaymentTerms(loan);
+  const paymentLine = terms.frequency === 'AGREED_DATE'
+    ? '📌 *Pago en Fecha Acordada:* ' + formatPaymentAmount(terms.amount)
+    : '📌 *' + terms.label + ':* ' + formatPaymentAmount(terms.amount)
+      + '\n📌 *' + (terms.frequency === 'WEEKLY' ? 'Semanas de Pago' : 'Días de Pago') + ':* ' + terms.periods;
 
   return `📄 *CONSTANCIA DE PRÉSTAMO - PRESTAMOSLEO*
 
@@ -367,7 +391,7 @@ export function generateLoanConstanciaMessage(loan) {
 📈 *Interés / Comisión:* ${interest}${penalty}
 💵 *Monto Total a Pagar:* ${totalToPay}
 📆 *Fecha de Vencimiento:* ${dueDate}
-📌 *Cuota Diaria:* ${dailyPayment} (${days} días)
+${paymentLine}
 
 _Gracias por su confianza. Ante cualquier consulta estamos para atenderle._`;
 }

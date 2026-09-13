@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatCurrency, formatDatePE, generateLoanConstanciaMessage } from '../utils/loanHelpers';
+import { formatCurrency, formatDatePE, formatPaymentAmount, getLoanPaymentTerms, generateLoanConstanciaMessage } from '../utils/loanHelpers';
 import { X, FileText, Copy, Check, MessageSquare, AlertCircle } from 'lucide-react';
 
 export function LoanConstanciaModal({
@@ -18,6 +18,7 @@ export function LoanConstanciaModal({
   const phoneWithCode = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
 
   const constanciaMessage = generateLoanConstanciaMessage(loan);
+  const paymentTerms = getLoanPaymentTerms(loan);
 
   const whatsappUrl = hasPhone
     ? `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(constanciaMessage)}`
@@ -100,9 +101,9 @@ export function LoanConstanciaModal({
                 </strong>
               </div>
               <div className="pt-1 border-t border-[#E6DCD2]/50">
-                <span className="text-xs text-[#6E615A] block">Cuota Diaria:</span>
+                <span className="text-xs text-[#6E615A] block">{paymentTerms.label}:</span>
                 <strong className="text-[#2C221E] text-sm font-extrabold block">
-                  📌 {formatCurrency(loan.dailyPaymentAmount)} ({loan.paymentDays || 20} días)
+                  📌 {formatPaymentAmount(paymentTerms.amount)}{paymentTerms.frequency === 'AGREED_DATE' ? '' : ' (' + paymentTerms.periods + ' ' + paymentTerms.unit + ')'}
                 </strong>
               </div>
             </div>

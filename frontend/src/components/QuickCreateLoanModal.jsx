@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatCurrency, calculate20PercentLoan } from '../utils/loanHelpers';
+import { formatCurrency, formatPaymentAmount, getLoanPaymentTerms, calculate20PercentLoan } from '../utils/loanHelpers';
 import { fetchDniData } from '../utils/reniecHelper';
 import { X, PlusCircle, CheckCircle2, Search, Loader2 } from 'lucide-react';
 
@@ -14,6 +14,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
 
   const [capital, setCapital] = useState(500);
   const [paymentDays, setPaymentDays] = useState(20);
+  const [paymentFrequency, setPaymentFrequency] = useState('AGREED_DATE');
   const [interestRate, setInterestRate] = useState(20);
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split('T')[0]
@@ -70,6 +71,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
   };
 
   const calculated = calculateCustomLoan(capital || 0, paymentDays || 20, interestRate);
+  const paymentTerms = getLoanPaymentTerms({ paymentFrequency, paymentDays, totalToPay: calculated.totalToPay });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,6 +90,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
         amount: capNum,
         interest_rate: Number(interestRate) || 20,
         interestRate: Number(interestRate) || 20,
+        paymentFrequency,
         paymentDays,
         days: paymentDays,
         startDate,
@@ -269,6 +272,15 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
               />
             </div>
           </div>
+          <div>
+            <label className="block text-xs font-bold text-[#6E615A] mb-1">Frecuencia de pago:</label>
+            <select value={paymentFrequency} onChange={(e) => setPaymentFrequency(e.target.value)}
+              className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]">
+              <option value="DAILY">Diario</option>
+              <option value="WEEKLY">Semanal</option>
+              <option value="AGREED_DATE">Fecha acordada</option>
+            </select>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-[#6E615A] mb-1">
@@ -336,9 +348,9 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
             </div>
 
             <div className="text-right">
-              <span className="text-[#6E615A] block">Cuota Diaria:</span>
+              <span className="text-[#6E615A] block">{paymentFrequency === 'DAILY' ? 'Cuota Diaria:' : paymentFrequency === 'WEEKLY' ? 'Cuota Semanal:' : 'Fecha Acordada:'}</span>
               <strong className="text-[#2D7A5D] text-sm font-extrabold">
-                {formatCurrency(calculated.dailyPaymentAmount)}/día
+                {formatPaymentAmount(paymentTerms.amount)}
               </strong>
             </div>
           </div>

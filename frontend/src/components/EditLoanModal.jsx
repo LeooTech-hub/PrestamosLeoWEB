@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatCurrency, formatDatePE } from '../utils/loanHelpers';
+import { formatCurrency, formatDatePE, formatPaymentAmount, getLoanPaymentTerms } from '../utils/loanHelpers';
 import { X, Calendar, FileText, CheckCircle2, Calculator, Percent } from 'lucide-react';
 
 function addDays(startISO, days) {
@@ -80,6 +80,7 @@ function penaltyDecisionStorageKey(loanId) {
 export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
   const [capital, setCapital] = useState(500);
   const [paymentDays, setPaymentDays] = useState(20);
+  const [paymentFrequency, setPaymentFrequency] = useState('AGREED_DATE');
   const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [useCustomCommission, setUseCustomCommission] = useState(false);
@@ -95,6 +96,7 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
         setCapital(loan.capital || 0);
         const days = loan.paymentDays || 20;
         setPaymentDays(days);
+        setPaymentFrequency(loan.paymentFrequency || loan.payment_frequency || 'AGREED_DATE');
         const start = loan.startDate || new Date().toISOString().split('T')[0];
         setStartDate(start);
         setDueDate(loan.dueDate || addDays(start, days));
@@ -168,6 +170,7 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
 
   const totalToPay = capNum + effectiveInterest + moraNum;
   const dailyPaymentAmount = Math.ceil(totalToPay / (paymentDays || 1));
+  const paymentTerms = getLoanPaymentTerms({ paymentFrequency, paymentDays, totalToPay });
 
   const applySuggestedPenalty = () => {
     setPenaltyDecision('applied');
@@ -210,6 +213,7 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
         capital: capNum,
         amount: capNum,
         amount_borrowed: capNum,
+        paymentFrequency,
         paymentDays,
         payment_days: paymentDays,
         days_agreed: paymentDays,
@@ -300,6 +304,16 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
               placeholder="Número de días (1 - 365)"
               className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#6E615A] mb-1">Frecuencia de pago:</label>
+            <select value={paymentFrequency} onChange={(e) => setPaymentFrequency(e.target.value)}
+              className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl text-xs font-bold text-[#2C221E] focus:outline-none focus:border-[#D96B27]">
+              <option value="DAILY">Diario</option>
+              <option value="WEEKLY">Semanal</option>
+              <option value="AGREED_DATE">Fecha acordada</option>
+            </select>
           </div>
 
           {/* Fechas: Inicio y Vencimiento */}
@@ -502,8 +516,8 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
             </div>
 
             <div className="flex justify-between items-center pt-1 font-extrabold">
-              <span className="text-[#6E615A]">Cuota Diaria Estimada:</span>
-              <span className="text-[#2D7A5D] text-xs">{formatCurrency(dailyPaymentAmount)} / día</span>
+              <span className="text-[#6E615A]">{paymentFrequency === 'DAILY' ? 'Cuota Diaria Estimada:' : paymentFrequency === 'WEEKLY' ? 'Cuota Semanal Estimada:' : 'Pago en Fecha Acordada:'}</span>
+              <span className="text-[#2D7A5D] text-xs">{formatPaymentAmount(paymentTerms.amount)}</span>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { formatCurrency, calculate20PercentLoan, formatDatePE } from '../utils/loanHelpers';
+import { formatCurrency, formatPaymentAmount, getLoanPaymentTerms, calculate20PercentLoan, formatDatePE } from '../utils/loanHelpers';
 import { fetchDniData } from '../utils/reniecHelper';
 import { UserPlus, User, Phone, MapPin, Calendar, Percent, CheckCircle2, Sparkles, Search, Loader2, Lock } from 'lucide-react';
 
@@ -48,6 +48,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
   const [capital, setCapital] = useState();
   const [paymentDays, setPaymentDays] = useState(20);
+  const [paymentFrequency, setPaymentFrequency] = useState('AGREED_DATE');
   const [interestRate, setInterestRate] = useState(20);
   const initialStartDate = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState(initialStartDate);
@@ -163,6 +164,9 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   };
 
   const calculated = calculate20PercentLoan(capital || 0, paymentDays || 20, interestRate);
+  const paymentTerms = getLoanPaymentTerms({ paymentFrequency, paymentDays, totalToPay: calculated.totalToPay });
+  const installmentCount = paymentTerms.periods;
+  const installmentAmount = paymentTerms.amount;
   const isClientLocked = Boolean(selectedClientId);
 
   const handleSubmit = async (e) => {
@@ -184,6 +188,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
         amount: capNum,
         interest_rate: Number(interestRate) || 20,
         interestRate: Number(interestRate) || 20,
+        paymentFrequency,
         paymentDays: Number(paymentDays) || 20,
         days: Number(paymentDays) || 20,
         startDate,
@@ -436,6 +441,20 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
               </div>
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1">Frecuencia de pago:</label>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Frecuencia de pago">
+                {[['DAILY', 'Diario'], ['WEEKLY', 'Semanal'], ['AGREED_DATE', 'Fecha acordada']].map(([value, label]) => (
+                  <button key={value} type="button" aria-pressed={paymentFrequency === value} onClick={() => setPaymentFrequency(value)}
+                    className={`px-3 py-2 rounded-xl text-xs font-extrabold border transition-all ${paymentFrequency === value
+                      ? 'terracotta-gradient text-white border-[#D96B27]'
+                      : 'bg-[#FAF8F5] dark:bg-[#24211E] text-[#6E615A] dark:text-[#E5E7EB] border-[#E6DCD2] dark:border-[#332F2C] hover:bg-[#FDF3ED]'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#6E615A] dark:text-[#E5E7EB] mb-1">
@@ -566,12 +585,12 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
               <div className="bg-[#EEF6F2] p-3 rounded-2xl border border-[#2D7A5D]/20 space-y-1">
                 <span className="text-[10px] font-bold text-[#2D7A5D] uppercase tracking-wider block">
-                  Cuota Diaria Estimada
+                  {paymentFrequency === 'DAILY' ? 'Cuota Diaria Estimada' : paymentFrequency === 'WEEKLY' ? 'Cuota Semanal Estimada' : 'Pago en Fecha Acordada'}
                 </span>
                 <div className="text-xl font-black text-[#2D7A5D]">
-                  {formatCurrency(calculated.dailyPaymentAmount)}
+                  {formatPaymentAmount(installmentAmount)}
                   <span className="text-xs font-semibold text-[#6E615A] block">
-                    x {calculated.paymentDays} días de pago
+                    {paymentFrequency === 'DAILY' ? `x ${installmentCount} días de pago` : paymentFrequency === 'WEEKLY' ? `x ${installmentCount} semanas/cuotas` : `Vence: ${formatDatePE(endDate)}`}
                   </span>
                 </div>
               </div>
