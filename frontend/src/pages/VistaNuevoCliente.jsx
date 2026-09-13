@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { formatCurrency, formatPaymentAmount, getLoanPaymentTerms, calculate20PercentLoan, formatDatePE } from '../utils/loanHelpers';
 import { fetchDniData } from '../utils/reniecHelper';
 import { UserPlus, User, Phone, MapPin, Calendar, Percent, CheckCircle2, Sparkles, Search, Loader2, Lock } from 'lucide-react';
+import { ClientDniDocuments } from '../components/ClientDniDocuments';
+import { uploadClientDni } from '../services/clientDniApi';
+
 
 const formatDateToISO = (date) => {
   const y = date.getFullYear();
@@ -45,6 +48,8 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   const [clientIdentification, setClientIdentification] = useState('');
   const [isSearchingDni, setIsSearchingDni] = useState(false);
   const [dniStatusText, setDniStatusText] = useState('');
+  const [dniFrontFile, setDniFrontFile] = useState(null);
+  const [dniBackFile, setDniBackFile] = useState(null);
 
   const [capital, setCapital] = useState();
   const [paymentDays, setPaymentDays] = useState(20);
@@ -55,6 +60,14 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   const [endDate, setEndDate] = useState(() => addDaysToDateStr(initialStartDate, 20));
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const storedUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch (_) {
+      return null;
+    }
+  })();
 
   // Escuchar si viene información de cliente desde location.state (+ Préstamo en tarjeta)
   useEffect(() => {
@@ -70,6 +83,8 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
           setClientPhone(existing.phone || '');
           setClientAddress(existing.address || '');
           setClientIdentification(existing.identification || '');
+          setDniFrontFile(null);
+          setDniBackFile(null);
         });
 
         setTimeout(() => {
@@ -84,6 +99,8 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
   const handleClientSelect = (clientId) => {
     setSelectedClientId(clientId);
+    setDniFrontFile(null);
+    setDniBackFile(null);
     const existing = clients.find((c) => c.id === clientId);
     if (existing) {
       setClientName(existing.name || '');
@@ -176,7 +193,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
     setIsSubmitting(true);
     try {
-      await onSubmitLoan({
+      const result = await onSubmitLoan({
         clientId: selectedClientId || undefined,
         clientName,
         alias: clientAlias,
@@ -195,6 +212,36 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
         dueDate: endDate,
         notes,
       });
+
+      if (!selectedClientId && (dniFrontFile || dniBackFile)) {
+        const createdClientId =
+          result?.loan?.clientId ||
+          result?.loan?.client_id ||
+          result?.clientId ||
+          result?.client_id;
+
+        if (createdClientId) {
+          try {
+            if (dniFrontFile) {
+              await uploadClientDni(createdClientId, 'front', dniFrontFile);
+            }
+
+            if (dniBackFile) {
+              await uploadClientDni(createdClientId, 'back', dniBackFile);
+            }
+          } catch (uploadError) {
+            console.error('Cliente creado pero falló la carga de DNI:', uploadError);
+            window.alert(
+              'El cliente y préstamo se guardaron, pero una foto del DNI no pudo subirse. Puedes agregarla desde Editar Cliente.'
+            );
+          }
+        } else {
+          window.alert(
+            'El cliente se guardó, pero no se pudo identificar su ID para subir las fotos del DNI. Puedes agregarlas desde Editar Cliente.'
+          );
+        }
+      }
+
       navigate('/prestamos');
     } catch (err) {
       console.error(err);
@@ -397,6 +444,22 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                 />
               </div>
             </div>
+
+            {!isClientLocked && (
+              <div className="border-t border-[#E6DCD2] pt-4 mt-4">
+                <ClientDniDocuments
+                  staged
+                  user={storedUser}
+                  frontFile={dniFrontFile}
+                  backFile={dniBackFile}
+                  onFrontFileChange={setDniFrontFile}
+                  onBackFileChange={setDniBackFile}
+                />
+                <p className="text-[10px] text-[#6E615A] mt-2">
+                  Las fotos se guardarán al registrar correctamente al cliente.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Sección de Condiciones del Préstamo */}
@@ -610,4 +673,3 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
     </div>
   );
 }
-

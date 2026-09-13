@@ -7,6 +7,7 @@ import { EditLoanModal } from '../components/EditLoanModal';
 import { EditPaymentModal } from '../components/EditPaymentModal';
 import { PaymentReceiptModal } from '../components/PaymentReceiptModal';
 import { AssignCollectorModal } from '../components/AssignCollectorModal';
+import { ClientDniDocuments } from '../components/ClientDniDocuments';
 import api from '../api';
 import {
   Users,
@@ -662,6 +663,14 @@ export function VistaClientes({
                   <span>{selectedClient.notes}</span>
                 </div>
               )}
+            </div>
+
+            <div className="mt-3 p-3 bg-white rounded-2xl border border-[#E6DCD2]">
+              <ClientDniDocuments
+                clientId={activeSelectedClient?.id || selectedClient?.id}
+                user={user}
+                readOnly
+              />
             </div>
 
             {/* Active Loan Quick Details Banner */}
