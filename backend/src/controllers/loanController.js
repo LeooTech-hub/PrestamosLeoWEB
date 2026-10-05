@@ -1,10 +1,12 @@
 import pool from '../config/db.js';
 import crypto from 'crypto';
 import { setClientRestriction as persistClientRestriction } from '../services/clientRestrictionService.js';
+import { parseRestrictionScope, restrictionSql } from '../services/clientRestrictionQueries.js';
 
 // payment_date es la fecha civil del negocio. Supabase opera en UTC, por lo
 // que toda consulta de hoy debe fijar explícitamente la zona horaria de Perú.
 const PERU_TODAY_SQL = `(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::date`;
+const RESTRICTED_CLIENT_LOAN_MESSAGE = 'Este cliente está restringido. Un administrador debe quitar la restricción antes de registrar un nuevo préstamo.';
 
 function generateUUID() {
   return typeof crypto.randomUUID === 'function'
@@ -406,6 +408,9 @@ function mapRowToLoan(row) {
 
   const paidDaysCount = Math.max(0, Math.floor(finiteNumber(row.paid_days_count, 0)));
   const remainingDays = Math.max(0, paymentDays - paidDaysCount);
+  const clientIsRestricted = row.client_is_restricted === true
+    || row.client_is_restricted === 1
+    || String(row.client_is_restricted || '').toLowerCase() === 'true';
 
   return {
     id: String(row.id || ''),
@@ -478,7 +483,11 @@ function mapRowToLoan(row) {
     notes: row.notes ? String(row.notes) : undefined,
     createdAt: String(row.created_at || new Date().toISOString()),
     assignedTo: row.assigned_to_user_id ? String(row.assigned_to_user_id) : undefined,
-    assignedToName: row.collector_name || 'Admin'
+    assignedToName: row.collector_name || 'Admin',
+    clientIsRestricted,
+    client_is_restricted: clientIsRestricted,
+    restrictionReason: row.client_restriction_reason ? String(row.client_restriction_reason) : null,
+    restriction_reason: row.client_restriction_reason ? String(row.client_restriction_reason) : null,
   };
 }
 
@@ -1124,6 +1133,7 @@ const loanController = {
       const clientIdFilter = req.query.clientId || req.query.client_id;
       const statusFilter = req.query.status;
       const searchFilter = req.query.search;
+      const restrictionScope = parseRestrictionScope(req.query.restriction);
       const params = [];
       const conditions = [];
       let queryStr = `
@@ -1133,11 +1143,15 @@ const loanController = {
                c.alias AS joined_client_alias,
                COALESCE(c.phone, '') AS client_phone,
                COALESCE(c.address, '') AS client_address,
+               COALESCE(c.is_restricted, FALSE) AS client_is_restricted,
+               c.restriction_reason AS client_restriction_reason,
                COALESCE(u.name, 'Admin') AS collector_name
         FROM loans l
         LEFT JOIN clients c ON l.client_id::text = c.id::text
         LEFT JOIN users u ON l.assigned_to_user_id::text = u.id::text
       `;
+      const restrictionCondition = restrictionSql(restrictionScope, 'c');
+      if (restrictionCondition) conditions.push(restrictionCondition);
       if (clientIdFilter) {
         conditions.push(`l.client_id::text = $${params.length + 1}`);
         params.push(String(clientIdFilter));
@@ -1158,6 +1172,7 @@ const loanController = {
       return res.json((rows || []).map(mapRowToLoan));
     } catch (error) {
       console.error("[ERROR GET /api/loans]:", error);
+      if (error?.statusCode === 422) return res.status(422).json({ error: error.message });
       return res.status(500).json({ error: 'No se pudieron cargar los préstamos', details: error.message });
     }
   },
@@ -1226,13 +1241,18 @@ const loanController = {
       }
       if (finalClientId) {
         const existingClient = await client.query(
-          `SELECT id, name FROM clients WHERE id::text = $1 LIMIT 1`,
+          `SELECT id, name, COALESCE(is_restricted, FALSE) AS is_restricted FROM clients WHERE id::text = $1 LIMIT 1`,
           [finalClientId]
         );
         if (existingClient.rows.length === 0) {
           await client.query('ROLLBACK');
           transactionStarted = false;
           return res.status(404).json({ error: 'Cliente no encontrado' });
+        }
+        if (existingClient.rows[0].is_restricted === true) {
+          await client.query('ROLLBACK');
+          transactionStarted = false;
+          return res.status(409).json({ error: RESTRICTED_CLIENT_LOAN_MESSAGE });
         }
         clientName = String(existingClient.rows[0].name);
       } else {
@@ -1242,7 +1262,7 @@ const loanController = {
           return res.status(400).json({ error: 'El nombre o client_id es obligatorio' });
         }
         const existingClientRes = await client.query(
-          `SELECT id, name
+          `SELECT id, name, COALESCE(is_restricted, FALSE) AS is_restricted
            FROM clients
            WHERE ($1 <> '' AND TRIM(COALESCE(dni, '')) = $1)
               OR ($2 <> '' AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = regexp_replace($2, '\\D', '', 'g'))
@@ -1256,6 +1276,11 @@ const loanController = {
           [clientIdentification, clientPhone, clientName]
         );
         if (existingClientRes.rows.length > 0) {
+          if (existingClientRes.rows[0].is_restricted === true) {
+            await client.query('ROLLBACK');
+            transactionStarted = false;
+            return res.status(409).json({ error: RESTRICTED_CLIENT_LOAN_MESSAGE });
+          }
           finalClientId = String(existingClientRes.rows[0].id);
           clientName = String(existingClientRes.rows[0].name || clientName);
         } else {
