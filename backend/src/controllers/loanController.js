@@ -539,6 +539,7 @@ export async function buildDashboardSummary(db = pool) {
     SELECT l.*, COALESCE(c.name, l.client_name, 'Cliente') AS client_name
     FROM loans l
     LEFT JOIN clients c ON l.client_id::text = c.id::text
+    WHERE COALESCE(c.is_restricted, FALSE) = FALSE
     ORDER BY l.created_at DESC NULLS LAST, l.id DESC
   `);
   const totalsResult = await db.query(`
@@ -1796,6 +1797,7 @@ const loanController = {
         LEFT JOIN clients c ON l.client_id::text = c.id::text
         WHERE UPPER(l.status) IN ('ACTIVE', 'OVERDUE', 'VIGENTE', 'VENCIDO', 'MORA')
           AND COALESCE(l.is_archived, 0) = 0
+          AND COALESCE(c.is_restricted, FALSE) = FALSE
         ORDER BY c.route_order ASC, l.created_at DESC
       `);
       const { rows: paymentsToday } = await pool.query(`
@@ -1881,6 +1883,7 @@ const loanController = {
           LEFT JOIN clients AS c ON l.client_id::text = c.id::text
           WHERE COALESCE(l.is_archived, 0) = 0
             AND UPPER(COALESCE(l.status, 'ACTIVE')) NOT IN ('PAID', 'PAGADO', 'CANCELADO', 'INACTIVE')
+            AND COALESCE(c.is_restricted, FALSE) = FALSE
             ${collectorFilter}
         )
         SELECT
