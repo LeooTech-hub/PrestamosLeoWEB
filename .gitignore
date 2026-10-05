@@ -13,3 +13,6 @@ frontend/.env
 dist/
 .next/
 *.log
+
+# Worktrees locales de desarrollo
+.worktrees/
