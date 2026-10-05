@@ -30,6 +30,7 @@ router.get('/clients', verifyToken, safe(loanController?.getClients));
 router.post('/clients', verifyToken, safe(loanController?.createClient));
 router.put('/clients/assign', verifyToken, requireAdmin, safe(loanController?.assignClients));
 router.put('/clients/reorder', verifyToken, safe(loanController?.updateRouteOrders));
+router.put('/clients/:id/restriction', verifyToken, requireAdmin, safe(loanController?.setClientRestriction));
 router.put('/clients/:id', verifyToken, safe(loanController?.updateClient));
 router.put('/clients/:id/restore', verifyToken, safe(loanController?.restoreClient));
 router.delete('/clients/:id', verifyToken, requireAdmin, safe(loanController?.deleteClient));

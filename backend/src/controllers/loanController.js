@@ -1,5 +1,6 @@
 import pool from '../config/db.js';
 import crypto from 'crypto';
+import { setClientRestriction as persistClientRestriction } from '../services/clientRestrictionService.js';
 
 // payment_date es la fecha civil del negocio. Supabase opera en UTC, por lo
 // que toda consulta de hoy debe fijar explícitamente la zona horaria de Perú.
@@ -829,6 +830,40 @@ const loanController = {
     } catch (error) {
       console.error('[ERROR POST /api/clients]:', error);
       return res.status(500).json({ error: error.message });
+    }
+  },
+
+  async setClientRestriction(req, res) {
+    const { isRestricted, reason } = req.body || {};
+    if (typeof isRestricted !== 'boolean') {
+      return res.status(422).json({ error: 'isRestricted debe ser un valor booleano' });
+    }
+    if (reason != null && typeof reason !== 'string') {
+      return res.status(422).json({ error: 'El motivo de restricción debe ser texto' });
+    }
+    if (String(reason || '').trim().length > 1000) {
+      return res.status(422).json({ error: 'El motivo de restricción no puede superar 1000 caracteres' });
+    }
+
+    try {
+      const updated = await persistClientRestriction(pool, {
+        clientId: req.params.id,
+        isRestricted,
+        reason,
+        adminId: req.user.id,
+        adminName: req.user.name || req.user.email || 'Administrador',
+        ip: req.ip || null,
+      });
+      return res.json({
+        success: true,
+        client: mapRowToClient(updated),
+      });
+    } catch (error) {
+      const statusCode = Number(error?.statusCode) || 500;
+      if (statusCode >= 500) console.error('[ERROR PUT /api/clients/:id/restriction]:', error);
+      return res.status(statusCode).json({
+        error: statusCode === 500 ? 'No se pudo actualizar la restricción del cliente' : error.message,
+      });
     }
   },
 
