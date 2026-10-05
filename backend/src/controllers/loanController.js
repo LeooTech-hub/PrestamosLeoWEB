@@ -126,7 +126,7 @@ async function synchronizeLoanFromPayments(db, loanId) {
 // MAPEADORES COMPATIBLES CON REACT & POSTGRES
 // ==========================================
 
-function mapRowToClient(row) {
+export function mapRowToClient(row) {
   const dniVal = row.dni ?? row.documento ?? row.identification ?? undefined;
   const aliasVal = row.alias ?? row.client_alias ?? undefined;
 
@@ -273,6 +273,12 @@ function mapRowToClient(row) {
   const isPaidToday = todayPaymentsCount > 0 && todayPaidAmount > 0;
   const paidAmount = Math.max(0, finiteNumber(row.loan_paid_amount, 0));
   const remainingAmount = Math.max(0, finiteNumber(row.loan_remaining_amount, numericTotalAmount));
+  const isRestricted = row.is_restricted === true
+    || row.is_restricted === 1
+    || String(row.is_restricted || '').toLowerCase() === 'true';
+  const restrictedAt = row.restricted_at ? String(row.restricted_at) : null;
+  const restrictedBy = row.restricted_by ? String(row.restricted_by) : null;
+  const restrictionReason = row.restriction_reason ? String(row.restriction_reason) : null;
 
   return {
     id: String(row.id || ''),
@@ -290,6 +296,14 @@ function mapRowToClient(row) {
     routeOrder: Number(row.route_order ?? 0),
     assignedTo: row.assigned_to_user_id ? String(row.assigned_to_user_id) : undefined,
     assignedToName: row.assigned_to_name || 'Sin Asignar',
+    isRestricted,
+    is_restricted: isRestricted,
+    restrictedAt,
+    restricted_at: restrictedAt,
+    restrictedBy,
+    restricted_by: restrictedBy,
+    restrictionReason,
+    restriction_reason: restrictionReason,
 
     amount: numericAmount,
     monto: numericAmount,

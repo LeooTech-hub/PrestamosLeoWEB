@@ -38,6 +38,10 @@ export async function initDb() {
         created_by_user_id VARCHAR(255) NULL,
         assigned_to VARCHAR(255) NULL,
         created_by VARCHAR(255) NULL,
+        is_restricted BOOLEAN NOT NULL DEFAULT FALSE,
+        restricted_at TIMESTAMPTZ NULL,
+        restricted_by VARCHAR(36) NULL,
+        restriction_reason TEXT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -153,6 +157,10 @@ export async function initDb() {
     await safeAddColumn('clients', 'mora', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('clients', 'penalty_amount', 'DECIMAL(10,2) DEFAULT 0.00');
     await safeAddColumn('clients', 'late_fee', 'DECIMAL(10,2) DEFAULT 0.00');
+    await safeAddColumn('clients', 'is_restricted', 'BOOLEAN NOT NULL DEFAULT FALSE');
+    await safeAddColumn('clients', 'restricted_at', 'TIMESTAMPTZ NULL');
+    await safeAddColumn('clients', 'restricted_by', 'VARCHAR(36) NULL');
+    await safeAddColumn('clients', 'restriction_reason', 'TEXT NULL');
 
     // Asegurar todas las columnas en loans
     await safeAddColumn('loans', 'capital', 'DECIMAL(10,2) DEFAULT 0.00');
