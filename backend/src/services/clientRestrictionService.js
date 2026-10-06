@@ -26,12 +26,12 @@ export async function setClientRestriction(db, {
     transactionStarted = true;
 
     const currentResult = await client.query(`
-      SELECT c.*, COALESCE(u.name, '') AS restricted_by_name
-      FROM clients AS c
-      LEFT JOIN users AS u ON c.restricted_by::text = u.id::text
-      WHERE c.id::text = $1
-      FOR UPDATE
-    `, [String(clientId)]);
+  SELECT c.*, COALESCE(u.name, '') AS restricted_by_name
+  FROM clients AS c
+  LEFT JOIN users AS u ON c.restricted_by::text = u.id::text
+  WHERE c.id::text = $1
+  FOR UPDATE OF c
+`, [String(clientId)]);
     const current = currentResult.rows[0];
     if (!current) throw new ClientRestrictionError(404, 'Cliente no encontrado');
 
