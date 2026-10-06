@@ -147,7 +147,7 @@ export default function App() {
 
       const [cList, lList, pList, sum, todayCol, alertList, report] = await Promise.all([
         fetchSafe('/clients', []),
-        fetchSafe('/loans', []),
+        fetchSafe('/loans?restriction=all', []),
         fetchSafe('/payments', []),
         fetchSafe('/dashboard/summary', defaultDashboardSummary),
         fetchSafe('/today-collections', []),
@@ -296,6 +296,17 @@ export default function App() {
       return res.data;
     } catch (err) {
       console.error('Error actualizando cliente:', err);
+      throw err;
+    }
+  };
+
+  const handleSetClientRestriction = async (id, data) => {
+    try {
+      const res = await api.put(`/clients/${id}/restriction`, data);
+      await loadData();
+      return res.data;
+    } catch (err) {
+      console.error('Error actualizando restricción del cliente:', err);
       throw err;
     }
   };
@@ -545,6 +556,7 @@ export default function App() {
                     loans={loans}
                     payments={payments}
                     onUpdateClient={handleUpdateClient}
+                    onSetClientRestriction={handleSetClientRestriction}
                     onUpdateLoan={handleUpdateLoan}
                     onDeleteClient={handleDeleteClient}
                     onDeletePayment={handleDeletePayment}

@@ -8,6 +8,8 @@ import { EditPaymentModal } from '../components/EditPaymentModal';
 import { PaymentReceiptModal } from '../components/PaymentReceiptModal';
 import { AssignCollectorModal } from '../components/AssignCollectorModal';
 import { ClientDniDocuments } from '../components/ClientDniDocuments';
+import { ClientRestrictionModal } from '../components/ClientRestrictionModal';
+import { filterClientsByRestriction, isClientRestricted } from '../utils/clientRestriction';
 import api from '../api';
 import {
   Users,
@@ -31,6 +33,8 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 
 export function VistaClientes({
@@ -38,6 +42,7 @@ export function VistaClientes({
   loans = [],
   payments = [],
   onUpdateClient,
+  onSetClientRestriction,
   onUpdateLoan,
   onDeleteClient,
   onDeletePayment,
@@ -52,6 +57,7 @@ export function VistaClientes({
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'UP_TO_DATE', 'OVERDUE', 'PAID'
+  const [restrictionFilter, setRestrictionFilter] = useState('ALL');
   const [selectedClient, setSelectedClient] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [deletingClient, setDeletingClient] = useState(null);
@@ -61,6 +67,7 @@ export function VistaClientes({
   const [activeTab, setActiveTab] = useState('LOANS');
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
   const [selectedPaymentForReceipt, setSelectedPaymentForReceipt] = useState(null);
+  const [restrictionTarget, setRestrictionTarget] = useState(null);
 
   useEffect(() => {
     console.log("CLIENT DATA:", clients);
@@ -158,7 +165,18 @@ export function VistaClientes({
     return (clients || []).filter(c => c?.assignedTo === collectorFilter || c?.assigned_to === collectorFilter || c?.assigned_to_user_id === collectorFilter);
   }, [clients, isAdmin, collectorFilter]);
 
-  const filteredClients = (collectorFilteredClients || []).filter((client) => {
+  const restrictionCounts = React.useMemo(() => ({
+    all: (clients || []).length,
+    active: filterClientsByRestriction(clients, 'ACTIVE').length,
+    restricted: filterClientsByRestriction(clients, 'RESTRICTED').length,
+  }), [clients]);
+
+  const restrictionFilteredClients = React.useMemo(
+    () => filterClientsByRestriction(collectorFilteredClients, restrictionFilter),
+    [collectorFilteredClients, restrictionFilter],
+  );
+
+  const filteredClients = (restrictionFilteredClients || []).filter((client) => {
     if (!client) return false;
     const term = (searchTerm || '').toLowerCase().trim();
     const name = String(client?.name || '').toLowerCase();
@@ -318,6 +336,28 @@ export function VistaClientes({
           />
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-bold text-[#6E615A] mr-1">Restricción:</span>
+          {[
+            ['ALL', `Todos (${restrictionCounts.all})`],
+            ['ACTIVE', `Activos (${restrictionCounts.active})`],
+            ['RESTRICTED', `Restringidos (${restrictionCounts.restricted})`],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setRestrictionFilter(value)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                restrictionFilter === value
+                  ? value === 'RESTRICTED' ? 'bg-[#C84B31] text-white border-[#C84B31]' : 'bg-[#2C221E] text-white border-[#2C221E]'
+                  : 'bg-white text-[#6E615A] border-[#E6DCD2] hover:bg-[#FAF8F5]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Filter Chips */}
         <div className="flex flex-wrap items-center gap-2">
           {isSelectMode && isAdmin && (
@@ -430,6 +470,7 @@ export function VistaClientes({
             ) || Number(client?.mora ?? client?.loan_mora ?? client?.penaltyAmount ?? client?.penalty_amount ?? client?.late_fee ?? 0);
 
             const isPaidToday = hasPaymentToday || Boolean(client.isPaidToday && Number(client.todayPaidAmount || client.today_paid_amount || 0) > 0);
+            const restricted = isClientRestricted(client);
 
             return (
               <div
@@ -464,6 +505,11 @@ export function VistaClientes({
                               ({client.alias})
                             </span>
                           )}
+                          {restricted && (
+                            <span className="text-[10px] font-extrabold bg-[#FDF2F0] text-[#C84B31] px-2 py-0.5 rounded-full border border-[#C84B31]/30">
+                              RESTRINGIDO
+                            </span>
+                          )}
                         </h3>
                         <span className="text-[11px] text-[#6E615A]">
                           Registrado: {formatDatePE((client.createdAt || '').split('T')[0])}
@@ -472,6 +518,15 @@ export function VistaClientes({
                     </div>
 
                     <div className="flex items-center gap-1">
+                      {isAdmin && (
+                        <button
+                          onClick={() => setRestrictionTarget(client)}
+                          className={`p-1.5 rounded-xl transition-all ${restricted ? 'text-[#2D7A5D] hover:bg-[#EEF6F2]' : 'text-[#C84B31] hover:bg-[#FDF2F0]'}`}
+                          title={restricted ? 'Quitar restricción' : 'Restringir cliente'}
+                        >
+                          {restricted ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           setSelectedClient(client);
@@ -507,6 +562,12 @@ export function VistaClientes({
                     {(client.dni || client.documento || client.identification) && (
                       <div className="text-[11px] text-[#6E615A]">
                         DNI: <strong className="text-[#2C221E]">{client.dni || client.documento || client.identification}</strong>
+                      </div>
+                    )}
+
+                    {restricted && (client.restrictionReason || client.restriction_reason) && (
+                      <div className="text-[11px] text-[#C84B31] bg-[#FDF2F0] border border-[#C84B31]/20 rounded-xl px-2 py-1.5">
+                        Motivo: {client.restrictionReason || client.restriction_reason}
                       </div>
                     )}
 
@@ -594,7 +655,9 @@ export function VistaClientes({
 
                     <button
                       onClick={() => navigate('/nuevo-cliente', { state: { selectedClient: client } })}
-                      className="flex items-center justify-center gap-1 py-2 px-3 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-xs hover:brightness-110 transition-all"
+                      disabled={restricted}
+                      title={restricted ? 'Quita la restricción antes de registrar un préstamo' : 'Registrar préstamo'}
+                      className="flex items-center justify-center gap-1 py-2 px-3 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-xs hover:brightness-110 transition-all disabled:opacity-45 disabled:cursor-not-allowed"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Préstamo</span>
@@ -621,6 +684,11 @@ export function VistaClientes({
                     <h3 className="text-lg sm:text-xl font-extrabold text-[#2C221E]">
                       {selectedClient?.name || 'Cliente'}
                     </h3>
+                    {isClientRestricted(activeSelectedClient) && (
+                      <span className="text-[10px] font-extrabold bg-[#FDF2F0] text-[#C84B31] px-2 py-0.5 rounded-full border border-[#C84B31]/30">
+                        RESTRINGIDO
+                      </span>
+                    )}
                     <button
                       onClick={() => setIsEditClientOpen(true)}
                       className="p-1.5 rounded-xl hover:bg-[#FDF3ED] text-[#D96B27] border border-[#E6DCD2] transition-all"
@@ -628,6 +696,15 @@ export function VistaClientes({
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setRestrictionTarget(activeSelectedClient || selectedClient)}
+                        className={`p-1.5 rounded-xl border transition-all ${isClientRestricted(activeSelectedClient) ? 'text-[#2D7A5D] border-[#2D7A5D]/30 hover:bg-[#EEF6F2]' : 'text-[#C84B31] border-[#C84B31]/30 hover:bg-[#FDF2F0]'}`}
+                        title={isClientRestricted(activeSelectedClient) ? 'Quitar restricción' : 'Restringir cliente'}
+                      >
+                        {isClientRestricted(activeSelectedClient) ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+                      </button>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-xs text-[#6E615A] mt-0.5">
                     <span className="flex items-center gap-1">
@@ -651,6 +728,18 @@ export function VistaClientes({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {isClientRestricted(activeSelectedClient) && (
+              <div className="mt-3 p-3 rounded-2xl bg-[#FDF2F0] border border-[#C84B31]/25 text-xs text-[#C84B31]">
+                <strong className="block">Cliente restringido</strong>
+                <span>{activeSelectedClient?.restrictionReason || activeSelectedClient?.restriction_reason || 'Sin motivo registrado'}</span>
+                {(activeSelectedClient?.restrictedAt || activeSelectedClient?.restricted_at) && (
+                  <span className="block mt-1 text-[11px] text-[#6E615A]">
+                    Desde: {formatDatePE(String(activeSelectedClient.restrictedAt || activeSelectedClient.restricted_at).split('T')[0])}
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="py-3 bg-[#FAF8F5] px-4 rounded-2xl border border-[#E6DCD2]/70 mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-1.5 text-[#6E615A]">
@@ -786,7 +875,9 @@ export function VistaClientes({
                   setIsDetailModalOpen(false);
                   navigate('/nuevo-cliente', { state: { selectedClient: activeSelectedClient || selectedClient } });
                 }}
-                className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-xs hover:brightness-110"
+                disabled={isClientRestricted(activeSelectedClient)}
+                title={isClientRestricted(activeSelectedClient) ? 'Quita la restricción antes de registrar un préstamo' : 'Registrar préstamo'}
+                className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-xs hover:brightness-110 disabled:opacity-45 disabled:cursor-not-allowed"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nuevo Préstamo</span>
@@ -1015,6 +1106,13 @@ export function VistaClientes({
         payment={selectedPaymentForReceipt?.payment || null}
         client={activeSelectedClient}
         loan={selectedPaymentForReceipt?.loan || null}
+      />
+
+      <ClientRestrictionModal
+        client={restrictionTarget}
+        isOpen={!!restrictionTarget}
+        onClose={() => setRestrictionTarget(null)}
+        onConfirm={onSetClientRestriction}
       />
 
       {/* Assign Collector Modal (ADMIN only) */}
