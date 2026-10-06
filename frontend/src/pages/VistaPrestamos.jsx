@@ -9,6 +9,7 @@ import {
   formatPaymentAmount,
   generateWhatsAppReminderMessage
 } from '../utils/loanHelpers';
+import { filterLoansByRestriction, isLoanClientRestricted } from '../utils/clientRestriction';
 
 import { PaymentModal } from '../components/PaymentModal';
 import { EditLoanModal } from '../components/EditLoanModal';
@@ -34,6 +35,7 @@ export function VistaPrestamos({
   onRevertPayment
 }) {
   const [filter, setFilter] = useState('ALL');
+  const [restrictionFilter, setRestrictionFilter] = useState('ACTIVE');
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentLoan, setPaymentLoan] = useState(null);
   const [editingLoan, setEditingLoan] = useState(null);
@@ -85,7 +87,8 @@ export function VistaPrestamos({
   // - Teléfono
   // - Dirección
   // ============================================================
-  const filteredLoans = (loans || []).filter((loan) => {
+  const restrictionScopedLoans = filterLoansByRestriction(loans, restrictionFilter);
+  const filteredLoans = restrictionScopedLoans.filter((loan) => {
     if (loan?.isArchived) return false;
 
     if (
@@ -178,6 +181,31 @@ export function VistaPrestamos({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
 
         <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-[#E6DCD2] warm-shadow overflow-x-auto">
+          {[
+            ['ACTIVE', 'Activos'],
+            ['RESTRICTED', 'Restringidos'],
+            ['ALL', 'Todos'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setRestrictionFilter(value)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                restrictionFilter === value
+                  ? value === 'RESTRICTED' ? 'bg-[#C84B31] text-white' : 'bg-[#2C221E] text-white'
+                  : 'text-[#6E615A] hover:bg-[#FAF8F5]'
+              }`}
+            >
+              {label} ({filterLoansByRestriction(loans, value).filter((loan) => !loan?.isArchived).length})
+            </button>
+          ))}
+        </div>
+
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+
+        <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-[#E6DCD2] warm-shadow overflow-x-auto">
 
           <button
             onClick={() => setFilter('ALL')}
@@ -188,7 +216,7 @@ export function VistaPrestamos({
             }`}
           >
             Todos (
-            {(loans || []).filter(
+            {restrictionScopedLoans.filter(
               (l) =>
                 !l?.isArchived &&
                 (
@@ -208,7 +236,7 @@ export function VistaPrestamos({
             }`}
           >
             Vigentes (
-            {(loans || []).filter(
+            {restrictionScopedLoans.filter(
               (l) =>
                 l?.status === 'ACTIVE' &&
                 !l?.isArchived
@@ -225,7 +253,7 @@ export function VistaPrestamos({
             }`}
           >
             En Mora (
-            {(loans || []).filter(
+            {restrictionScopedLoans.filter(
               (l) =>
                 l?.status === 'OVERDUE' &&
                 !l?.isArchived
@@ -242,7 +270,7 @@ export function VistaPrestamos({
             }`}
           >
             Cancelados (
-            {(loans || []).filter(
+            {restrictionScopedLoans.filter(
               (l) =>
                 l?.status === 'PAID' &&
                 !l?.isArchived
@@ -326,6 +354,12 @@ export function VistaPrestamos({
                       <h3 className="font-extrabold text-sm text-[#2C221E] line-clamp-1">
                         {loan.clientName || loan.client_name}
                       </h3>
+
+                      {isLoanClientRestricted(loan) && (
+                        <span className="inline-flex mt-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#FDF2F0] text-[#C84B31] border border-[#C84B31]/30">
+                          CLIENTE RESTRINGIDO
+                        </span>
+                      )}
 
                       {/* APODO */}
                       {nickname && (

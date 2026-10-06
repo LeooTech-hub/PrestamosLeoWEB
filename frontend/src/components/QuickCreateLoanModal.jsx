@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { formatCurrency, formatPaymentAmount, getLoanPaymentTerms, calculate20PercentLoan } from '../utils/loanHelpers';
 import { fetchDniData } from '../utils/reniecHelper';
 import { X, PlusCircle, CheckCircle2, Search, Loader2 } from 'lucide-react';
+import { availableLoanClients, isClientRestricted, RESTRICTED_CLIENT_LOAN_MESSAGE } from '../utils/clientRestriction';
 
 export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLoan }) {
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -21,10 +22,12 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
   );
   const [notes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [restrictionError, setRestrictionError] = useState('');
 
   if (!isOpen) return null;
 
   const handleClientSelect = (clientId) => {
+    setRestrictionError('');
     setSelectedClientId(clientId);
     const existing = clients.find((c) => c.id === clientId);
     if (existing) {
@@ -72,11 +75,17 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
 
   const calculated = calculateCustomLoan(capital || 0, paymentDays || 20, interestRate);
   const paymentTerms = getLoanPaymentTerms({ paymentFrequency, paymentDays, totalToPay: calculated.totalToPay });
+  const loanEligibleClients = availableLoanClients(clients);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const capNum = Number(capital);
     if (!clientName.trim() || !capNum || capNum <= 0) return;
+    const selectedClient = clients.find((client) => client.id === selectedClientId);
+    if (selectedClient && isClientRestricted(selectedClient)) {
+      setRestrictionError(RESTRICTED_CLIENT_LOAN_MESSAGE);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -99,6 +108,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
       onClose();
     } catch (err) {
       console.error(err);
+      setRestrictionError(err?.response?.data?.error || err?.message || 'No se pudo registrar el préstamo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -141,12 +151,17 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
               className="w-full px-3 py-2.5 bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl text-xs font-semibold text-[#2C221E] focus:outline-none focus:border-[#D96B27]"
             >
               <option value="">-- Registrar Nuevo Cliente --</option>
-              {clients.map((c) => (
+              {loanEligibleClients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} ({c.phone})
                 </option>
               ))}
             </select>
+            {restrictionError && (
+              <p className="mt-2 text-xs font-semibold text-[#C84B31] bg-[#FDF2F0] border border-[#C84B31]/20 rounded-xl px-3 py-2">
+                {restrictionError}
+              </p>
+            )}
           </div>
 
           <div className="space-y-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/60">

@@ -5,6 +5,7 @@ import { fetchDniData } from '../utils/reniecHelper';
 import { UserPlus, User, Phone, MapPin, Calendar, Percent, CheckCircle2, Sparkles, Search, Loader2, Lock } from 'lucide-react';
 import { ClientDniDocuments } from '../components/ClientDniDocuments';
 import { uploadClientDni } from '../services/clientDniApi';
+import { availableLoanClients, isClientRestricted, RESTRICTED_CLIENT_LOAN_MESSAGE } from '../utils/clientRestriction';
 
 
 const formatDateToISO = (date) => {
@@ -60,6 +61,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   const [endDate, setEndDate] = useState(() => addDaysToDateStr(initialStartDate, 20));
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [restrictionError, setRestrictionError] = useState('');
 
   const storedUser = (() => {
     try {
@@ -76,6 +78,10 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
       const targetId = incomingClient.id || location.state?.clientId;
       const existing = clients.find((c) => c.id === targetId) || incomingClient;
       if (existing) {
+        if (isClientRestricted(existing)) {
+          setRestrictionError(RESTRICTED_CLIENT_LOAN_MESSAGE);
+          return;
+        }
         queueMicrotask(() => {
           setSelectedClientId(existing.id || targetId || '');
           setClientName(existing.name || '');
@@ -98,6 +104,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   }, [location.state, clients]);
 
   const handleClientSelect = (clientId) => {
+    setRestrictionError('');
     setSelectedClientId(clientId);
     setDniFrontFile(null);
     setDniBackFile(null);
@@ -185,11 +192,17 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   const installmentCount = paymentTerms.periods;
   const installmentAmount = paymentTerms.amount;
   const isClientLocked = Boolean(selectedClientId);
+  const loanEligibleClients = availableLoanClients(clients);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const capNum = Number(capital);
     if (!clientName.trim() || !capNum || capNum <= 0) return;
+    const selectedClient = clients.find((client) => client.id === selectedClientId);
+    if (selectedClient && isClientRestricted(selectedClient)) {
+      setRestrictionError(RESTRICTED_CLIENT_LOAN_MESSAGE);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -245,6 +258,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
       navigate('/prestamos');
     } catch (err) {
       console.error(err);
+      setRestrictionError(err?.response?.data?.error || err?.message || 'No se pudo registrar el préstamo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -284,12 +298,17 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
                 className="w-full px-3 py-2.5 bg-[#FAF8F5] dark:bg-[#24211E] border border-[#E6DCD2] dark:border-[#332F2C] rounded-2xl text-xs font-semibold text-[#2C221E] dark:text-[#F3F4F6] focus:outline-none focus:border-[#D96B27]"
               >
                 <option value="">-- Registrar Nuevo Cliente --</option>
-                {clients.map((c) => (
+                {loanEligibleClients.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.phone})
                   </option>
                 ))}
               </select>
+              {restrictionError && (
+                <p className="mt-2 text-xs font-semibold text-[#C84B31] bg-[#FDF2F0] border border-[#C84B31]/20 rounded-xl px-3 py-2">
+                  {restrictionError}
+                </p>
+              )}
             </div>
 
             {isClientLocked && (
