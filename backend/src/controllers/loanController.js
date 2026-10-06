@@ -1976,18 +1976,185 @@ const loanController = {
 
   async getFinancialReport(req, res) {
     try {
+      const peruFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Lima',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const peruTodayStr = peruFormatter.format(new Date());
+      const [pYear, pMonth, pDay] = peruTodayStr.split('-').map(Number);
+      const periodUpper = String(req.query.period || 'WEEKLY').toUpperCase();
+
+      const toIso = (d) => {
+        const y = d.getUTCFullYear();
+        const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+
+      const toDmy = (isoStr) => {
+        if (!isoStr) return '--';
+        const parts = String(isoStr).split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return isoStr;
+      };
+
+      let startStr;
+      let endStr;
+      let label;
+
+      const customStart = req.query.startDate || req.query.start_date;
+      const customEnd = req.query.endDate || req.query.end_date;
+
+      if (customStart && customEnd) {
+        startStr = toDateOnly(customStart);
+        endStr = toDateOnly(customEnd);
+        label = `Personalizado (${toDmy(startStr)} al ${toDmy(endStr)})`;
+      } else if (periodUpper === 'DAILY') {
+        startStr = peruTodayStr;
+        endStr = peruTodayStr;
+        label = `Diario (${toDmy(peruTodayStr)})`;
+      } else if (periodUpper === 'WEEKLY') {
+        const d = new Date(Date.UTC(pYear, pMonth - 1, pDay));
+        const dayOfWeek = d.getUTCDay();
+        const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+        const monday = new Date(Date.UTC(pYear, pMonth - 1, pDay + diffToMonday));
+        const sunday = new Date(Date.UTC(pYear, pMonth - 1, pDay + diffToMonday + 6));
+        startStr = toIso(monday);
+        endStr = toIso(sunday);
+        label = `Semana Actual (${toDmy(startStr)} al ${toDmy(endStr)})`;
+      } else if (periodUpper === 'BIWEEKLY' || periodUpper === 'FORTNIGHTLY') {
+        if (pDay <= 15) {
+          const start = new Date(Date.UTC(pYear, pMonth - 1, 1));
+          const end = new Date(Date.UTC(pYear, pMonth - 1, 15));
+          startStr = toIso(start);
+          endStr = toIso(end);
+          label = `1ra Quincena (${toDmy(startStr)} al ${toDmy(endStr)})`;
+        } else {
+          const start = new Date(Date.UTC(pYear, pMonth - 1, 16));
+          const end = new Date(Date.UTC(pYear, pMonth, 0));
+          startStr = toIso(start);
+          endStr = toIso(end);
+          label = `2da Quincena (${toDmy(startStr)} al ${toDmy(endStr)})`;
+        }
+      } else if (periodUpper === 'MONTHLY') {
+        const start = new Date(Date.UTC(pYear, pMonth - 1, 1));
+        const end = new Date(Date.UTC(pYear, pMonth, 0));
+        startStr = toIso(start);
+        endStr = toIso(end);
+        const monthNames = [
+          'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+          'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+        label = `Mes de ${monthNames[pMonth - 1]} ${pYear}`;
+      } else if (periodUpper === 'YEARLY') {
+        startStr = `${pYear}-01-01`;
+        endStr = `${pYear}-12-31`;
+        label = `Año ${pYear}`;
+      } else {
+        startStr = '2020-01-01';
+        endStr = '2099-12-31';
+        label = 'Histórico Completo';
+      }
+
       const { rows: lRows } = await pool.query(`SELECT * FROM loans`);
-      const { rows: pRows } = await pool.query(`SELECT * FROM payments`);
-      const { rows: eRows } = await pool.query(`SELECT * FROM expenses`);
+      const { rows: pRows } = await pool.query(`
+        SELECT * FROM payments
+        WHERE COALESCE(payment_date, date) >= $1
+          AND COALESCE(payment_date, date) <= $2
+        ORDER BY COALESCE(payment_date, date) ASC, id ASC
+      `, [startStr, endStr]);
+      const { rows: eRows } = await pool.query(`
+        SELECT * FROM expenses
+        WHERE COALESCE(expense_date, date) >= $1
+          AND COALESCE(expense_date, date) <= $2
+        ORDER BY COALESCE(expense_date, date) DESC, id DESC
+      `, [startStr, endStr]);
 
       const loans = (lRows || []).map(mapRowToLoan);
-      const payments = (pRows || []).map(mapRowToPayment);
+      const loanMap = new Map();
+      for (const loan of loans) {
+        if (loan.id) loanMap.set(String(loan.id), loan);
+      }
+
+      const capitalInvested = loans
+        .filter((l) => {
+          const d = toDateOnly(l.startDate || l.start_date || l.createdAt);
+          return d && d >= startStr && d <= endStr;
+        })
+        .reduce((sum, l) => sum + Number(l.capital || 0), 0);
+
+      const remainingToCollect = loans
+        .filter((l) => l.status === 'ACTIVE' || l.status === 'OVERDUE')
+        .reduce((sum, l) => sum + Number(l.remainingAmount || 0), 0);
+
+      let principalCollectedRaw = 0;
+      let interestCollectedRaw = 0;
+      let totalMorasRaw = 0;
+      let realCollectedRaw = 0;
+
+      for (const pRow of pRows || []) {
+        const amount = finiteNumber(pRow.amount, 0);
+        const lateFee = finiteNumber(pRow.late_fee, 0);
+        const loan = loanMap.get(String(pRow.loan_id));
+
+        let capRatio = 1 / 1.2;
+        let intRatio = 0.2 / 1.2;
+        let penRatio = 0;
+
+        if (loan) {
+          const cap = finiteNumber(loan.capital, 0);
+          const intAm = finiteNumber(loan.interestAmount, 0);
+          const pen = finiteNumber(loan.penaltyAmount, 0);
+          const tot = finiteNumber(loan.totalToPay, cap + intAm + pen);
+          const base = tot > 0 ? tot : (cap + intAm + pen);
+          if (base > 0) {
+            capRatio = Math.max(0, cap) / base;
+            intRatio = Math.max(0, intAm) / base;
+            penRatio = Math.max(0, pen) / base;
+          }
+        }
+
+        const principalPart = amount * capRatio;
+        const interestPart = amount * intRatio;
+        const penaltyFromInstallment = amount * penRatio;
+        const moraPart = penaltyFromInstallment + lateFee;
+        const totalCash = amount + lateFee;
+
+        principalCollectedRaw += principalPart;
+        interestCollectedRaw += interestPart;
+        totalMorasRaw += moraPart;
+        realCollectedRaw += totalCash;
+      }
+
       const expenses = (eRows || []).map(mapRowToExpense);
+      const totalExpensesRaw = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+      const realCollected = Math.round(realCollectedRaw * 100) / 100;
+      const interestCollected = Math.round(interestCollectedRaw * 100) / 100;
+      const totalMoras = Math.round(totalMorasRaw * 100) / 100;
+      const principalCollected = Math.round((realCollected - interestCollected - totalMoras) * 100) / 100;
+      const grossProfit = Math.round((interestCollected + totalMoras) * 100) / 100;
+      const totalExpenses = Math.round(totalExpensesRaw * 100) / 100;
+      const netProfit = Math.round((grossProfit - totalExpenses) * 100) / 100;
+      const projectedCollection = Math.round((realCollected + remainingToCollect) * 100) / 100;
+
       return res.json({
-        period: req.query.period || 'WEEKLY',
-        capitalInvested: loans.reduce((s, l) => s + Number(l.capital || 0), 0),
-        realCollected: payments.reduce((s, p) => s + Number(p.amount || 0), 0),
-        totalExpenses: expenses.reduce((s, e) => s + Number(e.amount || 0), 0),
+        period: periodUpper,
+        startDate: toDmy(startStr),
+        endDate: toDmy(endStr),
+        periodLabel: label,
+        capitalInvested: Math.round(capitalInvested * 100) / 100,
+        principalCollected,
+        interestCollected,
+        totalMoras,
+        realCollected,
+        projectedCollection,
+        remainingToCollect: Math.round(remainingToCollect * 100) / 100,
+        grossProfit,
+        totalExpenses,
+        netProfit,
         expensesList: expenses
       });
     } catch (error) {
@@ -1999,7 +2166,10 @@ const loanController = {
   // 5. GASTOS, PAPELERA Y OTROS
   async getExpenses(req, res) {
     try {
-      const { rows } = await pool.query('SELECT * FROM expenses ORDER BY id DESC');
+      const { rows } = await pool.query(`
+        SELECT * FROM expenses
+        ORDER BY COALESCE(expense_date, date, created_at::date) DESC, created_at DESC, id DESC
+      `);
       return res.json((rows || []).map(mapRowToExpense));
     } catch (error) {
       console.error('[ERROR GET /api/expenses]:', error);
@@ -2010,11 +2180,27 @@ const loanController = {
   async addExpense(req, res) {
     try {
       const { amount, category, description, date } = req.body;
+      const numericAmount = finiteNumber(amount, 0);
+      if (numericAmount <= 0) {
+        return res.status(400).json({ error: 'El monto del gasto debe ser mayor a 0' });
+      }
+      const desc = String(description || '').trim();
+      if (!desc) {
+        return res.status(400).json({ error: 'La descripción del gasto es requerida' });
+      }
+      const expenseId = generateUUID();
+      const expenseDate = toDateOnly(date) || toDateOnly(new Date());
+      const cat = String(category || 'OTROS').trim();
+
       const { rows } = await pool.query(`
-        INSERT INTO expenses (amount, category, description, expense_date) VALUES ($1, $2, $3, $4) RETURNING *
-      `, [Number(amount || 0), category || 'OTROS', description || '', date || new Date().toISOString().split('T')[0]]);
+        INSERT INTO expenses (id, amount, category, description, expense_date, date)
+        VALUES ($1, $2, $3, $4, $5, $5)
+        RETURNING *
+      `, [expenseId, numericAmount, cat, desc, expenseDate]);
+
       return res.status(201).json(mapRowToExpense(rows[0]));
     } catch (error) {
+      console.error('[ERROR POST /api/expenses]:', error);
       return res.status(500).json({ error: error.message });
     }
   },
@@ -2023,21 +2209,45 @@ const loanController = {
     try {
       const { id } = req.params;
       const { amount, category, description, date } = req.body;
+      const current = await pool.query(`SELECT * FROM expenses WHERE id::text = $1`, [String(id)]);
+      if (current.rows.length === 0) {
+        return res.status(404).json({ error: 'Gasto no encontrado' });
+      }
+      const numericAmount = amount !== undefined ? finiteNumber(amount, 0) : Number(current.rows[0].amount);
+      if (numericAmount <= 0) {
+        return res.status(400).json({ error: 'El monto del gasto debe ser mayor a 0' });
+      }
+      const desc = description !== undefined ? String(description || '').trim() : current.rows[0].description;
+      if (!desc) {
+        return res.status(400).json({ error: 'La descripción del gasto es requerida' });
+      }
+      const cat = category || current.rows[0].category || 'OTROS';
+      const expenseDate = toDateOnly(date) || toDateOnly(current.rows[0].expense_date || current.rows[0].date);
+
       const { rows } = await pool.query(`
-        UPDATE expenses SET amount = $1, category = $2, description = $3, expense_date = $4 WHERE id::text = $5 RETURNING *
-      `, [Number(amount || 0), category || 'OTROS', description || '', date || new Date().toISOString().split('T')[0], String(id)]);
-      if (rows.length === 0) return res.status(404).json({ error: 'Gasto no encontrado' });
+        UPDATE expenses
+        SET amount = $1, category = $2, description = $3, expense_date = $4, date = $4
+        WHERE id::text = $5
+        RETURNING *
+      `, [numericAmount, cat, desc, expenseDate, String(id)]);
+
       return res.json(mapRowToExpense(rows[0]));
     } catch (error) {
+      console.error('[ERROR PUT /api/expenses]:', error);
       return res.status(500).json({ error: error.message });
     }
   },
 
   async deleteExpense(req, res) {
     try {
-      await pool.query(`DELETE FROM expenses WHERE id::text = $1`, [String(req.params.id)]);
+      const { id } = req.params;
+      const result = await pool.query(`DELETE FROM expenses WHERE id::text = $1 RETURNING id`, [String(id)]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Gasto no encontrado' });
+      }
       return res.json({ success: true });
     } catch (error) {
+      console.error('[ERROR DELETE /api/expenses]:', error);
       return res.status(500).json({ error: error.message });
     }
   },

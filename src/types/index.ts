@@ -8,7 +8,9 @@ export interface Client {
   documento?: string;
   identification?: string;
   notes?: string;
-  status: 'ACTIVE' | 'ARCHIVED';
+  status: 'ACTIVE' | 'ARCHIVED' | 'INACTIVE';
+  isArchived?: boolean;
+  is_archived?: boolean | number;
   routeOrder?: number;
   createdAt?: string;
   assignedTo?: string;
