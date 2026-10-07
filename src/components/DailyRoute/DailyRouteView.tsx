@@ -75,7 +75,8 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
       const matchAlias = (loan.clientAlias || '').toLowerCase().includes(q);
       const matchPhone = loan.clientPhone.includes(q);
       const matchAddress = (loan.clientAddress || '').toLowerCase().includes(q);
-      return matchName || matchAlias || matchPhone || matchAddress;
+      const matchOp = (loan.operationNumber || loan.operation_number || '').toLowerCase().includes(q);
+      return matchName || matchAlias || matchPhone || matchAddress || matchOp;
     }
 
     return true;
@@ -218,6 +219,11 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                           {loan.clientAlias && (
                             <span className="text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#3D261A] text-[#D96B27] dark:text-[#E07A5F] px-2 py-0.5 rounded-full border border-[#D96B27]/30 dark:border-[#E07A5F]/30">
                               ({loan.clientAlias})
+                            </span>
+                          )}
+                          {(loan.operationNumber || loan.operation_number) && (
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#FAF8F5] dark:bg-[#1C1917] text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E]">
+                              {loan.operationNumber || loan.operation_number}
                             </span>
                           )}
                         </h3>

@@ -72,10 +72,14 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
+      const op = String(loan.operationNumber || loan.operation_number || '').toLowerCase();
+      const alias = String(loan.clientAlias || '').toLowerCase();
       return (
         loan.clientName.toLowerCase().includes(q) ||
         loan.clientPhone.includes(q) ||
-        (loan.clientAddress || '').toLowerCase().includes(q)
+        (loan.clientAddress || '').toLowerCase().includes(q) ||
+        op.includes(q) ||
+        alias.includes(q)
       );
     }
 
@@ -182,9 +186,16 @@ export const LoansListView: React.FC<LoansListViewProps> = ({
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <h3 className="font-extrabold text-sm sm:text-base text-[#2C221E] dark:text-[#EAE0D5] truncate">
-                        {loan.client_name || loan.clientName || (loan as any).client?.name || 'Sin Nombre'}
-                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-extrabold text-sm sm:text-base text-[#2C221E] dark:text-[#EAE0D5] truncate">
+                          {loan.client_name || loan.clientName || (loan as any).client?.name || 'Sin Nombre'}
+                        </h3>
+                        {(loan.operationNumber || loan.operation_number) && (
+                          <span className="text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#FAF8F5] dark:bg-[#1C1917] text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E] shrink-0">
+                            {loan.operationNumber || loan.operation_number}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1.5 text-xs text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
                         <Phone className="w-3 h-3 text-[#E89D4F] shrink-0" />
                         <span className="truncate">{loan.clientPhone}</span>

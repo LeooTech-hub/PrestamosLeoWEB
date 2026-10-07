@@ -74,6 +74,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         totalToPay: updatedLoan.totalToPay,
         paidDaysCount: updatedLoan.paidDaysCount,
         totalPaymentDays: updatedLoan.paymentDays,
+        operationNumber: updatedLoan.operationNumber || updatedLoan.operation_number || loan.operationNumber || loan.operation_number,
       });
 
       setCompletedWhatsAppUrl(waUrl);
@@ -92,15 +93,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     onClose();
   };
 
+  const opNumber = loan.operationNumber || loan.operation_number;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
       <div className="bg-white dark:bg-[#26221F] rounded-3xl max-w-md w-full p-6 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow-lg relative overflow-hidden transition-colors duration-300">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#E6DCD2] dark:border-[#3D352E] pb-4">
           <div>
-            <span className="text-xs font-bold text-[#D96B27] dark:text-[#E07A5F] uppercase tracking-wider">
-              Cobro en Ruta (Perú S/.)
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#D96B27] dark:text-[#E07A5F] uppercase tracking-wider">
+                Cobro en Ruta (Perú S/.)
+              </span>
+              {opNumber && (
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#FAF8F5] dark:bg-[#1C1917] text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E]">
+                  {opNumber}
+                </span>
+              )}
+            </div>
             <h3 className="text-lg font-extrabold text-[#2C221E] dark:text-[#EAE0D5]">
               {loan.clientName}
             </h3>

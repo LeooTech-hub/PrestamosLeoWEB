@@ -34,8 +34,10 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
   const remainingAmount = loan ? loan.remainingAmount : 0;
 
   const formattedDate = formatDatePE(paymentDate);
+  const opNumber = loan?.operationNumber || loan?.operation_number || payment.operationNumber || payment.operation_number;
+  const opLine = opNumber ? `\n🔢 *Operación:* ${opNumber}` : '';
 
-  const receiptMessage = `📌 *CONSTANCIA DE PAGO - PRESTAMOSLEO*
+  const receiptMessage = `📌 *CONSTANCIA DE PAGO - PRESTAMOSLEO*${opLine}
 👤 *Cliente:* ${clientName}
 💵 *Abono Principal:* ${formatCurrency(amount)}${lateFee > 0 ? `\n⚠️ *Mora/Penalidad:* ${formatCurrency(lateFee)}\n💰 *Total Cobrado:* ${formatCurrency(amount + lateFee)}` : ''}
 📅 *Fecha:* ${formattedDate}
@@ -101,11 +103,18 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               )}
             </div>
 
-            <div className="pt-1">
-              <span className="text-xs text-[#6E615A] dark:text-[#C2B29F] block">Cliente</span>
-              <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-base font-extrabold block">
-                👤 {clientName}
-              </strong>
+            <div className="pt-1 flex items-center justify-between gap-2">
+              <div>
+                <span className="text-xs text-[#6E615A] dark:text-[#C2B29F] block">Cliente</span>
+                <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-base font-extrabold block">
+                  👤 {clientName}
+                </strong>
+              </div>
+              {opNumber && (
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-white dark:bg-[#26221F] text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E] shrink-0">
+                  {opNumber}
+                </span>
+              )}
             </div>
 
             <div className="bg-white dark:bg-[#26221F] p-3 rounded-xl border border-[#E6DCD2]/70 dark:border-[#3D352E] flex items-center justify-between">

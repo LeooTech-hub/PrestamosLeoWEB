@@ -44,10 +44,15 @@ export interface Client {
   total_remaining_amount?: number;
   nextDueDate?: string;
   next_due_date?: string;
+  operationNumber?: string;
+  operation_number?: string;
+  loan_operation_number?: string;
 }
 
 export interface Loan {
   id: string;
+  operationNumber?: string;
+  operation_number?: string;
   clientId: string;
   client_id?: string;
   clientName: string;
@@ -108,6 +113,8 @@ export interface Loan {
 
 export interface Payment {
   id: string;
+  operationNumber?: string;
+  operation_number?: string;
   loanId: string;
   loan_id?: string;
   clientId: string;
@@ -171,15 +178,28 @@ export interface FinancialReportData {
   endDate: string;
   capitalInvested: number;
   realCollected: number;
+  cashCollected?: number;
   principalCollected?: number;
   totalMoras?: number;
   projectedCollection: number;
   interestCollected: number;
+  commissionRealized?: number;
   grossProfit?: number;
   totalExpenses: number;
   netProfit: number;
   remainingToCollect: number;
   expensesList: OperationalExpense[];
+  cancelledLoans?: Array<{
+    loanId: string;
+    operationNumber?: string;
+    operation_number?: string;
+    clientName?: string;
+    capital: number;
+    interestAmount: number;
+    totalToPay: number;
+    payoffDate?: string | null;
+    commissionRecognized: number;
+  }>;
 }
 
 export interface AlertNotification {

@@ -98,6 +98,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
     const phone = String(client.phone || (client as any).telefono || '').toLowerCase();
     const address = String(client.address || (client as any).direccion || '').toLowerCase();
     const dni = String(client.identification || (client as any).dni || (client as any).documento || '').toLowerCase();
+    const op = String(client.operationNumber || client.operation_number || (client as any).loan_operation_number || client.activeLoan?.operationNumber || client.activeLoan?.operation_number || '').toLowerCase();
 
     const matchesSearch =
       !q ||
@@ -105,7 +106,13 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       alias.includes(q) ||
       phone.includes(q) ||
       address.includes(q) ||
-      dni.includes(q);
+      dni.includes(q) ||
+      op.includes(q) ||
+      loans.some(
+        (l) =>
+          (l?.clientId === client?.id || (l as any)?.client_id === client?.id) &&
+          String(l.operationNumber || l.operation_number || '').toLowerCase().includes(q)
+      );
 
     if (!matchesSearch) return false;
 

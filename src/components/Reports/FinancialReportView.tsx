@@ -147,6 +147,34 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
               `).join('')}
           </tbody>
         </table>
+
+        ${(report.cancelledLoans || []).length > 0 ? `
+        <h3>OPERACIONES CANCELADAS EN EL PERÍODO (COMISIÓN REALIZADA)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Operación</th>
+              <th>Cliente</th>
+              <th>Capital (S/.)</th>
+              <th>Comisión Realizada (S/.)</th>
+              <th>Total Cancelado (S/.)</th>
+              <th>Fecha Cancelación</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(report.cancelledLoans || []).map(c => `
+              <tr>
+                <td><strong>${c.operationNumber || c.operation_number || ''}</strong></td>
+                <td>${c.clientName || 'Cliente'}</td>
+                <td>S/. ${Number(c.capital || 0).toFixed(2)}</td>
+                <td class="positive">S/. ${Number(c.commissionRecognized || c.interestAmount || 0).toFixed(2)}</td>
+                <td>S/. ${Number(c.totalToPay || 0).toFixed(2)}</td>
+                <td>${c.payoffDate || ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ` : ''}
       </body>
       </html>
     `;
@@ -291,6 +319,34 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
               `).join('')}
           </tbody>
         </table>
+
+        ${(report.cancelledLoans || []).length > 0 ? `
+        <h3 style="font-size:14px; margin-top:25px; color:#2C221E;">Operaciones Canceladas en el Período (Comisión Realizada)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Operación</th>
+              <th>Cliente</th>
+              <th>Capital (S/.)</th>
+              <th>Comisión Realizada (S/.)</th>
+              <th>Total Cancelado (S/.)</th>
+              <th>Fecha Cancelación</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(report.cancelledLoans || []).map(c => `
+              <tr>
+                <td><strong>${c.operationNumber || c.operation_number || ''}</strong></td>
+                <td>${c.clientName || 'Cliente'}</td>
+                <td>S/. ${Number(c.capital || 0).toFixed(2)}</td>
+                <td style="color:#2D7A5D; font-weight:bold;">S/. ${Number(c.commissionRecognized || c.interestAmount || 0).toFixed(2)}</td>
+                <td>S/. ${Number(c.totalToPay || 0).toFixed(2)}</td>
+                <td>${c.payoffDate || ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ` : ''}
 
         <div class="footer">
           PrestamosLeoWEB © 2026 • Documento Generado el ${new Date().toLocaleString('es-PE')}
@@ -497,6 +553,64 @@ export const FinancialReportView: React.FC<FinancialReportViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Cancelled Loans (Comisión Realizada) Section */}
+      {report.cancelledLoans && report.cancelledLoans.length > 0 && (
+        <div className="bg-white dark:bg-[#26221F] rounded-3xl p-5 sm:p-6 border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow transition-colors duration-300 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E6DCD2]/60 dark:border-[#3D352E] pb-3 gap-2">
+            <div>
+              <h3 className="font-extrabold text-base text-[#2C221E] dark:text-[#EAE0D5] flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#2D7A5D] dark:text-[#3D9970]" />
+                Operaciones Canceladas en el Período ({report.cancelledLoans.length})
+              </h3>
+              <p className="text-xs text-[#6E615A] dark:text-[#C2B29F] mt-0.5">
+                Préstamos liquidados cuyo pago cancelatorio culminó en este período (Comisión Realizada).
+              </p>
+            </div>
+            <span className="text-xs font-bold text-[#2D7A5D] dark:text-[#3D9970] bg-[#EEF6F2] dark:bg-[#3D9970]/15 px-3 py-1.5 rounded-full border border-[#2D7A5D]/20 dark:border-[#3D9970]/30 self-start sm:self-auto">
+              Comisión Total: {formatCurrency(report.commissionRealized ?? report.interestCollected)}
+            </span>
+          </div>
+
+          <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+            {report.cancelledLoans.map((item) => (
+              <div
+                key={item.loanId}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] text-xs gap-3 transition-colors duration-300"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs font-bold text-[#D96B27] dark:text-[#E07A5F] bg-white dark:bg-[#26221F] px-2 py-0.5 rounded-md border border-[#E6DCD2] dark:border-[#3D352E]">
+                      {item.operationNumber || item.operation_number || 'OP-S/N'}
+                    </span>
+                    <strong className="text-sm font-extrabold text-[#2C221E] dark:text-[#EAE0D5]">
+                      {item.clientName || 'Cliente'}
+                    </strong>
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-[#6E615A] dark:text-[#C2B29F] flex-wrap">
+                    <span>Capital: <strong>{formatCurrency(item.capital)}</strong></span>
+                    <span>•</span>
+                    <span>Total Pagado: <strong>{formatCurrency(item.totalToPay)}</strong></span>
+                    {item.payoffDate && (
+                      <>
+                        <span>•</span>
+                        <span>Fecha Cancelación: <strong>{formatDatePE(item.payoffDate)}</strong></span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-left sm:text-right bg-white dark:bg-[#26221F] sm:bg-transparent p-2.5 sm:p-0 rounded-xl border sm:border-0 border-[#E6DCD2]/60 dark:border-[#3D352E]">
+                  <span className="text-[10px] text-[#6E615A] dark:text-[#C2B29F] block">Ganancia Reconocida</span>
+                  <strong className="text-[#2D7A5D] dark:text-[#3D9970] text-sm font-black">
+                    +{formatCurrency(item.commissionRecognized)}
+                  </strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Operational Expenses Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

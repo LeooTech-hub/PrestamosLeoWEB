@@ -306,6 +306,11 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                                 ? 'EN MORA'
                                 : 'ACTIVO'}
                             </span>
+                            {(loan.operationNumber || loan.operation_number) && (
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#FAF8F5] dark:bg-[#1C1917] text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E]">
+                                {loan.operationNumber || loan.operation_number}
+                              </span>
+                            )}
                             <span className="text-xs font-bold text-[#6E615A] dark:text-[#C2B29F]">
                               {loan.paymentDays || loan.days || loan.duration || 20} Días de Pago
                             </span>
@@ -450,7 +455,8 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                 ) : (
                   <div className="space-y-2">
                     {payments.map((pay) => {
-                      const relatedLoan = loans.find((l) => l.id === pay.loanId) || null;
+                      const relatedLoan = loans.find((l) => l.id === pay.loanId || (l as any).loan_id === pay.loanId) || null;
+                      const opNum = pay.operationNumber || pay.operation_number || relatedLoan?.operationNumber || relatedLoan?.operation_number;
 
                       return (
                         <div
@@ -464,6 +470,11 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
                               <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-sm font-extrabold">
                                 +{formatCurrency(pay.amount)}
                               </strong>
+                              {opNum && (
+                                <span className="font-mono text-[10px] font-bold text-[#D96B27] dark:text-[#E07A5F] bg-white dark:bg-[#26221F] px-1.5 py-0.5 rounded border border-[#E6DCD2] dark:border-[#3D352E]">
+                                  {opNum}
+                                </span>
+                              )}
                               {pay.dayNumber && (
                                 <span className="bg-[#E89D4F]/20 text-[#2C221E] dark:text-[#EAE0D5] font-semibold text-[10px] px-2 py-0.5 rounded-full border border-[#E89D4F]/30">
                                   Día {pay.dayNumber}

@@ -203,6 +203,8 @@ export function mapRowToClient(row) {
   const hasActiveLoan = Boolean(row.loan_id);
   const activeLoan = hasActiveLoan ? {
     id: String(row.loan_id),
+    operationNumber: (row.loan_operation_number || row.operation_number) ? String(row.loan_operation_number || row.operation_number) : undefined,
+    operation_number: (row.loan_operation_number || row.operation_number) ? String(row.loan_operation_number || row.operation_number) : undefined,
     amount: numericAmount,
     monto: numericAmount,
     capital: numericAmount,
@@ -299,6 +301,9 @@ export function mapRowToClient(row) {
     routeOrder: Number(row.route_order ?? 0),
     assignedTo: row.assigned_to_user_id ? String(row.assigned_to_user_id) : undefined,
     assignedToName: row.assigned_to_name || 'Sin Asignar',
+    operationNumber: (row.loan_operation_number || row.operation_number) ? String(row.loan_operation_number || row.operation_number) : undefined,
+    operation_number: (row.loan_operation_number || row.operation_number) ? String(row.loan_operation_number || row.operation_number) : undefined,
+    loan_operation_number: (row.loan_operation_number || row.operation_number) ? String(row.loan_operation_number || row.operation_number) : undefined,
     isRestricted,
     is_restricted: isRestricted,
     restrictedAt,
@@ -414,6 +419,8 @@ function mapRowToLoan(row) {
 
   return {
     id: String(row.id || ''),
+    operationNumber: row.operation_number ? String(row.operation_number) : undefined,
+    operation_number: row.operation_number ? String(row.operation_number) : undefined,
     clientId: String(row.client_id || ''),
     client_id: String(row.client_id || ''),
     clientName,
@@ -498,6 +505,8 @@ function mapRowToPayment(row) {
 
   return {
     id: String(row.id || ''),
+    operationNumber: (row.operation_number || row.loan_operation_number) ? String(row.operation_number || row.loan_operation_number) : undefined,
+    operation_number: (row.operation_number || row.loan_operation_number) ? String(row.operation_number || row.loan_operation_number) : undefined,
     loanId: String(row.loan_id || ''),
     loan_id: String(row.loan_id || ''),
     clientId: String(row.client_id || ''),
@@ -584,6 +593,200 @@ export async function buildDashboardSummary(db = pool) {
   };
 }
 
+export function calculateRealizedFinancialMetrics({
+  loans = [],
+  payments = [],
+  expenses = [],
+  startDate,
+  endDate
+}) {
+  const startStr = toDateOnly(startDate);
+  const endStr = toDateOnly(endDate);
+
+  // 1. Group all payments by loan_id and filter period payments
+  const paymentsByLoan = new Map();
+  const periodPayments = [];
+
+  for (const p of payments) {
+    const loanId = String(p.loan_id ?? p.loanId ?? '');
+    if (loanId) {
+      if (!paymentsByLoan.has(loanId)) {
+        paymentsByLoan.set(loanId, []);
+      }
+      paymentsByLoan.get(loanId).push(p);
+    }
+
+    const pDate = toDateOnly(p.payment_date ?? p.date ?? p.created_at);
+    if (pDate && startStr && endStr && pDate >= startStr && pDate <= endStr) {
+      periodPayments.push(p);
+    }
+  }
+
+  // Sort payments for each loan chronologically (date, timestamp, id as tie-breaker)
+  for (const [, loanPayments] of paymentsByLoan.entries()) {
+    loanPayments.sort((a, b) => {
+      const dateA = toDateOnly(a.payment_date ?? a.date ?? a.created_at) || '';
+      const dateB = toDateOnly(b.payment_date ?? b.date ?? b.created_at) || '';
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+
+      const timeA = new Date(a.created_at || 0).getTime();
+      const timeB = new Date(b.created_at || 0).getTime();
+      if (timeA !== timeB) return timeA - timeB;
+
+      return String(a.id || '').localeCompare(String(b.id || ''));
+    });
+  }
+
+  // 2. Identify the cancellation payment (pago cancelatorio) for each loan
+  let commissionRealized = 0;
+  let loanPenaltyRealized = 0;
+  const loanPayoffInfo = new Map();
+
+  for (const rawLoan of loans) {
+    const loanId = String(rawLoan.id ?? '');
+    if (!loanId) continue;
+
+    const capital = firstNonZeroNumber([
+      rawLoan.capital, rawLoan.amount, rawLoan.amount_borrowed, rawLoan.monto
+    ], 0);
+
+    const storedInterestRate = firstFiniteNumber([rawLoan.interest_rate, rawLoan.interestRate, rawLoan.interes], 20);
+    const storedInterestAmount = firstNonZeroNumber([rawLoan.interest_amount, rawLoan.interestAmount], 0);
+    const storedPenalty = Math.max(0, finiteNumber(
+      rawLoan.penalty_amount ?? rawLoan.penaltyAmount ?? rawLoan.mora ?? rawLoan.late_fee ?? rawLoan.lateFee,
+      0
+    ));
+    const storedTotal = firstNonZeroNumber([
+      rawLoan.total_to_pay, rawLoan.totalToPay, rawLoan.total_amount, rawLoan.totalAmount
+    ], 0);
+
+    const interestAmount = storedInterestAmount > 0
+      ? storedInterestAmount
+      : (storedTotal > 0 && storedTotal > capital + storedPenalty
+          ? Number((storedTotal - capital - storedPenalty).toFixed(2))
+          : Number((capital * (storedInterestRate / 100)).toFixed(2)));
+
+    const penaltyAmount = storedPenalty;
+
+    const totalToPay = storedTotal > 0
+      ? storedTotal
+      : Number((capital + interestAmount + penaltyAmount).toFixed(2));
+
+    const loanPayments = paymentsByLoan.get(loanId) || [];
+    let runningPaid = 0;
+    let payoffPayment = null;
+    let payoffDate = null;
+
+    for (const p of loanPayments) {
+      runningPaid += finiteNumber(p.amount, 0);
+      if (totalToPay > 0 && runningPaid >= totalToPay - 0.001) {
+        payoffPayment = p;
+        payoffDate = toDateOnly(p.payment_date ?? p.date ?? p.created_at);
+        break;
+      }
+    }
+
+    const isCancelledInPeriod = Boolean(
+      payoffPayment && payoffDate && startStr && endStr && payoffDate >= startStr && payoffDate <= endStr
+    );
+
+    loanPayoffInfo.set(loanId, {
+      loanId,
+      operationNumber: rawLoan.operation_number || rawLoan.operationNumber || undefined,
+      operation_number: rawLoan.operation_number || rawLoan.operationNumber || undefined,
+      clientName: rawLoan.client_name || rawLoan.clientName || undefined,
+      capital,
+      interestAmount,
+      penaltyAmount,
+      totalToPay,
+      runningPaid: Math.round(runningPaid * 100) / 100,
+      payoffPayment,
+      payoffDate,
+      isCancelledInPeriod,
+      commissionRecognized: isCancelledInPeriod ? interestAmount : 0
+    });
+
+    if (isCancelledInPeriod) {
+      commissionRealized += interestAmount;
+      loanPenaltyRealized += penaltyAmount;
+    }
+  }
+
+  // 3. Cash & Moras collected in the period
+  let paymentLateFees = 0;
+  let cashCollected = 0;
+
+  for (const p of periodPayments) {
+    const amt = finiteNumber(p.amount, 0);
+    const fee = finiteNumber(p.late_fee ?? p.lateFee, 0);
+    cashCollected += (amt + fee);
+    paymentLateFees += fee;
+  }
+
+  const totalMorasRaw = paymentLateFees + loanPenaltyRealized;
+
+  // 4. Expenses in the period
+  let totalExpensesRaw = 0;
+  const periodExpensesList = [];
+  for (const e of expenses) {
+    const eDate = toDateOnly(e.expense_date ?? e.date ?? e.created_at);
+    if (!startStr || !endStr || (eDate && eDate >= startStr && eDate <= endStr)) {
+      totalExpensesRaw += finiteNumber(e.amount, 0);
+      periodExpensesList.push(e);
+    }
+  }
+
+  // 5. Capital invested in the period & remaining to collect
+  let capitalInvestedRaw = 0;
+  let remainingToCollectRaw = 0;
+
+  for (const rawLoan of loans) {
+    const cap = firstNonZeroNumber([
+      rawLoan.capital, rawLoan.amount, rawLoan.amount_borrowed, rawLoan.monto
+    ], 0);
+    const lDate = toDateOnly(rawLoan.start_date ?? rawLoan.startDate ?? rawLoan.created_at);
+    if (lDate && startStr && endStr && lDate >= startStr && lDate <= endStr) {
+      capitalInvestedRaw += cap;
+    }
+
+    const status = normalizeLoanStatus(rawLoan.status);
+    if (status === 'ACTIVE' || status === 'OVERDUE') {
+      const tot = firstNonZeroNumber([rawLoan.total_to_pay, rawLoan.totalToPay, rawLoan.total_amount, rawLoan.totalAmount], 0);
+      const paid = finiteNumber(rawLoan.paid_amount ?? rawLoan.paidAmount, 0);
+      const rem = finiteNumber(rawLoan.remaining_amount ?? rawLoan.remainingAmount, Math.max(0, tot - paid));
+      remainingToCollectRaw += rem;
+    }
+  }
+
+  const realCollected = Math.round(cashCollected * 100) / 100;
+  const commissionRounded = Math.round(commissionRealized * 100) / 100;
+  const totalMoras = Math.round(totalMorasRaw * 100) / 100;
+  const grossProfit = Math.round((commissionRounded + totalMoras) * 100) / 100;
+  const totalExpenses = Math.round(totalExpensesRaw * 100) / 100;
+  const netProfit = Math.round((grossProfit - totalExpenses) * 100) / 100;
+  const principalCollected = Math.round(Math.max(0, realCollected - commissionRounded - totalMoras) * 100) / 100;
+  const remainingToCollect = Math.round(remainingToCollectRaw * 100) / 100;
+  const projectedCollection = Math.round((realCollected + remainingToCollect) * 100) / 100;
+  const capitalInvested = Math.round(capitalInvestedRaw * 100) / 100;
+
+  return {
+    capitalInvested,
+    principalCollected,
+    interestCollected: commissionRounded,
+    commissionRealized: commissionRounded,
+    totalMoras,
+    realCollected,
+    cashCollected: realCollected,
+    grossProfit,
+    totalExpenses,
+    netProfit,
+    remainingToCollect,
+    projectedCollection,
+    expensesList: periodExpensesList,
+    loanPayoffInfo
+  };
+}
+
 // ==========================================
 // CONTROLADOR
 // ==========================================
@@ -621,6 +824,8 @@ const loanController = {
           c.*,
           COALESCE(u.name, 'Sin Asignar') AS assigned_to_name,
           l.id AS loan_id,
+          l.operation_number AS loan_operation_number,
+          l.operation_number AS operation_number,
           COALESCE(NULLIF(l.amount, 0), NULLIF(l.capital, 0), NULLIF(l.amount_borrowed, 0), 0) AS loan_amount,
           COALESCE(NULLIF(l.amount, 0), NULLIF(l.capital, 0), NULLIF(l.amount_borrowed, 0), 0) AS loan_capital,
           COALESCE(NULLIF(l.total_amount, 0), NULLIF(l.total_to_pay, 0), 0) AS loan_total_amount,
@@ -731,6 +936,9 @@ const loanController = {
         return {
           ...mapped,
           loan_id: row.loan_id,
+          loan_operation_number: row.loan_operation_number || row.operation_number,
+          operationNumber: row.loan_operation_number || row.operation_number,
+          operation_number: row.loan_operation_number || row.operation_number,
           loan_amount: Number(row.loan_amount || 0),
           loan_capital: Number(row.loan_capital || 0),
           loan_total_amount: Number(row.loan_total_amount || 0),
@@ -1162,8 +1370,8 @@ const loanController = {
         params.push(statusFilter);
       }
       if (searchFilter && searchFilter.trim() !== '') {
-        conditions.push(`(c.name ILIKE $${params.length + 1} OR c.alias ILIKE $${params.length + 2})`);
-        params.push(`%${searchFilter.trim()}%`, `%${searchFilter.trim()}%`);
+        conditions.push(`(c.name ILIKE $${params.length + 1} OR c.alias ILIKE $${params.length + 2} OR l.operation_number ILIKE $${params.length + 3})`);
+        params.push(`%${searchFilter.trim()}%`, `%${searchFilter.trim()}%`, `%${searchFilter.trim()}%`);
       }
       if (conditions.length > 0) {
         queryStr += ` WHERE ` + conditions.join(' AND ');
@@ -1557,8 +1765,10 @@ const loanController = {
       const query = `
         SELECT p.*, 
                COALESCE(c.name, p.client_name, 'Cliente sin Nombre') AS joined_client_name,
-               COALESCE(u.name, 'Admin') AS collector_name
+               COALESCE(u.name, 'Admin') AS collector_name,
+               l.operation_number AS operation_number
         FROM payments p
+        LEFT JOIN loans l ON p.loan_id::text = l.id::text
         LEFT JOIN clients c ON p.client_id::text = c.id::text
         LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
         ORDER BY COALESCE(p.payment_date, p.date) DESC, p.created_at DESC NULLS LAST, p.id DESC
@@ -1577,8 +1787,10 @@ const loanController = {
       const query = `
         SELECT p.*, 
                COALESCE(c.name, p.client_name, 'Cliente sin Nombre') AS joined_client_name,
-               COALESCE(u.name, 'Admin') AS collector_name
+               COALESCE(u.name, 'Admin') AS collector_name,
+               l.operation_number AS operation_number
         FROM payments p
+        LEFT JOIN loans l ON p.loan_id::text = l.id::text
         LEFT JOIN clients c ON p.client_id::text = c.id::text
         LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
         ORDER BY COALESCE(p.payment_date, p.date) DESC, p.created_at DESC NULLS LAST, p.id DESC
@@ -1647,7 +1859,7 @@ const loanController = {
       ]);
       const synchronizedLoan = await synchronizeLoanFromPayments(client, loan.id);
       await client.query('COMMIT');
-      const payment = mapRowToPayment(paymentRes.rows[0]);
+      const payment = mapRowToPayment({ ...paymentRes.rows[0], operation_number: loan.operation_number });
       const updatedLoan = mapRowToLoan(synchronizedLoan);
       return res.status(201).json({
         ...payment,
@@ -2058,104 +2270,56 @@ const loanController = {
         label = 'Histórico Completo';
       }
 
+
       const { rows: lRows } = await pool.query(`SELECT * FROM loans`);
       const { rows: pRows } = await pool.query(`
         SELECT * FROM payments
-        WHERE COALESCE(payment_date, date) >= $1
-          AND COALESCE(payment_date, date) <= $2
-        ORDER BY COALESCE(payment_date, date) ASC, id ASC
-      `, [startStr, endStr]);
+        ORDER BY COALESCE(payment_date, date) ASC, created_at ASC, id ASC
+      `);
       const { rows: eRows } = await pool.query(`
         SELECT * FROM expenses
-        WHERE COALESCE(expense_date, date) >= $1
-          AND COALESCE(expense_date, date) <= $2
-        ORDER BY COALESCE(expense_date, date) DESC, id DESC
-      `, [startStr, endStr]);
+        ORDER BY COALESCE(expense_date, date, created_at::date) DESC, id DESC
+      `);
 
-      const loans = (lRows || []).map(mapRowToLoan);
-      const loanMap = new Map();
-      for (const loan of loans) {
-        if (loan.id) loanMap.set(String(loan.id), loan);
-      }
-
-      const capitalInvested = loans
-        .filter((l) => {
-          const d = toDateOnly(l.startDate || l.start_date || l.createdAt);
-          return d && d >= startStr && d <= endStr;
-        })
-        .reduce((sum, l) => sum + Number(l.capital || 0), 0);
-
-      const remainingToCollect = loans
-        .filter((l) => l.status === 'ACTIVE' || l.status === 'OVERDUE')
-        .reduce((sum, l) => sum + Number(l.remainingAmount || 0), 0);
-
-      let principalCollectedRaw = 0;
-      let interestCollectedRaw = 0;
-      let totalMorasRaw = 0;
-      let realCollectedRaw = 0;
-
-      for (const pRow of pRows || []) {
-        const amount = finiteNumber(pRow.amount, 0);
-        const lateFee = finiteNumber(pRow.late_fee, 0);
-        const loan = loanMap.get(String(pRow.loan_id));
-
-        let capRatio = 1 / 1.2;
-        let intRatio = 0.2 / 1.2;
-        let penRatio = 0;
-
-        if (loan) {
-          const cap = finiteNumber(loan.capital, 0);
-          const intAm = finiteNumber(loan.interestAmount, 0);
-          const pen = finiteNumber(loan.penaltyAmount, 0);
-          const tot = finiteNumber(loan.totalToPay, cap + intAm + pen);
-          const base = tot > 0 ? tot : (cap + intAm + pen);
-          if (base > 0) {
-            capRatio = Math.max(0, cap) / base;
-            intRatio = Math.max(0, intAm) / base;
-            penRatio = Math.max(0, pen) / base;
-          }
-        }
-
-        const principalPart = amount * capRatio;
-        const interestPart = amount * intRatio;
-        const penaltyFromInstallment = amount * penRatio;
-        const moraPart = penaltyFromInstallment + lateFee;
-        const totalCash = amount + lateFee;
-
-        principalCollectedRaw += principalPart;
-        interestCollectedRaw += interestPart;
-        totalMorasRaw += moraPart;
-        realCollectedRaw += totalCash;
-      }
-
-      const expenses = (eRows || []).map(mapRowToExpense);
-      const totalExpensesRaw = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-      const realCollected = Math.round(realCollectedRaw * 100) / 100;
-      const interestCollected = Math.round(interestCollectedRaw * 100) / 100;
-      const totalMoras = Math.round(totalMorasRaw * 100) / 100;
-      const principalCollected = Math.round((realCollected - interestCollected - totalMoras) * 100) / 100;
-      const grossProfit = Math.round((interestCollected + totalMoras) * 100) / 100;
-      const totalExpenses = Math.round(totalExpensesRaw * 100) / 100;
-      const netProfit = Math.round((grossProfit - totalExpenses) * 100) / 100;
-      const projectedCollection = Math.round((realCollected + remainingToCollect) * 100) / 100;
+      const metrics = calculateRealizedFinancialMetrics({
+        loans: lRows || [],
+        payments: pRows || [],
+        expenses: eRows || [],
+        startDate: startStr,
+        endDate: endStr
+      });
 
       return res.json({
         period: periodUpper,
         startDate: toDmy(startStr),
         endDate: toDmy(endStr),
         periodLabel: label,
-        capitalInvested: Math.round(capitalInvested * 100) / 100,
-        principalCollected,
-        interestCollected,
-        totalMoras,
-        realCollected,
-        projectedCollection,
-        remainingToCollect: Math.round(remainingToCollect * 100) / 100,
-        grossProfit,
-        totalExpenses,
-        netProfit,
-        expensesList: expenses
+        capitalInvested: metrics.capitalInvested,
+        principalCollected: metrics.principalCollected,
+        interestCollected: metrics.commissionRealized,
+        commissionRealized: metrics.commissionRealized,
+        totalMoras: metrics.totalMoras,
+        realCollected: metrics.realCollected,
+        cashCollected: metrics.realCollected,
+        projectedCollection: metrics.projectedCollection,
+        remainingToCollect: metrics.remainingToCollect,
+        grossProfit: metrics.grossProfit,
+        totalExpenses: metrics.totalExpenses,
+        netProfit: metrics.netProfit,
+        expensesList: (metrics.expensesList || []).map(mapRowToExpense),
+        cancelledLoans: Array.from(metrics.loanPayoffInfo?.values() || [])
+          .filter(l => l.isCancelledInPeriod)
+          .map(l => ({
+            loanId: l.loanId,
+            operationNumber: l.operationNumber || l.operation_number,
+            operation_number: l.operation_number || l.operationNumber,
+            clientName: l.clientName,
+            capital: l.capital,
+            interestAmount: l.interestAmount,
+            totalToPay: l.totalToPay,
+            payoffDate: l.payoffDate,
+            commissionRecognized: l.commissionRecognized
+          }))
       });
     } catch (error) {
       console.error('[ERROR GET /api/reports/financial]:', error);
@@ -2189,7 +2353,14 @@ const loanController = {
         return res.status(400).json({ error: 'La descripción del gasto es requerida' });
       }
       const expenseId = generateUUID();
-      const expenseDate = toDateOnly(date) || toDateOnly(new Date());
+      const peruFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Lima',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const peruTodayStr = peruFormatter.format(new Date());
+      const expenseDate = toDateOnly(date) || peruTodayStr;
       const cat = String(category || 'OTROS').trim();
 
       const { rows } = await pool.query(`
