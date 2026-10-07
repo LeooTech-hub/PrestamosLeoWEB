@@ -182,8 +182,16 @@ export function VistaClientes({
     const name = String(client?.name || '').toLowerCase();
     const alias = String(client?.alias || client?.apodo || '').toLowerCase();
     const phone = String(client?.phone || client?.telefono || '').toLowerCase();
-    const address = String(client?.address || client?.direccion || '').toLowerCase();
-    const dni = String(client?.identification || client?.dni || client?.documento || '').toLowerCase();
+    const cLoans = (loans || []).filter((l) => (l?.clientId === client?.id || l?.client_id === client?.id) && !l?.isArchived);
+    const opNumber = String(
+      client?.operationNumber ||
+      client?.operation_number ||
+      client?.loan_operation_number ||
+      client?.activeLoan?.operationNumber ||
+      client?.activeLoan?.operation_number ||
+      cLoans.map((l) => l?.operationNumber || l?.operation_number).filter(Boolean).join(' ') ||
+      ''
+    ).toLowerCase();
 
     const matchesSearch =
       !term ||
@@ -191,11 +199,10 @@ export function VistaClientes({
       alias.includes(term) ||
       phone.includes(term) ||
       address.includes(term) ||
-      dni.includes(term);
+      dni.includes(term) ||
+      opNumber.includes(term);
 
     if (!matchesSearch) return false;
-
-    const cLoans = (loans || []).filter((l) => (l?.clientId === client?.id || l?.client_id === client?.id) && !l?.isArchived);
     if (statusFilter === 'UP_TO_DATE') {
       const hasActive = cLoans.some((l) => l?.status === 'ACTIVE');
       const hasOverdue = cLoans.some((l) => l?.status === 'OVERDUE');
@@ -444,6 +451,16 @@ export function VistaClientes({
             const activeLoan = [...currentActive].sort((a, b) =>
               String(a?.dueDate || a?.due_date || '').localeCompare(String(b?.dueDate || b?.due_date || ''))
             )[0];
+            const opNumber =
+              activeLoan?.operationNumber ||
+              activeLoan?.operation_number ||
+              client?.activeLoan?.operationNumber ||
+              client?.activeLoan?.operation_number ||
+              client?.operationNumber ||
+              client?.operation_number ||
+              client?.loan_operation_number ||
+              (currentLoans.find((l) => l?.operationNumber || l?.operation_number)?.operationNumber) ||
+              (currentLoans.find((l) => l?.operationNumber || l?.operation_number)?.operation_number);
             const loanAmount = currentActive.reduce(
               (sum, loan) => sum + Number(loan?.capital ?? loan?.amount ?? loan?.monto ?? 0),
               0
@@ -503,6 +520,11 @@ export function VistaClientes({
                           {client.alias && (
                             <span className="text-[10px] font-extrabold bg-[#FDF3ED] text-[#D96B27] px-2 py-0.5 rounded-full border border-[#D96B27]/30">
                               ({client.alias})
+                            </span>
+                          )}
+                          {opNumber && (
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#FAF8F5] text-[#D96B27] border border-[#E6DCD2]">
+                              {opNumber}
                             </span>
                           )}
                           {restricted && (
@@ -612,6 +634,14 @@ export function VistaClientes({
 
                 <div className="border-t border-[#E6DCD2]/60 pt-3 space-y-3">
                   <div className="grid grid-cols-2 gap-2 bg-[#FAF8F5] p-2.5 rounded-2xl border border-[#E6DCD2]/70 text-xs">
+                    {opNumber && (
+                      <div className="col-span-2 flex items-center justify-between pb-1.5 border-b border-[#E6DCD2]/60">
+                        <span className="text-[10px] font-bold text-[#6E615A] uppercase tracking-wider">Operación:</span>
+                        <span className="font-mono text-xs font-black text-[#D96B27] bg-white px-2 py-0.5 rounded-lg border border-[#E6DCD2]/80 shadow-2xs">
+                          {opNumber}
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <span className="text-[10px] text-[#6E615A] block">Monto Prestado:</span>
                       {activeLoan ? (
@@ -782,10 +812,17 @@ export function VistaClientes({
               const hasOverdueLoan = activeLoans.some((loan) => loan?.status === 'OVERDUE');
               return (
                 <div className="mt-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/70">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] font-bold text-[#D96B27] uppercase tracking-wider">
-                      Resumen de Préstamos Vigentes
-                    </span>
+                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] font-bold text-[#D96B27] uppercase tracking-wider">
+                        Resumen de Préstamos Vigentes
+                      </span>
+                      {(activeSelectedLoan?.operationNumber || activeSelectedLoan?.operation_number || activeSelectedClient?.operationNumber || activeSelectedClient?.operation_number) && (
+                        <span className="font-mono text-[10px] font-extrabold text-[#D96B27] bg-white px-2 py-0.5 rounded-md border border-[#E6DCD2]">
+                          Operación: {activeSelectedLoan?.operationNumber || activeSelectedLoan?.operation_number || activeSelectedClient?.operationNumber || activeSelectedClient?.operation_number}
+                        </span>
+                      )}
+                    </div>
                     {activeSelectedLoan ? (
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
                         hasOverdueLoan
@@ -912,13 +949,18 @@ export function VistaClientes({
                               className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-4 space-y-2"
                             >
                               <div className="flex justify-between items-start">
-                                <div>
+                                <div className="space-y-1">
+                                  {(loan.operationNumber || loan.operation_number) && (
+                                    <span className="font-mono text-xs font-black text-[#D96B27] bg-white px-2 py-0.5 rounded-md border border-[#E6DCD2] inline-block">
+                                      Operación: {loan.operationNumber || loan.operation_number}
+                                    </span>
+                                  )}
                                   <strong className="text-sm font-extrabold text-[#2C221E] block">
                                     {mora > 0
                                       ? `Capital: ${formatCurrency(amount)} + Int (${interestRate}%): ${formatCurrency(interest)} + Mora: ${formatCurrency(mora)} = ${formatCurrency(total)}`
                                       : `Capital: ${formatCurrency(amount)} + Int (${interestRate}%): ${formatCurrency(interest)} = ${formatCurrency(total)}`}
                                   </strong>
-                                  <span className="text-xs text-[#6E615A]">
+                                  <span className="text-xs text-[#6E615A] block">
                                     Modalidad: {loan.paymentFrequency === 'DAILY' ? 'Pago diario' : loan.paymentFrequency === 'WEEKLY' ? 'Pago semanal' : 'Fecha acordada'} · {loan.paymentDays || loan.days || loan.duration || 20} Días de Pago
                                   </span>
                                 </div>
@@ -978,9 +1020,16 @@ export function VistaClientes({
                             className="bg-[#EEF6F2]/50 border border-[#2D7A5D]/20 rounded-2xl p-3 text-xs flex justify-between items-center opacity-80"
                           >
                             <div>
-                              <strong className="text-[#2C221E] block">
-                                {formatCurrency(loan.totalToPay)} ({loan.paymentDays} Días)
-                              </strong>
+                              <div className="flex items-center gap-2">
+                                {(loan.operationNumber || loan.operation_number) && (
+                                  <span className="font-mono text-[10px] font-bold text-[#2D7A5D] bg-white px-1.5 py-0.5 rounded-md border border-[#2D7A5D]/30">
+                                    {loan.operationNumber || loan.operation_number}
+                                  </span>
+                                )}
+                                <strong className="text-[#2C221E] block">
+                                  {formatCurrency(loan.totalToPay)} ({loan.paymentDays} Días)
+                                </strong>
+                              </div>
                               <span className="text-[#6E615A]">
                                 Inicio: {formatDatePE(loan.startDate)} • Vencía: {formatDatePE(loan.dueDate)}
                               </span>
@@ -1011,8 +1060,13 @@ export function VistaClientes({
                         <strong className="text-[#2C221E] text-sm block">
                           +{formatCurrency(payment.amount)}
                         </strong>
-                        <span className="text-[#6E615A]">
-                          {formatDatePE(payment.date)} • {payment.notes || 'Abono'}
+                        <span className="text-[#6E615A] flex items-center gap-1.5 flex-wrap">
+                          <span>{formatDatePE(payment.date)} • {payment.notes || 'Abono'}</span>
+                          {(payment.operationNumber || payment.operation_number || loans.find(l => l.id === payment.loanId)?.operationNumber || loans.find(l => l.id === payment.loanId)?.operation_number) && (
+                            <span className="font-mono text-[10px] font-bold text-[#D96B27] bg-white px-1.5 py-0.5 rounded border border-[#E6DCD2]">
+                              {payment.operationNumber || payment.operation_number || loans.find(l => l.id === payment.loanId)?.operationNumber || loans.find(l => l.id === payment.loanId)?.operation_number}
+                            </span>
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">

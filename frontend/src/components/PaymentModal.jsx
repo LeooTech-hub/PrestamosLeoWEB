@@ -49,6 +49,7 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
   };
 
   const isOverdue = loan.status === 'OVERDUE' || (loan.dueDate && new Date(loan.dueDate) < new Date());
+  const opNumber = loan.operationNumber || loan.operation_number || loan.loan_operation_number;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
@@ -60,8 +61,13 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
               <DollarSign className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-[#2C221E] dark:text-[#F3F4F6]">
-                Registrar Cobro / Abono
+              <h3 className="text-base font-extrabold text-[#2C221E] dark:text-[#F3F4F6] flex items-center gap-2 flex-wrap">
+                <span>Registrar Cobro / Abono</span>
+                {opNumber && (
+                  <span className="font-mono text-[10px] font-extrabold text-[#D96B27] dark:text-[#E07A5F] bg-[#FAF8F5] dark:bg-[#2C221E] px-2 py-0.5 rounded-md border border-[#E6DCD2] dark:border-[#332F2C]">
+                    Operación: {opNumber}
+                  </span>
+                )}
               </h3>
               <p className="text-xs text-[#6E615A] dark:text-[#E5E7EB] font-semibold">
                 Cliente: {loan.clientName} {loan.clientAlias ? `(${loan.clientAlias})` : ''}
@@ -104,6 +110,7 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
               href={generateWhatsAppMessage({
                 clientName: loan.clientName,
                 phone: loan.clientPhone,
+                operationNumber: opNumber || successData.payment?.operationNumber || successData.payment?.operation_number,
                 paymentAmount: successData.payment.amount + (successData.payment.lateFee || 0),
                 remainingAmount: successData.updatedLoan.remainingAmount,
                 totalToPay: successData.updatedLoan.totalToPay,

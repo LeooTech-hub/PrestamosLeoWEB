@@ -14,7 +14,8 @@ export function PaymentReceiptModal({
   if (!isOpen || !payment) return null;
 
   const clientName = client?.name || payment.clientName || 'Cliente';
-  const clientPhone = client?.phone || '';
+  const opNumber = payment.operationNumber || payment.operation_number || loan?.operationNumber || loan?.operation_number || loan?.loan_operation_number || loan?.activeLoan?.operationNumber || client?.operationNumber || client?.operation_number;
+  const opLine = opNumber ? `\n*Operación:* ${opNumber}` : '';
   const amount = payment.amount || 0;
   const paymentDate = payment.date || payment.paymentDate || new Date().toISOString().split('T')[0];
   const notes = payment.notes && payment.notes.trim() ? payment.notes.trim() : 'Abono de préstamo';
@@ -24,7 +25,7 @@ export function PaymentReceiptModal({
   const formattedDate = formatDatePE(paymentDate);
 
   const receiptMessage = `📌 *CONSTANCIA DE PAGO - PRESTAMOSLEO*
-👤 *Cliente:* ${clientName}
+👤 *Cliente:* ${clientName}${opLine}
 💵 *Abono Principal:* ${formatCurrency(amount)}${lateFee > 0 ? `\n⚠️ *Mora/Penalidad:* ${formatCurrency(lateFee)}\n💰 *Total Cobrado:* ${formatCurrency(amount + lateFee)}` : ''}
 📅 *Fecha:* ${formattedDate}
 📝 *Detalle/Nota:* ${notes}
@@ -78,22 +79,39 @@ export function PaymentReceiptModal({
         <div className="p-5 overflow-y-auto space-y-4 flex-1">
           {/* Main Receipt Card */}
           <div className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-[11px] font-black text-[#2D7A5D] bg-[#EEF6F2] px-2.5 py-1 rounded-full border border-[#2D7A5D]/20">
                 📌 CONSTANCIA DE PAGO - PRESTAMOSLEO
               </span>
-              {payment.dayNumber && (
-                <span className="text-[10px] font-bold text-[#D96B27] bg-[#FDF3ED] px-2 py-0.5 rounded-md border border-[#D96B27]/20">
-                  Día {payment.dayNumber}
-                </span>
-              )}
+              <div className="flex items-center gap-1.5">
+                {opNumber && (
+                  <span className="font-mono text-xs font-bold text-[#D96B27] bg-[#FDF3ED] px-2 py-0.5 rounded-md border border-[#D96B27]/30">
+                    Operación: {opNumber}
+                  </span>
+                )}
+                {payment.dayNumber && (
+                  <span className="text-[10px] font-bold text-[#D96B27] bg-[#FDF3ED] px-2 py-0.5 rounded-md border border-[#D96B27]/20">
+                    Día {payment.dayNumber}
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="pt-1">
-              <span className="text-xs text-[#6E615A] block">Cliente</span>
-              <strong className="text-[#2C221E] text-base font-extrabold block">
-                👤 {clientName}
-              </strong>
+            <div className="pt-1 flex items-start justify-between flex-wrap gap-2">
+              <div>
+                <span className="text-xs text-[#6E615A] block">Cliente</span>
+                <strong className="text-[#2C221E] text-base font-extrabold block">
+                  👤 {clientName}
+                </strong>
+              </div>
+              {opNumber && (
+                <div className="text-right">
+                  <span className="text-xs text-[#6E615A] block">N° Operación</span>
+                  <strong className="font-mono text-xs text-[#D96B27] font-extrabold block">
+                    {opNumber}
+                  </strong>
+                </div>
+              )}
             </div>
 
             <div className="bg-white p-3 rounded-xl border border-[#E6DCD2]/70 flex items-center justify-between">

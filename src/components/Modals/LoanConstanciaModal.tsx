@@ -22,6 +22,7 @@ export const LoanConstanciaModal: React.FC<LoanConstanciaModalProps> = ({
 
   const clientName = loan.clientName || 'Cliente';
   const clientPhone = loan.clientPhone || '';
+  const opNumber = loan.operationNumber || loan.operation_number || (loan as any).loan_operation_number;
   const cleanPhone = clientPhone.replace(/\D/g, '');
   const hasPhone = cleanPhone.length > 0;
   const phoneWithCode = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
@@ -76,17 +77,32 @@ export const LoanConstanciaModal: React.FC<LoanConstanciaModalProps> = ({
         <div className="p-5 overflow-y-auto space-y-4 flex-1">
           {/* Main Loan Summary Card */}
           <div className="bg-[#FAF8F5] dark:bg-[#1C1917] border border-[#E6DCD2] dark:border-[#3D352E] rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-[11px] font-black text-[#2D7A5D] dark:text-[#3D9970] bg-[#EEF6F2] dark:bg-[#3D9970]/20 px-2.5 py-1 rounded-full border border-[#2D7A5D]/20 dark:border-[#3D9970]/30">
                 📄 CONSTANCIA DE PRÉSTAMO - PRESTAMOSLEO
               </span>
+              {opNumber && (
+                <span className="font-mono text-xs font-extrabold text-[#D96B27] dark:text-[#E07A5F] bg-white dark:bg-[#26221F] px-2.5 py-1 rounded-lg border border-[#E6DCD2] dark:border-[#3D352E]">
+                  Operación: {opNumber}
+                </span>
+              )}
             </div>
 
-            <div className="pt-1">
-              <span className="text-xs text-[#6E615A] dark:text-[#C2B29F] block">Cliente</span>
-              <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-base font-extrabold block">
-                👤 {clientName}
-              </strong>
+            <div className="pt-1 flex items-start justify-between flex-wrap gap-2">
+              <div>
+                <span className="text-xs text-[#6E615A] dark:text-[#C2B29F] block">Cliente</span>
+                <strong className="text-[#2C221E] dark:text-[#EAE0D5] text-base font-extrabold block">
+                  👤 {clientName}
+                </strong>
+              </div>
+              {opNumber && (
+                <div className="text-right">
+                  <span className="text-xs text-[#6E615A] dark:text-[#C2B29F] block">Número de Operación</span>
+                  <strong className="font-mono text-[#D96B27] dark:text-[#E07A5F] text-sm font-extrabold block">
+                    {opNumber}
+                  </strong>
+                </div>
+              )}
             </div>
 
             <div className="bg-white dark:bg-[#26221F] p-3 rounded-xl border border-[#E6DCD2]/70 dark:border-[#3D352E] grid grid-cols-2 gap-3">
@@ -116,7 +132,13 @@ export const LoanConstanciaModal: React.FC<LoanConstanciaModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-1">
+              {opNumber && (
+                <div>
+                  <span className="text-[#6E615A] dark:text-[#C2B29F] block">N° Operación:</span>
+                  <strong className="font-mono text-[#D96B27] dark:text-[#E07A5F] block font-bold">{opNumber}</strong>
+                </div>
+              )}
               <div>
                 <span className="text-[#6E615A] dark:text-[#C2B29F] block">Fecha de Emisión:</span>
                 <strong className="text-[#2C221E] dark:text-[#EAE0D5] block">📅 {formatDatePE(loan.startDate)}</strong>

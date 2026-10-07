@@ -181,6 +181,11 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment, onRe
                               ({loan.clientAlias})
                             </span>
                           )}
+                          {(loan.operationNumber || loan.operation_number) && (
+                            <span className="font-mono text-[10px] font-bold text-[#D96B27] dark:text-[#E07A5F] bg-[#FAF8F5] dark:bg-[#2C221E] px-2 py-0.5 rounded-md border border-[#E6DCD2] dark:border-[#332F2C]">
+                              {loan.operationNumber || loan.operation_number}
+                            </span>
+                          )}
                         </h3>
                         <div className="flex items-center gap-1.5 text-xs text-[#6E615A] dark:text-[#E5E7EB] mt-0.5">
                           <Phone className="w-3 h-3 text-[#E89D4F]" />
@@ -231,6 +236,14 @@ export function VistaRutaDiaria({ todayCollections = [], onRegisterPayment, onRe
                   </div>
 
                   <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]/60 space-y-1.5 text-xs mb-4">
+                    {(loan.operationNumber || loan.operation_number) && (
+                      <div className="flex justify-between border-b border-[#E6DCD2]/60 pb-1">
+                        <span className="text-[10px] font-bold text-[#6E615A] uppercase tracking-wider">Operación:</span>
+                        <strong className="font-mono text-xs font-black text-[#D96B27]">
+                          {loan.operationNumber || loan.operation_number}
+                        </strong>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-[#6E615A]">{getLoanPaymentTerms(loan).label}:</span>
                       <strong className="text-[#2C221E] font-extrabold">

@@ -13,6 +13,7 @@ export function LoanConstanciaModal({
 
   const clientName = loan.clientName || 'Cliente';
   const clientPhone = loan.clientPhone || '';
+  const opNumber = loan.operationNumber || loan.operation_number || loan.loan_operation_number || loan.activeLoan?.operationNumber || loan.activeLoan?.operation_number;
   const cleanPhone = clientPhone.replace(/\D/g, '');
   const hasPhone = cleanPhone.length > 0;
   const phoneWithCode = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
@@ -68,17 +69,32 @@ export function LoanConstanciaModal({
         <div className="p-5 overflow-y-auto space-y-4 flex-1">
           {/* Main Loan Summary Card */}
           <div className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-[11px] font-black text-[#2D7A5D] bg-[#EEF6F2] px-2.5 py-1 rounded-full border border-[#2D7A5D]/20">
                 📄 CONSTANCIA DE PRÉSTAMO - PRESTAMOSLEO
               </span>
+              {opNumber && (
+                <span className="font-mono text-xs font-extrabold text-[#D96B27] bg-white px-2.5 py-1 rounded-lg border border-[#E6DCD2]">
+                  Operación: {opNumber}
+                </span>
+              )}
             </div>
 
-            <div className="pt-1">
-              <span className="text-xs text-[#6E615A] block">Cliente</span>
-              <strong className="text-[#2C221E] text-base font-extrabold block">
-                👤 {clientName}
-              </strong>
+            <div className="pt-1 flex items-start justify-between flex-wrap gap-2">
+              <div>
+                <span className="text-xs text-[#6E615A] block">Cliente</span>
+                <strong className="text-[#2C221E] text-base font-extrabold block">
+                  👤 {clientName}
+                </strong>
+              </div>
+              {opNumber && (
+                <div className="text-right">
+                  <span className="text-xs text-[#6E615A] block">Número de Operación</span>
+                  <strong className="font-mono text-[#D96B27] text-sm font-extrabold block">
+                    {opNumber}
+                  </strong>
+                </div>
+              )}
             </div>
 
             <div className="bg-white p-3 rounded-xl border border-[#E6DCD2]/70 grid grid-cols-2 gap-3">
@@ -108,7 +124,13 @@ export function LoanConstanciaModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-1">
+              {opNumber && (
+                <div>
+                  <span className="text-[#6E615A] block">N° Operación:</span>
+                  <strong className="font-mono text-[#D96B27] block font-bold">{opNumber}</strong>
+                </div>
+              )}
               <div>
                 <span className="text-[#6E615A] block">Fecha de Emisión:</span>
                 <strong className="text-[#2C221E] block">📅 {formatDatePE(loan.startDate)}</strong>

@@ -234,6 +234,15 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
               String(a.dueDate || a.due_date || '').localeCompare(String(b.dueDate || b.due_date || ''))
             )[0];
 
+            const opNumber =
+              activeLoan?.operationNumber ||
+              activeLoan?.operation_number ||
+              client.activeLoan?.operationNumber ||
+              client.activeLoan?.operation_number ||
+              client.operationNumber ||
+              client.operation_number ||
+              (client as any).loan_operation_number;
+
             const loanAmount = activeLoans.reduce(
               (sum, loan) => sum + Number(loan.capital ?? loan.amount ?? loan.monto ?? 0),
               0
@@ -288,6 +297,11 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                           {client.alias && (
                             <span className="text-[10px] font-extrabold bg-[#FDF3ED] dark:bg-[#3D261A] text-[#D96B27] dark:text-[#E07A5F] px-2 py-0.5 rounded-full border border-[#D96B27]/30 dark:border-[#E07A5F]/30">
                               ({client.alias})
+                            </span>
+                          )}
+                          {opNumber && (
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#FAF8F5] dark:bg-[#1C1917] text-[#D96B27] dark:text-[#E07A5F] border border-[#E6DCD2] dark:border-[#3D352E]">
+                              {opNumber}
                             </span>
                           )}
                         </h3>
@@ -372,24 +386,34 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                   </div>
 
                   {/* Loans Summary Row */}
-                  <div className="grid grid-cols-2 gap-2 mt-3 bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E] text-xs">
-                    <div>
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block">Monto Prestado:</span>
-                      {activeLoan ? (
-                        <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loanAmount)}</strong>
-                      ) : (
-                        <span className="text-[#6E615A] dark:text-[#C2B29F] italic">Sin Préstamo Activo</span>
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-[#6E615A] dark:text-[#C2B29F] block">Saldo Restante:</span>
-                      {activeLoan ? (
-                        <strong className={totalRemaining > 0 ? 'text-[#C84B31]' : 'text-[#2D7A5D] dark:text-[#3D9970]'}>
-                          {formatCurrency(totalRemaining)}
-                        </strong>
-                      ) : (
-                        <span className="text-[#6E615A] dark:text-[#C2B29F] italic">Sin Préstamo Activo</span>
-                      )}
+                  <div className="mt-3 bg-[#FAF8F5] dark:bg-[#1C1917] p-3 rounded-2xl border border-[#E6DCD2]/70 dark:border-[#3D352E] text-xs space-y-2">
+                    {opNumber && (
+                      <div className="flex items-center justify-between border-b border-[#E6DCD2]/50 dark:border-[#3D352E] pb-1.5">
+                        <span className="text-[11px] font-semibold text-[#6E615A] dark:text-[#C2B29F]">N° Operación:</span>
+                        <span className="font-mono text-xs font-bold text-[#D96B27] dark:text-[#E07A5F] bg-white dark:bg-[#26221F] px-2 py-0.5 rounded-md border border-[#E6DCD2] dark:border-[#3D352E]">
+                          {opNumber}
+                        </span>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] block">Monto Prestado:</span>
+                        {activeLoan ? (
+                          <strong className="text-[#2C221E] dark:text-[#EAE0D5]">{formatCurrency(loanAmount)}</strong>
+                        ) : (
+                          <span className="text-[#6E615A] dark:text-[#C2B29F] italic">Sin Préstamo Activo</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-[#6E615A] dark:text-[#C2B29F] block">Saldo Restante:</span>
+                        {activeLoan ? (
+                          <strong className={totalRemaining > 0 ? 'text-[#C84B31]' : 'text-[#2D7A5D] dark:text-[#3D9970]'}>
+                            {formatCurrency(totalRemaining)}
+                          </strong>
+                        ) : (
+                          <span className="text-[#6E615A] dark:text-[#C2B29F] italic">Sin Préstamo Activo</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

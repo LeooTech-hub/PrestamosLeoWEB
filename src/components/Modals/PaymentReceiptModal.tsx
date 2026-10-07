@@ -35,10 +35,10 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
 
   const formattedDate = formatDatePE(paymentDate);
   const opNumber = loan?.operationNumber || loan?.operation_number || payment.operationNumber || payment.operation_number;
-  const opLine = opNumber ? `\n🔢 *Operación:* ${opNumber}` : '';
+  const opLine = opNumber ? `\n*Operación:* ${opNumber}` : '';
 
-  const receiptMessage = `📌 *CONSTANCIA DE PAGO - PRESTAMOSLEO*${opLine}
-👤 *Cliente:* ${clientName}
+  const receiptMessage = `📌 *CONSTANCIA DE PAGO - PRESTAMOSLEO*
+👤 *Cliente:* ${clientName}${opLine}
 💵 *Abono Principal:* ${formatCurrency(amount)}${lateFee > 0 ? `\n⚠️ *Mora/Penalidad:* ${formatCurrency(lateFee)}\n💰 *Total Cobrado:* ${formatCurrency(amount + lateFee)}` : ''}
 📅 *Fecha:* ${formattedDate}
 📝 *Detalle/Nota:* ${notes}

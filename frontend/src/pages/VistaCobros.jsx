@@ -125,9 +125,11 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
     if (!p) return false;
     if (!searchText.trim()) return true;
     const q = searchText.toLowerCase();
+    const op = (p.operationNumber || p.operation_number || "").toLowerCase();
     return (p.client_name || "").toLowerCase().includes(q) ||
            (p.collector_name || "").toLowerCase().includes(q) ||
-           (p.notes || "").toLowerCase().includes(q);
+           (p.notes || "").toLowerCase().includes(q) ||
+           op.includes(q);
   });
 
   const totalRecaudado = filtered.reduce((s, p) => s + Number(p?.amount || 0), 0);
@@ -265,7 +267,14 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
               {/* Mobile */}
               <div className="md:hidden flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0 space-y-1.5">
-                  <p className="font-extrabold text-sm text-[#2C221E] dark:text-[#F3F4F6] truncate">{p.client_name || "Cliente"}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-extrabold text-sm text-[#2C221E] dark:text-[#F3F4F6] truncate">{p.client_name || "Cliente"}</p>
+                    {(p.operationNumber || p.operation_number) && (
+                      <span className="font-mono text-[10px] font-bold text-[#D96B27] bg-[#FDF3ED] border border-[#D96B27]/30 px-2 py-0.5 rounded-md">
+                        {p.operationNumber || p.operation_number}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-[#6E615A] dark:text-[#C2B29F]">{p.notes || "Pago registrado"}</p>
                   <p className="text-xs text-[#9A8A84] dark:text-[#6E615A]">{formatDateWithTime(p.date, p.created_at)}</p>
                   <div className="flex items-center gap-2 flex-wrap pt-1">
@@ -303,7 +312,14 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
               {/* Desktop */}
               <div className="hidden md:grid grid-cols-[2fr_1.5fr_1fr_1fr_1.5fr_80px] gap-3 items-center">
                 <div className="min-w-0">
-                  <p className="font-extrabold text-sm text-[#2C221E] dark:text-[#F3F4F6] truncate">{p.client_name || "Cliente"}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-extrabold text-sm text-[#2C221E] dark:text-[#F3F4F6] truncate">{p.client_name || "Cliente"}</p>
+                    {(p.operationNumber || p.operation_number) && (
+                      <span className="font-mono text-[10px] font-bold text-[#D96B27] bg-[#FDF3ED] border border-[#D96B27]/30 px-2 py-0.5 rounded-md">
+                        {p.operationNumber || p.operation_number}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-[#9A8A84] dark:text-[#6E615A] truncate">{p.notes || "Pago registrado"}</p>
                 </div>
                 <div className="text-xs text-[#6E615A] dark:text-[#C2B29F] font-medium">{formatDateWithTime(p.date, p.created_at)}</div>

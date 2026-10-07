@@ -346,11 +346,13 @@ export function generateWhatsAppMessage(params) {
   const dateStr = formatDatePE(new Date().toISOString().split('T')[0]);
   const cleanPhone = (params.phone || '').replace(/\D/g, '');
   const phoneWithCode = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
+  const opNumber = params.operationNumber || params.operation_number;
+  const opLine = opNumber ? `\n*Operación:* ${opNumber}` : '';
 
   const text = 
   `📄 *COMPROBANTE DE PAGO - PRESTAMOS LEO*
 ---------------------------------------
-👤 *Cliente:* ${params.clientName}
+👤 *Cliente:* ${params.clientName}${opLine}
 💰 *Monto Recibido:* ${formatCurrency(params.paymentAmount)}
 📅 *Fecha:* ${dateStr}
 
@@ -368,6 +370,8 @@ Recordar que credito pagado, credito renovado`;
 export function generateLoanConstanciaMessage(loan) {
   if (!loan) return '';
   const clientName = loan.clientName || 'Cliente';
+  const opNumber = loan.operationNumber || loan.operation_number || loan.loan_operation_number || loan.activeLoan?.operationNumber || loan.activeLoan?.operation_number || loan.active_loan?.operation_number;
+  const opLine = opNumber ? `\n*Operación:* ${opNumber}` : '';
   const startDate = formatDatePE(loan.startDate);
   const capital = formatCurrency(loan.capital);
   const interestVal = loan.interestAmount != null
@@ -385,7 +389,7 @@ export function generateLoanConstanciaMessage(loan) {
 
   return `📄 *CONSTANCIA DE PRÉSTAMO - PRESTAMOSLEO*
 
-👤 *Cliente:* ${clientName}
+👤 *Cliente:* ${clientName}${opLine}
 📅 *Fecha de Emisión:* ${startDate}
 💰 *Monto Prestado:* ${capital}
 📈 *Interés / Comisión:* ${interest}${penalty}

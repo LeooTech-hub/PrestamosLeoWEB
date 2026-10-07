@@ -140,11 +140,18 @@ export function VistaPrestamos({
       ''
     ).toLowerCase();
 
+    const opNumber = String(
+      loan?.operationNumber ||
+      loan?.operation_number ||
+      ''
+    ).toLowerCase();
+
     return (
       clientName.includes(term) ||
       clientNickname.includes(term) ||
       clientPhone.includes(term) ||
-      clientAddress.includes(term)
+      clientAddress.includes(term) ||
+      opNumber.includes(term)
     );
   });
 
@@ -351,9 +358,16 @@ export function VistaPrestamos({
 
                     <div className="min-w-0">
 
-                      <h3 className="font-extrabold text-sm text-[#2C221E] line-clamp-1">
-                        {loan.clientName || loan.client_name}
-                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-extrabold text-sm text-[#2C221E] line-clamp-1">
+                          {loan.clientName || loan.client_name}
+                        </h3>
+                        {(loan.operationNumber || loan.operation_number) && (
+                          <span className="font-mono text-[10px] font-bold text-[#D96B27] bg-[#FAF8F5] px-2 py-0.5 rounded-md border border-[#E6DCD2]">
+                            {loan.operationNumber || loan.operation_number}
+                          </span>
+                        )}
+                      </div>
 
                       {isLoanClientRestricted(loan) && (
                         <span className="inline-flex mt-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#FDF2F0] text-[#C84B31] border border-[#C84B31]/30">
@@ -444,6 +458,15 @@ export function VistaPrestamos({
                   {/* INFORMACIÓN FINANCIERA */}
                   {/* ================================================== */}
                   <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#E6DCD2]/60 space-y-1 text-xs mb-4">
+
+                    {(loan.operationNumber || loan.operation_number) && (
+                      <div className="flex justify-between border-b border-[#E6DCD2]/50 pb-1 mb-1">
+                        <span className="text-[10px] font-bold text-[#6E615A] uppercase tracking-wider">Operación:</span>
+                        <strong className="font-mono text-xs font-black text-[#D96B27]">
+                          {loan.operationNumber || loan.operation_number}
+                        </strong>
+                      </div>
+                    )}
 
                     <div className="flex justify-between text-xs">
 

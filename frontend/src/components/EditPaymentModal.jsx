@@ -53,9 +53,16 @@ export function EditPaymentModal({ payment, isOpen, onClose, onConfirmEditPaymen
               <DollarSign className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-[#2C221E]">
-                Editar Abono / Pago
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-extrabold text-[#2C221E]">
+                  Editar Abono / Pago
+                </h3>
+                {(payment.operationNumber || payment.operation_number) && (
+                  <span className="font-mono text-[10px] font-bold text-[#D96B27] bg-[#FAF8F5] px-2 py-0.5 rounded-md border border-[#E6DCD2]">
+                    {payment.operationNumber || payment.operation_number}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-[#6E615A] font-semibold">
                 Cliente: {payment.clientName}
               </p>
