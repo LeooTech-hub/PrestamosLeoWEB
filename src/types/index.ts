@@ -108,6 +108,12 @@ export interface Loan {
   notes?: string;
   status: 'ACTIVE' | 'PAID' | 'OVERDUE' | 'EXPIRED';
   isArchived?: boolean;
+  paymentFrequency?: 'DAILY' | 'WEEKLY' | 'AGREED_DATE' | string;
+  payment_frequency?: string;
+  installmentsCount?: number;
+  cuotas?: number;
+  weeks?: number;
+  schedule?: any[];
   createdAt?: string;
 }
 

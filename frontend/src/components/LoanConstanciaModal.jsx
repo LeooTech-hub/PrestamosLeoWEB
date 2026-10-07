@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
-import { formatCurrency, formatDatePE, formatPaymentAmount, getLoanPaymentTerms, generateLoanConstanciaMessage } from '../utils/loanHelpers';
-import { X, FileText, Copy, Check, MessageSquare, AlertCircle } from 'lucide-react';
+import {
+  formatCurrency,
+  formatDatePE,
+  formatPaymentAmount,
+  formatScheduleAmount,
+  getLoanPaymentTerms,
+  generateLoanConstanciaMessage,
+  generateWeeklyPaymentSchedule,
+} from '../utils/loanHelpers';
+import { X, FileText, Copy, Check, MessageSquare, AlertCircle, Calendar } from 'lucide-react';
 
 export function LoanConstanciaModal({
   isOpen,
@@ -11,8 +19,8 @@ export function LoanConstanciaModal({
 
   if (!isOpen || !loan) return null;
 
-  const clientName = loan.clientName || 'Cliente';
-  const clientPhone = loan.clientPhone || '';
+  const clientName = loan.clientName || loan.client_name || loan.name || 'Cliente';
+  const clientPhone = loan.clientPhone || loan.phone || '';
   const opNumber = loan.operationNumber || loan.operation_number || loan.loan_operation_number || loan.activeLoan?.operationNumber || loan.activeLoan?.operation_number;
   const cleanPhone = clientPhone.replace(/\D/g, '');
   const hasPhone = cleanPhone.length > 0;
@@ -20,6 +28,7 @@ export function LoanConstanciaModal({
 
   const constanciaMessage = generateLoanConstanciaMessage(loan);
   const paymentTerms = getLoanPaymentTerms(loan);
+  const scheduleResult = generateWeeklyPaymentSchedule(loan);
 
   const whatsappUrl = hasPhone
     ? `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(constanciaMessage)}`
@@ -37,13 +46,15 @@ export function LoanConstanciaModal({
     }
   };
 
+  const cap = loan.capital != null ? loan.capital : (loan.amount != null ? loan.amount : (loan.amount_borrowed != null ? loan.amount_borrowed : 0));
   const interestVal = loan.interestAmount != null
     ? loan.interestAmount
-    : Number(((loan.capital || 0) * 0.20).toFixed(2));
+    : (loan.interest_amount != null ? loan.interest_amount : Number(((Number(cap) || 0) * 0.20).toFixed(2)));
+  const totalVal = loan.totalToPay ?? loan.totalAmount ?? loan.total_amount ?? loan.total_to_pay ?? ((Number(cap) || 0) + (Number(interestVal) || 0) + (Number(loan.penaltyAmount || 0)));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-md w-full border border-[#E6DCD2] warm-shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-3xl max-w-md sm:max-w-lg w-full border border-[#E6DCD2] warm-shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-[#2C221E] to-[#3D302A] text-white p-4 sm:p-5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -101,7 +112,7 @@ export function LoanConstanciaModal({
               <div>
                 <span className="text-xs text-[#6E615A] block">Monto Prestado:</span>
                 <strong className="text-[#2C221E] text-base font-extrabold block">
-                  💰 {formatCurrency(loan.capital)}
+                  💰 {formatCurrency(cap)}
                 </strong>
               </div>
               <div>
@@ -113,7 +124,7 @@ export function LoanConstanciaModal({
               <div className="pt-1 border-t border-[#E6DCD2]/50">
                 <span className="text-xs text-[#6E615A] block">Monto Total a Pagar:</span>
                 <strong className="text-[#2D7A5D] text-base font-black block">
-                  💵 {formatCurrency(loan.totalToPay)}
+                  💵 {formatCurrency(totalVal)}
                 </strong>
               </div>
               <div className="pt-1 border-t border-[#E6DCD2]/50">
@@ -133,14 +144,90 @@ export function LoanConstanciaModal({
               )}
               <div>
                 <span className="text-[#6E615A] block">Fecha de Emisión:</span>
-                <strong className="text-[#2C221E] block">📅 {formatDatePE(loan.startDate)}</strong>
+                <strong className="text-[#2C221E] block">📅 {formatDatePE(loan.startDate || loan.start_date || loan.fecha_inicio)}</strong>
               </div>
               <div>
                 <span className="text-[#6E615A] block">Fecha de Vencimiento:</span>
-                <strong className="text-[#C84B31] block font-bold">📆 {formatDatePE(loan.dueDate)}</strong>
+                <strong className="text-[#C84B31] block font-bold">📆 {formatDatePE(loan.dueDate || loan.due_date || loan.fecha_vencimiento)}</strong>
               </div>
             </div>
           </div>
+
+          {/* Sección Cronograma de Pagos */}
+          {(scheduleResult.isWeekly || (scheduleResult.schedule && scheduleResult.schedule.length > 0) || scheduleResult.hasInconsistency) && (
+            <div className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#D96B27]/10 border border-[#D96B27]/20 flex items-center justify-center text-[#D96B27]">
+                    <Calendar className="w-4 h-4 text-[#D96B27]" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-[#2C221E] uppercase tracking-wider">
+                      Cronograma de pagos
+                    </h4>
+                    <span className="text-[10px] text-[#6E615A] block">
+                      {scheduleResult.isWeekly ? 'Frecuencia semanal (intervalos de 7 días)' : 'Fechas programadas de amortización'}
+                    </span>
+                  </div>
+                </div>
+                {scheduleResult.schedule.length > 0 && (
+                  <span className="text-[11px] font-extrabold text-[#2D7A5D] bg-[#EEF6F2] px-2.5 py-0.5 rounded-full border border-[#2D7A5D]/20">
+                    {scheduleResult.schedule.length} {scheduleResult.schedule.length === 1 ? 'cuota' : 'cuotas'}
+                  </span>
+                )}
+              </div>
+
+              {scheduleResult.hasInconsistency && (
+                <div className="bg-[#FDF6EE] border border-[#E89D4F]/40 p-3 rounded-xl flex items-start gap-2 text-xs text-[#8C5319]">
+                  <AlertCircle className="w-4 h-4 text-[#E89D4F] shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-bold">Aviso sobre plazo contractual:</strong>
+                    <span>{scheduleResult.inconsistencyReason}</span>
+                  </div>
+                </div>
+              )}
+
+              {scheduleResult.schedule.length > 0 && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 gap-2">
+                    {scheduleResult.schedule.map((item) => (
+                      <div
+                        key={item.installmentNumber}
+                        className="bg-white rounded-xl p-2.5 border border-[#E6DCD2]/70 flex items-center justify-between shadow-2xs hover:border-[#D96B27]/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-6 h-6 rounded-lg bg-[#FAF8F5] border border-[#E6DCD2] flex items-center justify-center font-mono font-black text-[#D96B27] text-xs shrink-0">
+                            {item.installmentNumber}
+                          </span>
+                          <div>
+                            <span className="text-xs font-bold text-[#2C221E] block">
+                              {item.formattedShortDate}
+                            </span>
+                            <span className="text-[10px] text-[#6E615A] block">
+                              {item.formattedDate}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-[#6E615A] block">Importe cuota</span>
+                          <strong className="text-sm font-black text-[#2D7A5D] font-mono block">
+                            {item.formattedAmount}
+                          </strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2 border-t border-[#E6DCD2]/70 flex items-center justify-between text-xs px-1">
+                    <span className="text-[#6E615A] font-semibold">Total a cancelar:</span>
+                    <strong className="text-[#2C221E] font-black font-mono text-sm">
+                      {formatCurrency(scheduleResult.totalAmount)}
+                    </strong>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Pre-formatted Message Box */}
           <div className="space-y-1.5">
@@ -148,7 +235,7 @@ export function LoanConstanciaModal({
               <MessageSquare className="w-3.5 h-3.5 text-[#2D7A5D]" />
               Mensaje preformateado (WhatsApp):
             </label>
-            <div className="bg-white border border-[#E6DCD2] rounded-xl p-3 text-xs text-[#2C221E] font-mono whitespace-pre-wrap leading-relaxed max-h-44 overflow-y-auto select-all">
+            <div className="bg-white border border-[#E6DCD2] rounded-xl p-3 text-xs text-[#2C221E] font-mono whitespace-pre-wrap leading-relaxed select-all">
               {constanciaMessage}
             </div>
           </div>
