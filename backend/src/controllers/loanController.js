@@ -2100,21 +2100,20 @@ const loanController = {
         )
         SELECT
           *,
-          (effective_due_date - CURRENT_DATE)::integer AS days_remaining,
+          (effective_due_date - ${PERU_TODAY_SQL})::integer AS days_remaining,
           ${PERU_TODAY_SQL}::text AS peru_today,
           CASE
-            WHEN effective_due_date < CURRENT_DATE THEN 'OVERDUE'
-            WHEN effective_due_date = CURRENT_DATE THEN 'DUE_TODAY'
-            WHEN effective_due_date = CURRENT_DATE + 1 THEN 'DUE_TOMORROW'
+            WHEN effective_due_date < ${PERU_TODAY_SQL} THEN 'OVERDUE'
+            WHEN effective_due_date = ${PERU_TODAY_SQL} THEN 'DUE_TODAY'
           END AS alert_type
         FROM alert_candidates
         WHERE remaining_amount > 0
           AND effective_due_date IS NOT NULL
-          AND (effective_due_date <= CURRENT_DATE + 1 OR payment_frequency IN ('DAILY', 'WEEKLY'))
+          AND (effective_due_date <= ${PERU_TODAY_SQL} OR payment_frequency IN ('DAILY', 'WEEKLY'))
         ORDER BY
           CASE
-            WHEN effective_due_date < CURRENT_DATE THEN 0
-            WHEN effective_due_date = CURRENT_DATE THEN 1
+            WHEN effective_due_date < ${PERU_TODAY_SQL} THEN 0
+            WHEN effective_due_date = ${PERU_TODAY_SQL} THEN 1
             ELSE 2
           END,
           effective_due_date ASC,

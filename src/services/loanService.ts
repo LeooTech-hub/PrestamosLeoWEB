@@ -364,12 +364,7 @@ export function getDaysDifferenceInfo(dueDateStr: string) {
       color: 'YELLOW',
       diffDays,
     };
-  } else if (diffDays === 1) {
-    return {
-      label: 'Vence mañana (1 día)',
-      color: 'YELLOW',
-      diffDays,
-    };
+
   } else {
     return {
       label: `Quedan ${diffDays} días`,

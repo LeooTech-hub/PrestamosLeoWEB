@@ -21,11 +21,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   if (!isOpen) return null;
 
   const overdueAlerts = alerts.filter((a) => a.type === 'OVERDUE');
-  const expiringAlerts = alerts.filter((a) => a.type === 'DUE_TODAY' || a.type === 'DUE_TOMORROW');
+  const expiringAlerts = alerts.filter((a) => a.type === 'DUE_TODAY');
 
   const filteredAlerts = alerts.filter((a) => {
     if (filter === 'OVERDUE') return a.type === 'OVERDUE';
-    if (filter === 'EXPIRING') return a.type === 'DUE_TODAY' || a.type === 'DUE_TOMORROW';
+    if (filter === 'EXPIRING') return a.type === 'DUE_TODAY';
     return true;
   });
 
@@ -111,7 +111,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             filteredAlerts.map((item) => {
               const isOverdue = item.type === 'OVERDUE';
               const isToday = item.type === 'DUE_TODAY';
-              const statusLabel = isOverdue ? 'VENCIDO' : isToday ? 'VENCE HOY' : 'VENCE MAÑANA';
+              const statusLabel = isOverdue ? 'VENCIDO' : isToday ? 'VENCE HOY' : '';
 
               return (
                 <div

@@ -39,7 +39,7 @@ export function NotificationDropdown({ alerts = [], isOpen, onClose }) {
             alerts.map((alert) => {
               const isOverdue = alert.type === 'OVERDUE' || alert.type === 'INSTALLMENT_OVERDUE';
               const isToday = alert.type === 'DUE_TODAY';
-              const statusLabel = alert.type === 'INSTALLMENT_OVERDUE' ? (alert.paymentFrequency === 'WEEKLY' ? 'CUOTA SEMANAL VENCIDA' : 'CUOTA DIARIA VENCIDA') : isOverdue ? 'VENCIDO' : isToday ? 'VENCE HOY' : 'VENCE MAÑANA';
+              const statusLabel = alert.type === 'INSTALLMENT_OVERDUE' ? (alert.paymentFrequency === 'WEEKLY' ? 'CUOTA SEMANAL VENCIDA' : 'CUOTA DIARIA VENCIDA') : isOverdue ? 'VENCIDO' : isToday ? 'VENCE HOY' : '';
 
               return (
                 <div
