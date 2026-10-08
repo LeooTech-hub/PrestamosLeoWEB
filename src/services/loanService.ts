@@ -116,12 +116,13 @@ export const loanService = {
 // Calculations & Helpers
 export const formatDate = (dateStr?: string | null) => {
   if (!dateStr) return '--';
-  const cleanStr = dateStr.toString().split('T')[0].split(' ')[0];
-  const parts = cleanStr.split('-');
-  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '--';
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  const parts = parseDateParts(dateStr);
+  if (parts) {
+    const dd = String(parts.day).padStart(2, '0');
+    const mm = String(parts.month).padStart(2, '0');
+    return `${dd}/${mm}/${parts.year}`;
+  }
+  return '--';
 };
 
 export function calculateCustomLoan(capital: number, paymentDays: number, interestRate: number = 20) {
@@ -508,6 +509,14 @@ export function formatDateShortSpanish(dateStr: any) {
   return `${dd} ${monthName} ${parts.year}`;
 }
 
+export function formatDateDayMonthSpanish(dateStr: any) {
+  const parts = parseDateParts(dateStr);
+  if (!parts) return '--';
+  const dd = String(parts.day).padStart(2, '0');
+  const monthName = SPANISH_SHORT_MONTHS[parts.month - 1] || '';
+  return `${dd} ${monthName}`;
+}
+
 export function formatScheduleAmount(amount: any) {
   const num = Number(amount) || 0;
   return 'S/ ' + new Intl.NumberFormat('es-PE', {
@@ -555,11 +564,20 @@ export function isWeeklyLoan(loan: any) {
 export function getWeeklyInstallmentCount(loan: any) {
   if (!loan) return 1;
 
+  // A) Si existe un cronograma contractual REAL almacenado con cuotas reales, utilizar su cantidad.
+  const existingSchedule = loan.schedule || loan.cronograma || loan.paymentSchedule || loan.payment_schedule || (Array.isArray(loan.installments) ? loan.installments : null);
+  if (Array.isArray(existingSchedule) && existingSchedule.length > 0) {
+    return existingSchedule.length;
+  }
+
+  // B) Si existe una propiedad explícita que inequívocamente representa cantidad de cuotas (NO plazo en días)
   const explicitCount = Number(
+    loan.weeklyInstallments ??
+    loan.weekly_installments ??
+    loan.numberOfInstallments ??
+    loan.number_of_installments ??
     loan.installmentsCount ??
     loan.installments_count ??
-    loan.totalInstallments ??
-    loan.total_installments ??
     loan.cuotas ??
     loan.weeks ??
     loan.semanas
@@ -568,27 +586,30 @@ export function getWeeklyInstallmentCount(loan: any) {
     return explicitCount;
   }
 
+  // C) Si NO existe cantidad explícita de cuotas, para préstamos SEMANALES calcularla mediante:
+  //    diffDays(fechaEmision, fechaVencimiento) / 7
   const rawStart = loan.startDate || loan.start_date || loan.fecha_inicio || loan.fechaInicio || loan.createdAt || loan.created_at;
-  const rawDue = loan.dueDate || loan.due_date || loan.fecha_vencimiento || loan.fechaVencimiento;
+  const rawDue = loan.dueDate || loan.due_date || loan.fecha_vencimiento || loan.fechaVencimiento || (loanService as any)?.getOrCalculateDueDate?.(loan);
   const diff = diffDaysSafe(rawStart, rawDue);
-  const rawDays = Number(loan.paymentDays ?? loan.payment_days ?? loan.days);
 
-  if (diff && diff > 0 && diff % 7 === 0) {
-    return diff / 7;
+  if (diff && diff > 0) {
+    if (diff % 7 === 0) {
+      return diff / 7;
+    }
+    return Math.max(1, Math.round(diff / 7));
   }
 
+  // Fallback si no hay fechas disponibles en el objeto del préstamo:
+  // Plazo en días dividido entre 7 (NUNCA usar directamente días como cuotas)
+  const rawDays = Number(loan.paymentDays ?? loan.payment_days ?? loan.days ?? loan.duration ?? loan.total_installments ?? loan.totalInstallments);
   if (rawDays && rawDays > 0) {
     if (rawDays % 7 === 0) {
       return rawDays / 7;
     }
-    if (diff && Math.abs(diff - rawDays * 7) <= 2) {
+    if (rawDays <= 12) {
       return rawDays;
     }
-    return Math.max(1, Math.ceil(rawDays / 7));
-  }
-
-  if (diff && diff > 0) {
-    return Math.max(1, Math.round(diff / 7));
+    return Math.max(1, Math.round(rawDays / 7));
   }
 
   return 1;
@@ -636,13 +657,18 @@ export function generateWeeklyPaymentSchedule(loan: any) {
     const mapped = existingSchedule.map((item: any, idx: number) => {
       const rawDate = item.dueDate || item.due_date || item.date || item.fecha || item.paymentDate;
       const amt = Number(item.amount ?? item.monto ?? item.cuota ?? 0);
+      const parts = parseDateParts(rawDate);
+      const isoDate = parts ? `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}` : (rawDate ? String(rawDate).split('T')[0] : '');
       return {
         installmentNumber: Number(item.installmentNumber || item.number || item.cuotaNumber || (idx + 1)),
-        dueDate: rawDate ? String(rawDate).split('T')[0] : '',
+        dueDate: isoDate,
+        date: formatDatePE(rawDate),
         amount: amt,
         formattedAmount: formatScheduleAmount(amt),
+        formattedPaymentAmount: formatPaymentAmount(amt),
         formattedDate: formatDatePE(rawDate),
         formattedShortDate: formatDateShortSpanish(rawDate),
+        whatsappDate: formatDateDayMonthSpanish(rawDate),
       };
     });
     const sum = Number(mapped.reduce((acc: number, curr: any) => acc + curr.amount, 0).toFixed(2));
@@ -653,6 +679,8 @@ export function generateWeeklyPaymentSchedule(loan: any) {
       hasInconsistency: false,
       inconsistencyReason: null as string | null,
       totalAmount: sum,
+      weeklyAmount: mapped[0]?.amount || 0,
+      installmentAmount: mapped[0]?.amount || 0,
       installmentsCount: mapped.length,
       schedule: mapped,
     };
@@ -674,30 +702,37 @@ export function generateWeeklyPaymentSchedule(loan: any) {
       hasInconsistency: false,
       inconsistencyReason: null as string | null,
       totalAmount,
+      weeklyAmount: 0,
+      installmentAmount: 0,
       installmentsCount: 0,
       schedule: [] as any[],
     };
   }
 
   const rawStart = loan.startDate || loan.start_date || loan.fecha_inicio || loan.fechaInicio || loan.createdAt || loan.created_at;
-  const rawDue = loan.dueDate || loan.due_date || loan.fecha_vencimiento || loan.fechaVencimiento;
+  const rawDue = loan.dueDate || loan.due_date || loan.fecha_vencimiento || loan.fechaVencimiento || (loanService as any)?.getOrCalculateDueDate?.(loan);
 
-  const cleanStartDate = rawStart ? String(rawStart).split('T')[0].split(' ')[0] : null;
-  const cleanDueDate = rawDue ? String(rawDue).split('T')[0].split(' ')[0] : null;
+  const startParts = parseDateParts(rawStart);
+  const dueParts = parseDateParts(rawDue);
 
-  if (!cleanStartDate || !cleanDueDate) {
+  if (!startParts || !dueParts) {
     return {
       isWeekly: true,
       isConsistent: false,
       hasInconsistency: true,
       inconsistencyReason: 'Faltan fechas contractuales para calcular el cronograma semanal.',
       totalAmount,
+      weeklyAmount: 0,
+      installmentAmount: 0,
       installmentsCount: 0,
       schedule: [] as any[],
     };
   }
 
-  const diffDays = diffDaysSafe(cleanStartDate, cleanDueDate);
+  const isoStartDate = `${startParts.year}-${String(startParts.month).padStart(2, '0')}-${String(startParts.day).padStart(2, '0')}`;
+  const isoDueDate = `${dueParts.year}-${String(dueParts.month).padStart(2, '0')}-${String(dueParts.day).padStart(2, '0')}`;
+
+  const diffDays = diffDaysSafe(isoStartDate, isoDueDate);
 
   if (diffDays === null || diffDays <= 0) {
     return {
@@ -706,22 +741,26 @@ export function generateWeeklyPaymentSchedule(loan: any) {
       hasInconsistency: true,
       inconsistencyReason: 'La fecha de vencimiento debe ser posterior a la fecha de emisión.',
       totalAmount,
+      weeklyAmount: 0,
+      installmentAmount: 0,
       installmentsCount: 0,
       schedule: [] as any[],
     };
   }
 
   const weeksCount = getWeeklyInstallmentCount(loan);
-  const expectedDueDate = addDaysSafe(cleanStartDate, weeksCount * 7);
-  const isConsistent = expectedDueDate === cleanDueDate;
+  const expectedDueDate = addDaysSafe(isoStartDate, weeksCount * 7);
+  const isConsistent = expectedDueDate === isoDueDate;
 
   if (!isConsistent) {
     return {
       isWeekly: true,
       isConsistent: false,
       hasInconsistency: true,
-      inconsistencyReason: `Inconsistencia contractual: El vencimiento registrado (${formatDatePE(cleanDueDate)}) no coincide con el ciclo de ${weeksCount} semanas desde la emisión (${formatDatePE(expectedDueDate)}).`,
+      inconsistencyReason: `Inconsistencia contractual: El vencimiento registrado (${formatDatePE(isoDueDate)}) no coincide con el ciclo de ${weeksCount} semanas desde la emisión (${formatDatePE(expectedDueDate)}).`,
       totalAmount,
+      weeklyAmount: 0,
+      installmentAmount: 0,
       installmentsCount: weeksCount,
       schedule: [] as any[],
     };
@@ -731,15 +770,18 @@ export function generateWeeklyPaymentSchedule(loan: any) {
   const schedule: any[] = [];
 
   for (let i = 1; i <= weeksCount; i++) {
-    const installmentDate = addDaysSafe(cleanStartDate, i * 7);
+    const installmentDate = addDaysSafe(isoStartDate, i * 7);
     const amount = amounts[i - 1];
     schedule.push({
       installmentNumber: i,
       dueDate: installmentDate,
+      date: formatDatePE(installmentDate),
       amount,
       formattedAmount: formatScheduleAmount(amount),
+      formattedPaymentAmount: formatPaymentAmount(amount),
       formattedDate: formatDatePE(installmentDate),
       formattedShortDate: formatDateShortSpanish(installmentDate),
+      whatsappDate: formatDateDayMonthSpanish(installmentDate),
     });
   }
 
@@ -749,6 +791,8 @@ export function generateWeeklyPaymentSchedule(loan: any) {
     hasInconsistency: false,
     inconsistencyReason: null as string | null,
     totalAmount,
+    weeklyAmount: amounts[0] || 0,
+    installmentAmount: amounts[0] || 0,
     installmentsCount: weeksCount,
     schedule,
   };
@@ -780,22 +824,22 @@ export function generateLoanConstanciaMessage(loan: any) {
     ? '📌 *Pago en Fecha Acordada:* ' + formatPaymentAmount(terms.amount)
     : isWeekly
       ? '📌 *Cuota Semanal:* ' + formatPaymentAmount(terms.amount)
-        + '\n📌 *Cantidad de Semanas:* ' + terms.periods
+        + '\n📌 *Semanas de Pago:* ' + terms.periods
       : '📌 *' + terms.label + ':* ' + formatPaymentAmount(terms.amount)
-        + '\n📌 *' + (terms.frequency === 'WEEKLY' ? 'Cantidad de Semanas' : 'Días de Pago') + ':* ' + terms.periods;
+        + '\n📌 *' + (terms.frequency === 'WEEKLY' ? 'Semanas de Pago' : 'Días de Pago') + ':* ' + terms.periods;
 
   const scheduleResult = generateWeeklyPaymentSchedule(loan);
   let scheduleSection = '';
   if (scheduleResult.isWeekly && scheduleResult.schedule && scheduleResult.schedule.length > 0) {
     const lines = scheduleResult.schedule.map(
-      (item: any) => `${item.installmentNumber}. ${item.formattedShortDate}: ${item.formattedAmount}`
+      (item: any) => `${item.installmentNumber}. ${item.whatsappDate || formatDateDayMonthSpanish(item.dueDate)}: ${formatPaymentAmount(item.amount)}`
     );
-    scheduleSection = `\n\n📌 *FECHAS DE CANCELACIÓN:*\n${lines.join('\n')}`;
+    scheduleSection = `\n\n📌 *FECHAS DE CANCELACIÓN:*\n\n${lines.join('\n')}`;
   } else if (scheduleResult.isWeekly && scheduleResult.hasInconsistency) {
     scheduleSection = `\n\n⚠️ *Aviso de Fechas:* ${scheduleResult.inconsistencyReason}`;
   }
 
-  const yapeSection = '\n\n📲 *Número de Yape:* 906329361';
+  const yapeSection = '\n\n📲 *Yape:* 906329361 - Leonardo Rod*';
   const footerSection = '\n\n_Gracias por su confianza. Ante cualquier consulta estamos para atenderle._';
 
   return `📄 *CONSTANCIA DE PRÉSTAMO - PRESTAMOSLEO*

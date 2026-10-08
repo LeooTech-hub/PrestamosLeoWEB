@@ -130,7 +130,7 @@ export function LoanConstanciaModal({
               <div className="pt-1 border-t border-[#E6DCD2]/50">
                 <span className="text-xs text-[#6E615A] block">{paymentTerms.label}:</span>
                 <strong className="text-[#2C221E] text-sm font-extrabold block">
-                  📌 {formatPaymentAmount(paymentTerms.amount)}{paymentTerms.frequency === 'AGREED_DATE' ? '' : ' (' + paymentTerms.periods + ' ' + paymentTerms.unit + ')'}
+                  📌 {formatScheduleAmount(paymentTerms.amount)}{paymentTerms.frequency === 'AGREED_DATE' ? '' : ' (' + paymentTerms.periods + ' ' + paymentTerms.unit + ')'}
                 </strong>
               </div>
             </div>
@@ -166,7 +166,7 @@ export function LoanConstanciaModal({
                       Cronograma de pagos
                     </h4>
                     <span className="text-[10px] text-[#6E615A] block">
-                      {scheduleResult.isWeekly ? 'Frecuencia semanal (intervalos de 7 días)' : 'Fechas programadas de amortización'}
+                      {scheduleResult.isWeekly ? `Frecuencia semanal · ${scheduleResult.schedule.length} cuotas` : 'Fechas programadas de amortización'}
                     </span>
                   </div>
                 </div>
@@ -201,15 +201,14 @@ export function LoanConstanciaModal({
                           </span>
                           <div>
                             <span className="text-xs font-bold text-[#2C221E] block">
-                              {item.formattedShortDate}
+                              Cuota {item.installmentNumber}
                             </span>
-                            <span className="text-[10px] text-[#6E615A] block">
-                              {item.formattedDate}
+                            <span className="text-[11px] text-[#6E615A] block">
+                              {item.formattedShortDate}
                             </span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="text-[10px] text-[#6E615A] block">Importe cuota</span>
                           <strong className="text-sm font-black text-[#2D7A5D] font-mono block">
                             {item.formattedAmount}
                           </strong>
@@ -219,9 +218,9 @@ export function LoanConstanciaModal({
                   </div>
 
                   <div className="pt-2 border-t border-[#E6DCD2]/70 flex items-center justify-between text-xs px-1">
-                    <span className="text-[#6E615A] font-semibold">Total a cancelar:</span>
+                    <span className="text-[#6E615A] font-semibold">Total:</span>
                     <strong className="text-[#2C221E] font-black font-mono text-sm">
-                      {formatCurrency(scheduleResult.totalAmount)}
+                      {formatScheduleAmount(scheduleResult.totalAmount)}
                     </strong>
                   </div>
                 </div>

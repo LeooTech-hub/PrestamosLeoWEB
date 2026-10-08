@@ -286,16 +286,16 @@ test('9. Mensaje de WhatsApp: incluye todos los campos obligatorios, negritas, Y
   assert.match(message, /💵 \*Monto Total a Pagar:\* S\/\. 240/);
   assert.match(message, /📆 \*Fecha de Vencimiento:\* 22\/10\/2026/);
   assert.match(message, /📌 \*Cuota Semanal:\* S\/\. 80\.00/);
-  assert.match(message, /📌 \*Cantidad de Semanas:\* 3/);
+  assert.match(message, /📌 \*Semanas de Pago:\* 3/);
 
   // Validación de sección de fechas de cancelación
   assert.match(message, /📌 \*FECHAS DE CANCELACIÓN:\*/);
-  assert.match(message, /1\. 08 oct 2026: S\/ 80\.00/);
-  assert.match(message, /2\. 15 oct 2026: S\/ 80\.00/);
-  assert.match(message, /3\. 22 oct 2026: S\/ 80\.00/);
+  assert.match(message, /1\. 08 oct: S\/\. 80\.00/);
+  assert.match(message, /2\. 15 oct: S\/\. 80\.00/);
+  assert.match(message, /3\. 22 oct: S\/\. 80\.00/);
 
   // Validación de número de Yape y agradecimiento
-  assert.match(message, /📲 \*Número de Yape:\* 906329361/);
+  assert.match(message, /📲 \*Yape:\* 906329361/);
   assert.match(message, /_Gracias por su confianza\. Ante cualquier consulta estamos para atenderle\._/);
 });
 
@@ -325,7 +325,7 @@ test('10. Compatibilidad: no altera préstamos diarios ni acuerdos especiales', 
   assert.match(message, /📌 \*Cuota Diaria:\* S\/\. 30\.00/);
   assert.match(message, /📌 \*Días de Pago:\* 20/);
   assert.doesNotMatch(message, /📌 \*FECHAS DE CANCELACIÓN:\*/);
-  assert.match(message, /📲 \*Número de Yape:\* 906329361/);
+  assert.match(message, /📲 \*Yape:\* 906329361/);
 });
 
 test('11. Cronograma contractual existente: respetado como fuente principal', () => {
@@ -350,6 +350,57 @@ test('11. Cronograma contractual existente: respetado como fuente principal', ()
   assert.equal(scheduleResult.totalAmount, 200);
 
   const message = generateLoanConstanciaMessage(loanWithCustomSchedule);
-  assert.match(message, /1\. 10 oct 2026: S\/ 100\.00/);
-  assert.match(message, /2\. 25 oct 2026: S\/ 100\.00/);
+  assert.match(message, /1\. 10 oct: S\/\. 100\.00/);
+  assert.match(message, /2\. 25 oct: S\/\. 100\.00/);
+});
+
+test('12. Caso real: paymentDays: 21 y total_installments: 21 del backend calcula 3 semanas sin inconsistencia', () => {
+  const realLoan = {
+    clientName: 'JHON ANTHONY ARBILDO RENGIFO',
+    operationNumber: 'OP-000101',
+    startDate: '01/10/2026',
+    dueDate: '22/10/2026',
+    capital: 200,
+    interestAmount: 40,
+    totalToPay: 240,
+    paymentFrequency: 'WEEKLY',
+    paymentDays: 21,
+    total_installments: 21,
+  };
+
+  const terms = getLoanPaymentTerms(realLoan);
+  assert.equal(terms.periods, 3);
+  assert.equal(terms.amount, 80.00);
+  assert.equal(terms.label, 'Cuota Semanal');
+
+  const scheduleResult = generateWeeklyPaymentSchedule(realLoan);
+  assert.equal(scheduleResult.isWeekly, true);
+  assert.equal(scheduleResult.installmentsCount, 3);
+  assert.equal(scheduleResult.weeklyAmount, 80.00);
+  assert.equal(scheduleResult.schedule.length, 3);
+  assert.equal(scheduleResult.hasInconsistency, false);
+  assert.equal(scheduleResult.isConsistent, true);
+
+  assert.equal(scheduleResult.schedule[0].date, '08/10/2026');
+  assert.equal(scheduleResult.schedule[1].date, '15/10/2026');
+  assert.equal(scheduleResult.schedule[2].date, '22/10/2026');
+
+  assert.equal(scheduleResult.schedule[0].formattedAmount, 'S/ 80.00');
+  assert.equal(scheduleResult.schedule[1].formattedAmount, 'S/ 80.00');
+  assert.equal(scheduleResult.schedule[2].formattedAmount, 'S/ 80.00');
+
+  const message = generateLoanConstanciaMessage(realLoan);
+
+  assert.match(message, /📌 \*Cuota Semanal:\* S\/\. 80\.00/);
+  assert.match(message, /📌 \*Semanas de Pago:\* 3/);
+  assert.match(message, /1\. 08 oct: S\/\. 80\.00/);
+  assert.match(message, /2\. 15 oct: S\/\. 80\.00/);
+  assert.match(message, /3\. 22 oct: S\/\. 80\.00/);
+  assert.match(message, /📲 \*Yape:\* 906329361/);
+
+  // Verificaciones de no-regresión: NO debe contener 21 semanas, S/. 11.43 ni alerta de inconsistencia
+  assert.doesNotMatch(message, /21 semanas/i);
+  assert.doesNotMatch(message, /11\.43/);
+  assert.doesNotMatch(message, /Inconsistencia contractual/i);
+  assert.doesNotMatch(message, /Aviso de Fechas/i);
 });

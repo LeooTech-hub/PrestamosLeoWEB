@@ -7,7 +7,8 @@ import {
   getOrCalculateDueDate,
   getLoanPaymentTerms,
   formatPaymentAmount,
-  generateWhatsAppReminderMessage
+  generateWhatsAppReminderMessage,
+  sortLoansForDisplay
 } from '../utils/loanHelpers';
 import { filterLoansByRestriction, isLoanClientRestricted } from '../utils/clientRestriction';
 
@@ -154,6 +155,8 @@ export function VistaPrestamos({
       opNumber.includes(term)
     );
   });
+
+  const sortedLoans = sortLoansForDisplay(filteredLoans, filter);
 
   return (
     <div className="space-y-6">
@@ -307,7 +310,7 @@ export function VistaPrestamos({
       {/* ====================================================== */}
       {/* RESULTADOS */}
       {/* ====================================================== */}
-      {filteredLoans.length === 0 ? (
+      {sortedLoans.length === 0 ? (
 
         <div className="bg-white rounded-3xl p-12 text-center border border-[#E6DCD2] warm-shadow">
 
@@ -327,7 +330,7 @@ export function VistaPrestamos({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-          {filteredLoans.map((loan) => {
+          {sortedLoans.map((loan) => {
 
             const daysInfo = getDaysDifferenceInfo(
               getOrCalculateDueDate(loan)
