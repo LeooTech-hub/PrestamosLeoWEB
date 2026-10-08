@@ -225,9 +225,9 @@ export default function App() {
     }
   };
 
-  const handleRegisterPayment = async (loanId, amount, notes, lateFee) => {
+  const handleRegisterPayment = async (loanId, amount, notes, lateFee, paymentMethod) => {
     try {
-      const res = await api.post('/payments', { loanId, amount, notes, lateFee });
+      const res = await api.post('/payments', { loanId, amount, notes, lateFee, paymentMethod });
       await loadData();
       return res.data;
     } catch (err) {

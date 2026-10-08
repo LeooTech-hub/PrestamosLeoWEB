@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MoneyMethodSelector } from './MoneyMethodSelector';
 import { formatCurrency, generateWhatsAppMessage } from '../utils/loanHelpers';
 import { X, DollarSign, Send, CheckCircle2 } from 'lucide-react';
 
@@ -6,6 +7,11 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
   const [amount, setAmount] = useState(0);
   const [lateFee, setLateFee] = useState(0);
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [methodError, setMethodError] = useState('');
+  useEffect(() => {
+    if (isOpen) queueMicrotask(() => { setPaymentMethod(''); setMethodError(''); });
+  }, [isOpen, loan?.id]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successData, setSuccessData] = useState(null);
 
@@ -19,12 +25,13 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
         setSuccessData(null);
       });
     }
-  }, [loan]);
+  }, [loan, isOpen]);
 
   if (!isOpen || !loan) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!paymentMethod) { setMethodError('Selecciona el método de pago: Yape o Efectivo.'); return; }
     if (!loan?.id || !amount || Number(amount) <= 0) return;
     if (Number(amount) > Number(loan.remainingAmount ?? loan.remaining_amount ?? 0)) {
       alert('El monto supera el saldo restante. Máximo a cobrar: ' + formatCurrency(loan.remainingAmount ?? loan.remaining_amount ?? 0) + '.');
@@ -33,7 +40,7 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
 
     setIsSubmitting(true);
     try {
-      const result = await onConfirmPayment(loan.id, Number(amount), notes, Number(lateFee) || 0);
+      const result = await onConfirmPayment(loan.id, Number(amount), notes, Number(lateFee) || 0, paymentMethod);
       const payment = result?.payment || result;
       const updatedLoan = result?.updatedLoan || result?.loan;
       if (!payment?.amount || !updatedLoan?.id) {
@@ -227,6 +234,8 @@ export function PaymentModal({ loan, isOpen, onClose, onConfirmPayment }) {
               />
             </div>
 
+            <MoneyMethodSelector label="Método de pago:" value={paymentMethod}
+              onChange={value => { setPaymentMethod(value); setMethodError(''); }} error={methodError} />
             <div className="border-t border-[#E6DCD2] pt-4 flex items-center justify-end gap-2">
               <button
                 type="button"

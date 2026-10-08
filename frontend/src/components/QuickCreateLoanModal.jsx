@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { formatCurrency, formatPaymentAmount, getLoanPaymentTerms, calculate20PercentLoan } from '../utils/loanHelpers';
+import React, { useState, useEffect } from 'react';
+import { MoneyMethodSelector } from './MoneyMethodSelector';
+import { formatCurrency, formatPaymentAmount, getLoanPaymentTerms, calculateCustomLoan } from '../utils/loanHelpers';
 import { fetchDniData } from '../utils/reniecHelper';
 import { X, PlusCircle, CheckCircle2, Search, Loader2 } from 'lucide-react';
 import { availableLoanClients, isClientRestricted, RESTRICTED_CLIENT_LOAN_MESSAGE } from '../utils/clientRestriction';
@@ -22,6 +23,11 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
   );
   const [notes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [disbursementMethod, setDisbursementMethod] = useState('');
+  const [methodError, setMethodError] = useState('');
+  useEffect(() => {
+    if (isOpen) queueMicrotask(() => { setDisbursementMethod(''); setMethodError(''); });
+  }, [isOpen]);
   const [restrictionError, setRestrictionError] = useState('');
 
   if (!isOpen) return null;
@@ -79,6 +85,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!disbursementMethod) { setMethodError('Selecciona el método de entrega: Yape o Efectivo.'); return; }
     const capNum = Number(capital);
     if (!clientName.trim() || !capNum || capNum <= 0) return;
     const selectedClient = clients.find((client) => client.id === selectedClientId);
@@ -91,6 +98,7 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
     try {
       await onSubmitLoan({
         clientId: selectedClientId || undefined,
+        disbursementMethod,
         clientName,
         clientPhone,
         clientAddress,
@@ -370,6 +378,8 @@ export function QuickCreateLoanModal({ clients = [], isOpen, onClose, onSubmitLo
             </div>
           </div>
 
+          <MoneyMethodSelector label="Método de entrega del préstamo:" value={disbursementMethod}
+            onChange={value => { setDisbursementMethod(value); setMethodError(''); }} error={methodError} />
           <div className="border-t border-[#E6DCD2] pt-4 flex items-center justify-end gap-2">
             <button
               type="button"

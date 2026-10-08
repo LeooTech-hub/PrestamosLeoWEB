@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Loan } from '@/types';
+import { Loan, MoneyMethod } from '@/types';
+import { MoneyMethodSelector } from '@/components/MoneyMethodSelector';
 import { calculateCustomLoan, formatCurrency, formatDatePE } from '@/services/loanService';
 import { X, CheckCircle2, CalendarDays, Percent } from 'lucide-react';
 
@@ -42,6 +43,8 @@ interface EditLoanModalProps {
       daily_payment?: number;
       daily_payment_amount?: number;
       notes?: string;
+      disbursementMethod?: MoneyMethod;
+      disbursement_method?: MoneyMethod;
     }
   ) => Promise<void>;
 }
@@ -108,6 +111,9 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
   const [interestRate, setInterestRate] = useState<number>(getLoanInterestRate(loan));
   const [penaltyInput, setPenaltyInput] = useState<string>(String(loan?.penaltyAmount || 0));
   const [notes, setNotes] = useState<string>(loan?.notes || '');
+  const [disbursementMethod, setDisbursementMethod] = useState<MoneyMethod | ''>(
+    loan?.disbursementMethod || loan?.disbursement_method || ''
+  );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [prevId, setPrevId] = useState<string | null>(null);
 
@@ -121,6 +127,7 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
     setInterestRate(getLoanInterestRate(loan));
     setPenaltyInput(String(loan.penaltyAmount || 0));
     setNotes(loan.notes || '');
+    setDisbursementMethod(loan.disbursementMethod || loan.disbursement_method || '');
   }
 
   if (!isOpen || !loan) return null;
@@ -211,6 +218,8 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
         daily_payment: dailyPayment,
         daily_payment_amount: dailyPayment,
         notes: notes.trim(),
+        disbursementMethod: disbursementMethod || undefined,
+        disbursement_method: disbursementMethod || undefined,
       });
       onClose();
     } catch (error) {
@@ -284,6 +293,15 @@ export const EditLoanModal: React.FC<EditLoanModalProps> = ({
               placeholder="Número de días (1 – 365)"
               className={inputCls}
               required
+            />
+          </div>
+
+          {/* ── Método de entrega ── */}
+          <div className="mb-4">
+            <MoneyMethodSelector
+              label={disbursementMethod ? "Método de entrega del préstamo:" : "Método de entrega: No registrado"}
+              value={disbursementMethod}
+              onChange={(val) => setDisbursementMethod(val)}
             />
           </div>
 

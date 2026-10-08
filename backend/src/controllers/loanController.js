@@ -6,6 +6,11 @@ import { parseRestrictionScope, restrictionSql } from '../services/clientRestric
 // payment_date es la fecha civil del negocio. Supabase opera en UTC, por lo
 // que toda consulta de hoy debe fijar explícitamente la zona horaria de Perú.
 const PERU_TODAY_SQL = `(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::date`;
+// Legacy local TIMESTAMP values were stored in UTC; production uses TIMESTAMPTZ.
+const STORED_PAYMENT_DATE_SQL = `COALESCE(p.payment_date, p.date,
+  ((CASE WHEN pg_typeof(p.created_at) = 'timestamp without time zone'::regtype
+    THEN p.created_at::timestamp AT TIME ZONE 'UTC'
+    ELSE p.created_at::timestamptz END) AT TIME ZONE 'America/Lima')::date)`;
 const RESTRICTED_CLIENT_LOAN_MESSAGE = 'Este cliente está restringido. Un administrador debe quitar la restricción antes de registrar un nuevo préstamo.';
 
 function generateUUID() {
@@ -431,6 +436,9 @@ function mapRowToLoan(row) {
     clientPhone: String(row.client_phone || row.phone || ''),
     clientAddress: String(row.client_address || row.address || ''),
 
+    disbursementMethod: row.disbursement_method ?? null,
+    disbursement_method: row.disbursement_method ?? null,
+
     capital,
     amount: capital,
     monto: capital,
@@ -499,7 +507,8 @@ function mapRowToLoan(row) {
 }
 
 function mapRowToPayment(row) {
-  const paymentDate = String(row.payment_date || row.date || row.created_at || new Date().toISOString().split('T')[0]).split('T')[0];
+  const paymentDate = Object.hasOwn(row, 'stored_payment_date') ? toDateOnly(row.stored_payment_date) : toDateOnly(row.payment_date || row.date)
+    || (row.created_at ? new Date(row.created_at).toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) : null);
   const clientName = String(row.joined_client_name || row.client_name || row.name || 'Cliente sin Nombre');
   const collectorName = String(row.collector_name || row.user_name || 'Admin');
 
@@ -520,6 +529,11 @@ function mapRowToPayment(row) {
     late_fee: Number(row.late_fee || 0),
     date: paymentDate,
     payment_date: paymentDate,
+    paymentDate,
+    loanStartDate: toDateOnly(row.loan_start_date),
+    loan_start_date: toDateOnly(row.loan_start_date),
+    paymentMethod: row.payment_method ?? null,
+    payment_method: row.payment_method ?? null,
     type: row.type || 'FULL_DAY',
     dayNumber: Number(row.day_number || 1),
     day_number: Number(row.day_number || 1),
@@ -1387,6 +1401,10 @@ const loanController = {
   },
 
   async createClientAndLoan(req, res) {
+    const disbursementMethod = req.body.disbursement_method ?? req.body.disbursementMethod;
+    if (!['YAPE', 'CASH'].includes(disbursementMethod)) {
+      return res.status(422).json({ error: 'Selecciona el método de entrega del préstamo: Yape o Efectivo.' });
+    }
     const client = await pool.connect();
     let transactionStarted = false;
     try {
@@ -1538,7 +1556,7 @@ const loanController = {
           payment_days, days_agreed, days, payment_frequency,
           daily_payment_amount, daily_payment, daily_amount,
           paid_amount, remaining_amount, paid_days_count, remaining_days,
-          start_date, due_date, status, assigned_to_user_id, assigned_to, is_archived
+          start_date, due_date, status, assigned_to_user_id, assigned_to, is_archived, disbursement_method
         ) VALUES (
           $1, $2, $3, $4, $5,
           $6, $6, $6,
@@ -1547,12 +1565,12 @@ const loanController = {
           $10, $10, $10, $17,
           $11, $11, $11,
           0, $9, 0, $10,
-          $12, $13, $14, $15, $16, 0
+          $12, $13, $14, $15, $16, 0, $18
         ) RETURNING *
       `, [
         loanId, finalClientId, clientName, loanClientPhone, loanClientAddress,
         amount, interestRate, interestAmount, totalAmount,
-        days, dailyAmount, startDate, dueDate, status, assignedToUserId, assignedToUserId, paymentFrequency
+        days, dailyAmount, startDate, dueDate, status, assignedToUserId, assignedToUserId, paymentFrequency, disbursementMethod
       ]);
       const fullLoanRes = await client.query(`
         SELECT l.*, COALESCE(c.name, 'Cliente') AS client_name, c.alias AS client_alias, c.phone AS client_phone, c.address AS client_address
@@ -1682,6 +1700,7 @@ const loanController = {
       const remainingDays = Math.max(0, days - paidDaysCount);
       const status = normalizeLoanStatus(req.body.status ?? current.status, 'ACTIVE');
       const notes = String(req.body.notes ?? req.body.observaciones ?? current.notes ?? '').trim();
+      const disbursementMethod = req.body.disbursement_method ?? req.body.disbursementMethod ?? current.disbursement_method ?? null;
 
       const { rows } = await client.query(`
         UPDATE loans SET
@@ -1708,6 +1727,7 @@ const loanController = {
           paid_amount = $12::numeric,
           paid_days_count = $13::integer,
           notes = $14::text,
+          disbursement_method = $20::text,
           status = CASE
             WHEN $15::numeric <= 0::numeric THEN 'PAID'
             WHEN $16::text = 'INACTIVE' THEN 'INACTIVE'
@@ -1719,7 +1739,7 @@ const loanController = {
       `, [
         amount, interestRate, interestAmount, penaltyAmount, totalAmount, days, dailyAmount,
         startDate, dueDate, remainingAmount, remainingDays, paidAmount, paidDaysCount, notes,
-        remainingAmount, status, dueDate, String(id), paymentFrequency
+        remainingAmount, status, dueDate, String(id), paymentFrequency, disbursementMethod
       ]);
 
       await client.query('COMMIT');
@@ -1766,7 +1786,9 @@ const loanController = {
         SELECT p.*, 
                COALESCE(c.name, p.client_name, 'Cliente sin Nombre') AS joined_client_name,
                COALESCE(u.name, 'Admin') AS collector_name,
-               l.operation_number AS operation_number
+               l.operation_number AS operation_number,
+               l.start_date AS loan_start_date,
+               ${STORED_PAYMENT_DATE_SQL} AS stored_payment_date
         FROM payments p
         LEFT JOIN loans l ON p.loan_id::text = l.id::text
         LEFT JOIN clients c ON p.client_id::text = c.id::text
@@ -1784,18 +1806,43 @@ const loanController = {
   // GET /api/payments/history
   async getPaymentHistory(req, res) {
     try {
+      const params = [];
+      const conditions = [];
+      const add = (sql, value) => { params.push(value); conditions.push(`${sql} $${params.length}`); };
+      const paymentDateSql = STORED_PAYMENT_DATE_SQL;
+      for (const [key, operator] of [['start_date', '>='], ['end_date', '<=']]) {
+        if (req.query[key]) {
+          const date = toDateOnly(req.query[key]);
+          const calendarDate = date ? new Date(`${date}T00:00:00Z`) : null;
+          if (!calendarDate || Number.isNaN(calendarDate.getTime()) || calendarDate.toISOString().slice(0, 10) !== date) {
+            return res.status(422).json({ error: 'Rango de fechas inválido' });
+          }
+          add(`${paymentDateSql} ${operator}`, date);
+        }
+      }
+      const collectorId = String(req.user?.role || '').toUpperCase() === 'COBRADOR'
+        ? req.user.id : req.query.collector_id;
+      if (collectorId) add('p.collected_by_user_id::text =', String(collectorId));
+      if (req.query.payment_method) {
+        if (!['YAPE', 'CASH'].includes(req.query.payment_method)) return res.status(422).json({ error: 'Método de pago inválido' });
+        add('p.payment_method =', req.query.payment_method);
+      }
       const query = `
         SELECT p.*, 
                COALESCE(c.name, p.client_name, 'Cliente sin Nombre') AS joined_client_name,
                COALESCE(u.name, 'Admin') AS collector_name,
-               l.operation_number AS operation_number
+               l.operation_number AS operation_number,
+               l.start_date AS loan_start_date,
+               ${STORED_PAYMENT_DATE_SQL} AS stored_payment_date
         FROM payments p
         LEFT JOIN loans l ON p.loan_id::text = l.id::text
         LEFT JOIN clients c ON p.client_id::text = c.id::text
         LEFT JOIN users u ON p.collected_by_user_id::text = u.id::text
+        ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
         ORDER BY COALESCE(p.payment_date, p.date) DESC, p.created_at DESC NULLS LAST, p.id DESC
       `;
-      const { rows } = await pool.query(query);
+      // Sin truncar filas antes de búsqueda/método: el total representa todo el rango.
+      const { rows } = await pool.query(query, params);
       return res.json((rows || []).map(mapRowToPayment));
     } catch (error) {
       console.error('[ERROR GET /api/payments/history]:', error);
@@ -1804,6 +1851,10 @@ const loanController = {
   },
 
   async registerPayment(req, res) {
+    const paymentMethod = req.body.payment_method ?? req.body.paymentMethod;
+    if (!['YAPE', 'CASH'].includes(paymentMethod)) {
+      return res.status(422).json({ error: 'Selecciona el método de pago: Yape o Efectivo.' });
+    }
     const client = await pool.connect();
     try {
       const userId = req.user?.id;
@@ -1846,20 +1897,20 @@ const loanController = {
       const paymentRes = await client.query(`
         INSERT INTO payments (
           id, loan_id, client_id, client_name, amount, payment_date, date,
-          type, day_number, late_fee, notes, collected_by_user_id, collected_by, created_by
+          type, day_number, late_fee, notes, collected_by_user_id, collected_by, created_by, payment_method
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, $10, $11, $11, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, $10, $11, $11, $11, $12)
         RETURNING *
       `, [
         generateUUID(), String(loan.id), String(loan.client_id), loan.client_name || 'Cliente', numericAmount,
         todayStr,
         newRemainingAmount <= 0 ? 'FULL_PAYOFF' : (numericAmount >= dailyAmount ? 'FULL_DAY' : 'PARTIAL'),
         newPaidDaysCount,
-        finiteNumber(lateFee, 0), notes || '', String(userId)
+        finiteNumber(lateFee, 0), notes || '', String(userId), paymentMethod
       ]);
       const synchronizedLoan = await synchronizeLoanFromPayments(client, loan.id);
       await client.query('COMMIT');
-      const payment = mapRowToPayment({ ...paymentRes.rows[0], operation_number: loan.operation_number });
+      const payment = mapRowToPayment({ ...paymentRes.rows[0], operation_number: loan.operation_number, loan_start_date: loan.start_date });
       const updatedLoan = mapRowToLoan(synchronizedLoan);
       return res.status(201).json({
         ...payment,
@@ -1914,6 +1965,11 @@ const loanController = {
   },
 
   async updatePayment(req, res) {
+    const requestedMethod = req.body.payment_method ?? req.body.paymentMethod;
+    const hasRequestedMethod = Object.hasOwn(req.body, 'payment_method') || Object.hasOwn(req.body, 'paymentMethod');
+    if (hasRequestedMethod && !['YAPE', 'CASH'].includes(requestedMethod)) {
+      return res.status(422).json({ error: 'Selecciona el método de pago: Yape o Efectivo.' });
+    }
     const client = await pool.connect();
     try {
       const { id } = req.params;
@@ -1957,11 +2013,12 @@ const loanController = {
       }
       const paymentDate = toDateOnly(date) || toDateOnly(current.rows[0].payment_date || current.rows[0].date);
       const { rows } = await client.query(`
-        UPDATE payments
-        SET amount = $1, payment_date = $2, date = $2, notes = $3
+        UPDATE payments AS p
+        SET amount = $1, payment_date = $2, date = $2, notes = $3, payment_method = $5
         WHERE id::text = $4
-        RETURNING *
-      `, [numericAmount, paymentDate, notes ?? current.rows[0].notes ?? '', String(id)]);
+        RETURNING *, ${STORED_PAYMENT_DATE_SQL} AS stored_payment_date
+      `, [numericAmount, paymentDate, notes ?? current.rows[0].notes ?? '', String(id),
+        hasRequestedMethod ? requestedMethod : current.rows[0].payment_method ?? null]);
       const synchronizedLoan = await synchronizeLoanFromPayments(client, current.rows[0].loan_id);
       await client.query('COMMIT');
       return res.json({

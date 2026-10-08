@@ -19,7 +19,7 @@ function validBody(overrides = {}) {
   return {
     clientId: 'client-1', name: 'Juan', phone: '999999999', address: 'Lima',
     amount: 500, interestRate: 20, paymentDays: 20, paymentFrequency: 'DAILY',
-    startDate: '2026-10-05', dueDate: '2026-10-25', ...overrides,
+    startDate: '2026-10-05', dueDate: '2026-10-25', disbursementMethod: 'YAPE', ...overrides,
   };
 }
 

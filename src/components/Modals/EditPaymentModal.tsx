@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Payment } from '@/types';
+import { Payment, MoneyMethod } from '@/types';
+import { MoneyMethodSelector } from '@/components/MoneyMethodSelector';
 import { X, CheckCircle2, DollarSign, Calendar, FileText } from 'lucide-react';
 
 interface EditPaymentModalProps {
@@ -10,7 +11,7 @@ interface EditPaymentModalProps {
   onClose: () => void;
   onConfirmEditPayment?: (
     id: string,
-    data: { amount?: number; date?: string; notes?: string }
+    data: { amount?: number; date?: string; notes?: string; paymentMethod?: MoneyMethod }
   ) => Promise<void>;
 }
 
@@ -23,6 +24,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({
   const [amount, setAmount] = useState<number | string>(payment?.amount || '');
   const [date, setDate] = useState<string>(payment?.date || '');
   const [notes, setNotes] = useState<string>(payment?.notes || '');
+  const [paymentMethod, setPaymentMethod] = useState<MoneyMethod | ''>(payment?.paymentMethod ?? payment?.payment_method ?? '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [prevId, setPrevId] = useState<string | null>(null);
 
@@ -31,6 +33,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({
     setAmount(payment.amount);
     setDate(payment.date || payment.paymentDate || '');
     setNotes(payment.notes || '');
+    setPaymentMethod(payment.paymentMethod ?? payment.payment_method ?? '');
   }
 
   if (!isOpen || !payment) return null;
@@ -51,6 +54,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({
         amount: numAmount,
         date,
         notes: notes.trim(),
+        ...(paymentMethod ? { paymentMethod } : {}),
       });
       onClose();
     } catch (err) {
@@ -90,6 +94,8 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          <MoneyMethodSelector label="Método de pago:" value={paymentMethod} onChange={setPaymentMethod} />
+          {!paymentMethod && <p className="text-xs text-[#6E615A]">Método: No registrado. Puedes conservar el dato histórico.</p>}
           <div>
             <label className="block text-xs font-bold text-[#6E615A] dark:text-[#C2B29F] mb-1">
               Monto del Abono (S/.):

@@ -2,6 +2,7 @@ import {
   ReportPeriod,
   ExpenseCategory,
   NewClientLoanFormData,
+  MoneyMethod,
 } from '@/types';
 
 const API_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) || 'http://localhost:5000/api';
@@ -82,12 +83,12 @@ export const loanService = {
   },
 
   getPayments: () => fetchAPI('/payments'),
-  registerPayment: (loanId: string, amount: number, notes?: string, lateFee?: number) =>
+  registerPayment: (loanId: string, amount: number, notes?: string, lateFee?: number, paymentMethod?: MoneyMethod) =>
     fetchAPI('/payments', {
       method: 'POST',
-      body: JSON.stringify({ loanId, amount, notes, lateFee }),
+      body: JSON.stringify({ loanId, amount, notes, lateFee, paymentMethod }),
     }),
-  updatePayment: (id: string, data: { amount?: number; date?: string; notes?: string }) =>
+  updatePayment: (id: string, data: { amount?: number; date?: string; notes?: string; paymentMethod?: MoneyMethod }) =>
     fetchAPI(`/payments/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -800,6 +801,10 @@ export function generateWeeklyPaymentSchedule(loan: any) {
 
 export const getLoanPaymentSchedule = generateWeeklyPaymentSchedule;
 
+export function formatMoneyMethod(method?: string | null) {
+  return method === 'YAPE' ? 'Yape' : method === 'CASH' ? 'Efectivo' : 'No registrado';
+}
+
 export function generateLoanConstanciaMessage(loan: any) {
   if (!loan) return '';
   const clientName = loan.clientName || loan.client_name || loan.name || 'Cliente';
@@ -839,7 +844,8 @@ export function generateLoanConstanciaMessage(loan: any) {
     scheduleSection = `\n\n⚠️ *Aviso de Fechas:* ${scheduleResult.inconsistencyReason}`;
   }
 
-  const yapeSection = '\n\n📲 *Yape:* 906329361 - Leonardo Rod*';
+  const deliverySection = `\n\n*Préstamo efectuado en:* ${formatMoneyMethod(loan.disbursementMethod ?? loan.disbursement_method)}`;
+  const yapeSection = '\n\n📲 *Yape:* 906329361 - Leonardo Rod';
   const footerSection = '\n\n_Gracias por su confianza. Ante cualquier consulta estamos para atenderle._';
 
   return `📄 *CONSTANCIA DE PRÉSTAMO - PRESTAMOSLEO*
@@ -850,7 +856,7 @@ export function generateLoanConstanciaMessage(loan: any) {
 📈 *Interés / Comisión:* ${interest}${penalty}
 💵 *Monto Total a Pagar:* ${totalToPay}
 📆 *Fecha de Vencimiento:* ${dueDate}
-${paymentLine}${scheduleSection}${yapeSection}${footerSection}`;
+${paymentLine}${scheduleSection}${deliverySection}${yapeSection}${footerSection}`;
 }
 
 export default loanService;

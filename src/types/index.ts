@@ -1,3 +1,5 @@
+export type MoneyMethod = 'YAPE' | 'CASH';
+
 export interface Client {
   id: string;
   name: string;
@@ -50,6 +52,8 @@ export interface Client {
 }
 
 export interface Loan {
+  disbursementMethod?: MoneyMethod | null;
+  disbursement_method?: MoneyMethod | null;
   id: string;
   operationNumber?: string;
   operation_number?: string;
@@ -133,7 +137,10 @@ export interface Payment {
   payment_date?: string;
   date?: string;
   notes?: string;
-  paymentMethod?: string;
+  paymentMethod?: MoneyMethod | null;
+  payment_method?: MoneyMethod | null;
+  loanStartDate?: string | null;
+  loan_start_date?: string | null;
 }
 
 export interface DashboardSummary {
@@ -148,6 +155,7 @@ export interface DashboardSummary {
 }
 
 export interface NewClientLoanFormData {
+  disbursementMethod: MoneyMethod;
   clientId?: string;
   clientName: string;
   clientAlias?: string;

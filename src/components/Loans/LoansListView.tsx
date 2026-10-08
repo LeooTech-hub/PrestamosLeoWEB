@@ -27,7 +27,9 @@ interface LoansListViewProps {
   onRegisterPayment: (
     loanId: string,
     amount: number,
-    notes?: string
+    notes?: string,
+    lateFee?: number,
+    paymentMethod?: import('@/types').MoneyMethod
   ) => Promise<{ updatedLoan: Loan }>;
   onUpdateLoan: (
     id: string,

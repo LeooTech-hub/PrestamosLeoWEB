@@ -182,6 +182,18 @@ export function VistaClientes({
     const name = String(client?.name || '').toLowerCase();
     const alias = String(client?.alias || client?.apodo || '').toLowerCase();
     const phone = String(client?.phone || client?.telefono || '').toLowerCase();
+    const dni = String(
+  client?.dni ||
+  client?.documentNumber ||
+  client?.document_number ||
+  ''
+).toLowerCase();
+
+const address = String(
+  client?.address ||
+  client?.direccion ||
+  ''
+).toLowerCase();
     const cLoans = (loans || []).filter((l) => (l?.clientId === client?.id || l?.client_id === client?.id) && !l?.isArchived);
     const opNumber = String(
       client?.operationNumber ||
@@ -702,16 +714,16 @@ export function VistaClientes({
 
       {/* Client Detail Modal */}
       {isDetailModalOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 border border-[#E6DCD2] warm-shadow-lg relative overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="flex items-start justify-between border-b border-[#E6DCD2] pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#FDF3ED] text-[#D96B27] font-black flex items-center justify-center text-lg border border-[#D96B27]/20">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-2xl sm:max-w-3xl md:max-w-4xl w-full p-4 sm:p-5 border border-[#E6DCD2] warm-shadow-lg relative overflow-hidden h-[92vh] max-h-[92vh] flex flex-col">
+            <div className="flex items-start justify-between border-b border-[#E6DCD2] pb-2.5 shrink-0">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#FDF3ED] text-[#D96B27] font-black flex items-center justify-center text-base sm:text-lg border border-[#D96B27]/20 shrink-0">
                   {selectedClient?.name ? selectedClient.name.charAt(0) : 'C'}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg sm:text-xl font-extrabold text-[#2C221E]">
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#2C221E]">
                       {selectedClient?.name || 'Cliente'}
                     </h3>
                     {isClientRestricted(activeSelectedClient) && (
@@ -721,7 +733,7 @@ export function VistaClientes({
                     )}
                     <button
                       onClick={() => setIsEditClientOpen(true)}
-                      className="p-1.5 rounded-xl hover:bg-[#FDF3ED] text-[#D96B27] border border-[#E6DCD2] transition-all"
+                      className="p-1 rounded-lg hover:bg-[#FDF3ED] text-[#D96B27] border border-[#E6DCD2] transition-all cursor-pointer"
                       title="Editar Cliente"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -729,14 +741,14 @@ export function VistaClientes({
                     {isAdmin && (
                       <button
                         onClick={() => setRestrictionTarget(activeSelectedClient || selectedClient)}
-                        className={`p-1.5 rounded-xl border transition-all ${isClientRestricted(activeSelectedClient) ? 'text-[#2D7A5D] border-[#2D7A5D]/30 hover:bg-[#EEF6F2]' : 'text-[#C84B31] border-[#C84B31]/30 hover:bg-[#FDF2F0]'}`}
+                        className={`p-1 rounded-lg border transition-all cursor-pointer ${isClientRestricted(activeSelectedClient) ? 'text-[#2D7A5D] border-[#2D7A5D]/30 hover:bg-[#EEF6F2]' : 'text-[#C84B31] border-[#C84B31]/30 hover:bg-[#FDF2F0]'}`}
                         title={isClientRestricted(activeSelectedClient) ? 'Quitar restricción' : 'Restringir cliente'}
                       >
                         {isClientRestricted(activeSelectedClient) ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
                       </button>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-[#6E615A] mt-0.5">
+                  <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#6E615A] mt-0.5">
                     <span className="flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-[#E89D4F]" />
                       {selectedClient?.phone || 'Sin teléfono'}
@@ -753,139 +765,142 @@ export function VistaClientes({
 
               <button
                 onClick={() => setIsDetailModalOpen(false)}
-                className="p-2 rounded-full hover:bg-[#FAF8F5] text-[#6E615A]"
+                className="p-1.5 rounded-full hover:bg-[#FAF8F5] text-[#6E615A] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {isClientRestricted(activeSelectedClient) && (
-              <div className="mt-3 p-3 rounded-2xl bg-[#FDF2F0] border border-[#C84B31]/25 text-xs text-[#C84B31]">
-                <strong className="block">Cliente restringido</strong>
-                <span>{activeSelectedClient?.restrictionReason || activeSelectedClient?.restriction_reason || 'Sin motivo registrado'}</span>
-                {(activeSelectedClient?.restrictedAt || activeSelectedClient?.restricted_at) && (
-                  <span className="block mt-1 text-[11px] text-[#6E615A]">
-                    Desde: {formatDatePE(String(activeSelectedClient.restrictedAt || activeSelectedClient.restricted_at).split('T')[0])}
-                  </span>
-                )}
-              </div>
-            )}
-
-            <div className="py-3 bg-[#FAF8F5] px-4 rounded-2xl border border-[#E6DCD2]/70 mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 text-[#6E615A]">
-                <MapPin className="w-4 h-4 text-[#E89D4F] shrink-0" />
-                <span>{selectedClient.address || 'Sin dirección registrada'}</span>
-              </div>
-              {selectedClient.notes && (
-                <div className="flex items-center gap-1 text-[#6E615A] italic">
-                  <FileText className="w-3.5 h-3.5 text-[#E89D4F]" />
-                  <span>{selectedClient.notes}</span>
+            <div className="shrink-0 space-y-2 mt-2">
+              {isClientRestricted(activeSelectedClient) && (
+                <div className="p-2.5 rounded-xl bg-[#FDF2F0] border border-[#C84B31]/25 text-xs text-[#C84B31]">
+                  <strong className="block">Cliente restringido</strong>
+                  <span>{activeSelectedClient?.restrictionReason || activeSelectedClient?.restriction_reason || 'Sin motivo registrado'}</span>
+                  {(activeSelectedClient?.restrictedAt || activeSelectedClient?.restricted_at) && (
+                    <span className="block mt-0.5 text-[11px] text-[#6E615A]">
+                      Desde: {formatDatePE(String(activeSelectedClient.restrictedAt || activeSelectedClient.restricted_at).split('T')[0])}
+                    </span>
+                  )}
                 </div>
               )}
-            </div>
 
-            <div className="mt-3 p-3 bg-white rounded-2xl border border-[#E6DCD2]">
-              <ClientDniDocuments
-                clientId={activeSelectedClient?.id || selectedClient?.id}
-                user={user}
-                readOnly
-              />
-            </div>
+              <div className="py-1.5 px-3 bg-[#FAF8F5] rounded-xl border border-[#E6DCD2]/70 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1.5 text-[#6E615A]">
+                  <MapPin className="w-3.5 h-3.5 text-[#E89D4F] shrink-0" />
+                  <span>{selectedClient.address || 'Sin dirección registrada'}</span>
+                </div>
+                {selectedClient.notes && (
+                  <div className="flex items-center gap-1 text-[#6E615A] italic">
+                    <FileText className="w-3.5 h-3.5 text-[#E89D4F] shrink-0" />
+                    <span>{selectedClient.notes}</span>
+                  </div>
+                )}
+              </div>
 
-            {/* Active Loan Quick Details Banner */}
-            {(() => {
-              const activeSelectedLoan = [...activeLoans].sort((a, b) =>
-                String(a?.dueDate || a?.due_date || '').localeCompare(String(b?.dueDate || b?.due_date || ''))
-              )[0];
-              const activeCapital = activeLoans.reduce(
-                (sum, loan) => sum + Number(loan?.capital ?? loan?.amount ?? loan?.monto ?? 0),
-                0
-              );
-              const activeRemaining = activeLoans.reduce(
-                (sum, loan) => sum + Number(loan?.remainingAmount ?? loan?.remaining_amount ?? 0),
-                0
-              );
-              const activeMora = activeLoans.reduce(
-                (sum, loan) => sum + Number(loan?.mora ?? loan?.penaltyAmount ?? loan?.penalty_amount ?? loan?.late_fee ?? 0),
-                0
-              ) || Number(activeSelectedClient?.mora ?? activeSelectedClient?.loan_mora ?? activeSelectedClient?.penaltyAmount ?? activeSelectedClient?.penalty_amount ?? activeSelectedClient?.late_fee ?? 0);
-              const hasOverdueLoan = activeLoans.some((loan) => loan?.status === 'OVERDUE');
-              return (
-                <div className="mt-3 p-3 bg-[#FAF8F5] rounded-2xl border border-[#E6DCD2]/70">
-                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[11px] font-bold text-[#D96B27] uppercase tracking-wider">
-                        Resumen de Préstamos Vigentes
-                      </span>
-                      {(activeSelectedLoan?.operationNumber || activeSelectedLoan?.operation_number || activeSelectedClient?.operationNumber || activeSelectedClient?.operation_number) && (
-                        <span className="font-mono text-[10px] font-extrabold text-[#D96B27] bg-white px-2 py-0.5 rounded-md border border-[#E6DCD2]">
-                          Operación: {activeSelectedLoan?.operationNumber || activeSelectedLoan?.operation_number || activeSelectedClient?.operationNumber || activeSelectedClient?.operation_number}
+              <div className="p-2 bg-white rounded-xl border border-[#E6DCD2]">
+                <ClientDniDocuments
+                  clientId={activeSelectedClient?.id || selectedClient?.id}
+                  user={user}
+                  readOnly
+                  compact
+                />
+              </div>
+
+              {/* Active Loan Quick Details Banner */}
+              {(() => {
+                const activeSelectedLoan = [...activeLoans].sort((a, b) =>
+                  String(a?.dueDate || a?.due_date || '').localeCompare(String(b?.dueDate || b?.due_date || ''))
+                )[0];
+                const activeCapital = activeLoans.reduce(
+                  (sum, loan) => sum + Number(loan?.capital ?? loan?.amount ?? loan?.monto ?? 0),
+                  0
+                );
+                const activeRemaining = activeLoans.reduce(
+                  (sum, loan) => sum + Number(loan?.remainingAmount ?? loan?.remaining_amount ?? 0),
+                  0
+                );
+                const activeMora = activeLoans.reduce(
+                  (sum, loan) => sum + Number(loan?.mora ?? loan?.penaltyAmount ?? loan?.penalty_amount ?? loan?.late_fee ?? 0),
+                  0
+                ) || Number(activeSelectedClient?.mora ?? activeSelectedClient?.loan_mora ?? activeSelectedClient?.penaltyAmount ?? activeSelectedClient?.penalty_amount ?? activeSelectedClient?.late_fee ?? 0);
+                const hasOverdueLoan = activeLoans.some((loan) => loan?.status === 'OVERDUE');
+                return (
+                  <div className="p-2 sm:p-2.5 bg-[#FAF8F5] rounded-xl border border-[#E6DCD2]/70">
+                    <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-[#D96B27] uppercase tracking-wider">
+                          Resumen de Préstamos Vigentes
+                        </span>
+                        {(activeSelectedLoan?.operationNumber || activeSelectedLoan?.operation_number || activeSelectedClient?.operationNumber || activeSelectedClient?.operation_number) && (
+                          <span className="font-mono text-[9px] sm:text-[10px] font-extrabold text-[#D96B27] bg-white px-1.5 py-0.2 rounded border border-[#E6DCD2]">
+                            Op: {activeSelectedLoan?.operationNumber || activeSelectedLoan?.operation_number || activeSelectedClient?.operationNumber || activeSelectedClient?.operation_number}
+                          </span>
+                        )}
+                      </div>
+                      {activeSelectedLoan ? (
+                        <span className={`text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                          hasOverdueLoan
+                            ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
+                            : 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30'
+                        }`}>
+                          {hasOverdueLoan ? 'EN MORA' : 'VIGENTE'}
+                        </span>
+                      ) : (
+                        <span className="text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300">
+                          SIN PRÉSTAMO ACTIVO
                         </span>
                       )}
                     </div>
-                    {activeSelectedLoan ? (
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                        hasOverdueLoan
-                          ? 'bg-[#FDF2F0] text-[#C84B31] border-[#C84B31]/30'
-                          : 'bg-[#EEF6F2] text-[#2D7A5D] border-[#2D7A5D]/30'
-                      }`}>
-                        {hasOverdueLoan ? 'EN MORA' : 'VIGENTE'}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300">
-                        SIN PRÉSTAMO ACTIVO
-                      </span>
-                    )}
-                  </div>
 
-                  {activeSelectedLoan ? (
-                    <div className={`grid ${activeMora > 0 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'} gap-2 text-xs bg-white p-2.5 rounded-xl border border-[#E6DCD2]/60`}>
-                      <div>
-                        <span className="text-[#6E615A] block text-[10px]">Monto Prestado:</span>
-                        <strong className="text-[#2C221E] font-extrabold">
-                          {formatCurrency(activeCapital)}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="text-[#6E615A] block text-[10px]">Préstamos Vigentes:</span>
-                        <strong className="text-[#D96B27] font-extrabold">
-                          {activeLoans.length}
-                        </strong>
-                      </div>
-                      {activeMora > 0 && (
+                    {activeSelectedLoan ? (
+                      <div className={`grid ${activeMora > 0 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'} gap-1.5 text-xs bg-white p-2 rounded-lg border border-[#E6DCD2]/60`}>
                         <div>
-                          <span className="text-[#6E615A] block text-[10px]">Mora / Recargo:</span>
-                          <strong className="text-[#C84B31] font-extrabold">
-                            +{formatCurrency(activeMora)}
+                          <span className="text-[#6E615A] block text-[9px] sm:text-[10px]">Monto Prestado:</span>
+                          <strong className="text-[#2C221E] font-extrabold text-xs">
+                            {formatCurrency(activeCapital)}
                           </strong>
                         </div>
-                      )}
-                      <div>
-                        <span className="text-[#6E615A] block text-[10px]">Próximo Vencimiento:</span>
-                        <strong className="text-[#2C221E] font-extrabold">
-                          {getDueDateFormattedSpanish(activeSelectedLoan)}
-                        </strong>
+                        <div>
+                          <span className="text-[#6E615A] block text-[9px] sm:text-[10px]">Préstamos Vigentes:</span>
+                          <strong className="text-[#D96B27] font-extrabold text-xs">
+                            {activeLoans.length}
+                          </strong>
+                        </div>
+                        {activeMora > 0 && (
+                          <div>
+                            <span className="text-[#6E615A] block text-[9px] sm:text-[10px]">Mora / Recargo:</span>
+                            <strong className="text-[#C84B31] font-extrabold text-xs">
+                              +{formatCurrency(activeMora)}
+                            </strong>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-[#6E615A] block text-[9px] sm:text-[10px]">Próximo Vencimiento:</span>
+                          <strong className="text-[#2C221E] font-extrabold text-xs">
+                            {getDueDateFormattedSpanish(activeSelectedLoan)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-[#6E615A] block text-[9px] sm:text-[10px]">Saldo Restante:</span>
+                          <strong className={hasOverdueLoan ? "text-[#C84B31] font-extrabold text-xs" : "text-[#2D7A5D] font-extrabold text-xs"}>
+                            {formatCurrency(activeRemaining)}
+                          </strong>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-[#6E615A] block text-[10px]">Saldo Restante:</span>
-                        <strong className={hasOverdueLoan ? "text-[#C84B31] font-extrabold" : "text-[#2D7A5D] font-extrabold"}>
-                          {formatCurrency(activeRemaining)}
-                        </strong>
+                    ) : (
+                      <div className="text-xs text-[#6E615A] italic font-medium py-0.5">
+                        Sin Préstamo Activo
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-xs text-[#6E615A] italic font-medium py-1">
-                      Sin Préstamo Activo
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
 
-            <div className="flex items-center gap-2 border-b border-[#E6DCD2] mt-4 pb-2">
+            <div className="shrink-0 flex items-center gap-2 border-b border-[#E6DCD2] mt-2.5 pb-2">
               <button
                 onClick={() => setActiveTab('LOANS')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'LOANS'
                     ? 'bg-[#2C221E] text-white shadow-xs'
                     : 'text-[#6E615A] hover:bg-[#FAF8F5]'
@@ -897,7 +912,7 @@ export function VistaClientes({
 
               <button
                 onClick={() => setActiveTab('PAYMENTS')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'PAYMENTS'
                     ? 'bg-[#2C221E] text-white shadow-xs'
                     : 'text-[#6E615A] hover:bg-[#FAF8F5]'
@@ -914,14 +929,14 @@ export function VistaClientes({
                 }}
                 disabled={isClientRestricted(activeSelectedClient)}
                 title={isClientRestricted(activeSelectedClient) ? 'Quita la restricción antes de registrar un préstamo' : 'Registrar préstamo'}
-                className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-xs hover:brightness-110 disabled:opacity-45 disabled:cursor-not-allowed"
+                className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl terracotta-gradient text-white text-xs font-bold shadow-xs hover:brightness-110 disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nuevo Préstamo</span>
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+            <div className="flex-1 min-h-0 overflow-y-auto py-3 pb-8 sm:pb-10 space-y-3 pr-1.5">
               {activeTab === 'LOANS' ? (
                 clientLoans.length === 0 ? (
                   <div className="text-center py-8 text-xs text-[#6E615A]">
@@ -1027,11 +1042,11 @@ export function VistaClientes({
                                   </span>
                                 )}
                                 <strong className="text-[#2C221E] block">
-                                  {formatCurrency(loan.totalToPay)} ({loan.paymentDays} Días)
+                                  {formatCurrency(loan.totalToPay ?? loan.total_amount ?? loan.total ?? 0)} ({loan.paymentDays || loan.payment_days || loan.days || loan.duration || 20} Días)
                                 </strong>
                               </div>
                               <span className="text-[#6E615A]">
-                                Inicio: {formatDatePE(loan.startDate)} • Vencía: {formatDatePE(loan.dueDate)}
+                                Inicio: {formatDatePE(loan.startDate || loan.start_date || loan.created_at)} • Vencía: {formatDatePE(loan.dueDate || loan.due_date)}
                               </span>
                             </div>
                             <span className="bg-[#2D7A5D] text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full">
@@ -1107,10 +1122,10 @@ export function VistaClientes({
               )}
             </div>
 
-            <div className="border-t border-[#E6DCD2] pt-3 flex justify-end">
+            <div className="shrink-0 border-t border-[#E6DCD2] pt-2.5 flex justify-end">
               <button
                 onClick={() => setIsDetailModalOpen(false)}
-                className="px-5 py-2 rounded-xl bg-[#2C221E] text-white font-bold text-xs"
+                className="px-5 py-2 rounded-xl bg-[#2C221E] text-white font-bold text-xs hover:bg-[#43352F] transition-colors cursor-pointer"
               >
                 Cerrar
               </button>

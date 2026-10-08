@@ -4,6 +4,8 @@ import { formatCurrency, formatPaymentAmount, getLoanPaymentTerms, calculate20Pe
 import { fetchDniData } from '../utils/reniecHelper';
 import { UserPlus, User, Phone, MapPin, Calendar, Percent, CheckCircle2, Sparkles, Search, Loader2, Lock } from 'lucide-react';
 import { ClientDniDocuments } from '../components/ClientDniDocuments';
+import { MoneyMethodSelector } from '../components/MoneyMethodSelector';
+import { formatMoneyMethod } from '../utils/loanHelpers';
 import { uploadClientDni } from '../services/clientDniApi';
 import { availableLoanClients, isClientRestricted, RESTRICTED_CLIENT_LOAN_MESSAGE } from '../utils/clientRestriction';
 
@@ -61,6 +63,8 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
   const [endDate, setEndDate] = useState(() => addDaysToDateStr(initialStartDate, 20));
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [disbursementMethod, setDisbursementMethod] = useState('');
+  const [methodError, setMethodError] = useState('');
   const [restrictionError, setRestrictionError] = useState('');
 
   const storedUser = (() => {
@@ -196,6 +200,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!disbursementMethod) { setMethodError('Selecciona el método de entrega: Yape o Efectivo.'); return; }
     const capNum = Number(capital);
     if (!clientName.trim() || !capNum || capNum <= 0) return;
     const selectedClient = clients.find((client) => client.id === selectedClientId);
@@ -208,6 +213,7 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
     try {
       const result = await onSubmitLoan({
         clientId: selectedClientId || undefined,
+        disbursementMethod,
         clientName,
         alias: clientAlias,
         clientAlias,
@@ -255,6 +261,8 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
         }
       }
 
+      setDisbursementMethod('');
+      setMethodError('');
       navigate('/prestamos');
     } catch (err) {
       console.error(err);
@@ -640,6 +648,10 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
 
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1">
+                <span className="text-[#6E615A] dark:text-[#C2B29F]">Método de entrega:</span>
+                <strong className="text-[#2C221E] dark:text-[#F3F4F6]">{formatMoneyMethod(disbursementMethod)}</strong>
+              </div>
+              <div className="flex justify-between py-1">
                 <span className="text-[#6E615A] dark:text-[#E5E7EB]">Capital Solicitado:</span>
                 <strong className="text-[#2C221E] dark:text-[#F3F4F6]">{formatCurrency(calculated.capital)}</strong>
               </div>
@@ -678,6 +690,8 @@ export function VistaNuevoCliente({ clients = [], onSubmitLoan }) {
               </div>
             </div>
 
+            <MoneyMethodSelector label="Método de entrega del préstamo:" value={disbursementMethod}
+              onChange={value => { setDisbursementMethod(value); setMethodError(''); }} error={methodError} />
             <button
               type="submit"
               disabled={isSubmitting}

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Loan } from '@/types';
+import React, { useState, useEffect } from 'react';
+import { Loan, MoneyMethod } from '@/types';
+import { MoneyMethodSelector } from '@/components/MoneyMethodSelector';
 import { formatCurrency, generateWhatsAppMessage } from '@/services/loanService';
 import confetti from 'canvas-confetti';
 import { X, CheckCircle2, DollarSign, MessageCircle } from 'lucide-react';
@@ -14,7 +15,8 @@ interface PaymentModalProps {
     loanId: string,
     amount: number,
     notes?: string,
-    lateFee?: number
+    lateFee?: number,
+    paymentMethod?: MoneyMethod
   ) => Promise<{ updatedLoan?: Loan; loan?: Loan }>;
 }
 
@@ -28,6 +30,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [customAmount, setCustomAmount] = useState<number>(loan?.dailyPaymentAmount || 0);
   const [lateFee, setLateFee] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<MoneyMethod | ''>('');
+  const [methodError, setMethodError] = useState('');
+  useEffect(() => {
+    if (isOpen) queueMicrotask(() => { setPaymentMethod(''); setMethodError(''); setCompletedWhatsAppUrl(null); });
+  }, [isOpen, loan?.id]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [completedWhatsAppUrl, setCompletedWhatsAppUrl] = useState<string | null>(null);
 
@@ -36,6 +43,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const targetAmount = paymentType === 'FULL' ? loan.dailyPaymentAmount : customAmount;
 
   const handleRegister = async () => {
+    if (!paymentMethod) { setMethodError('Selecciona el método de pago: Yape o Efectivo.'); return; }
     if (!loan?.id || !targetAmount || targetAmount <= 0) {
       alert('Por favor ingrese un monto de pago válido');
       return;
@@ -47,7 +55,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      const result = await onConfirmPayment(loan.id, targetAmount, notes, lateFee || 0);
+      const result = await onConfirmPayment(loan.id, targetAmount, notes, lateFee || 0, paymentMethod);
       const updatedLoan = result.updatedLoan || result.loan;
       if (!updatedLoan?.id) {
         throw new Error('La respuesta del pago no contiene el préstamo actualizado');
@@ -289,6 +297,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
 
             {/* Actions */}
+            <MoneyMethodSelector label="Método de pago:" value={paymentMethod}
+              onChange={value => { setPaymentMethod(value); setMethodError(''); }} error={methodError} />
             <div className="pt-2 flex gap-3">
               <button
                 type="button"

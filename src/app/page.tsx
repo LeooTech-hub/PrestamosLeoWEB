@@ -149,9 +149,10 @@ export default function Home() {
     loanId: string,
     amount: number,
     notes?: string,
-    lateFee?: number
+    lateFee?: number,
+    paymentMethod?: import('@/types').MoneyMethod
   ) => {
-    const result = await loanService.registerPayment(loanId, amount, notes, lateFee);
+    const result = await loanService.registerPayment(loanId, amount, notes, lateFee, paymentMethod);
     await loadData();
     return result;
   };

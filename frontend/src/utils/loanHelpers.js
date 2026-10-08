@@ -736,6 +736,10 @@ export function generateWeeklyPaymentSchedule(loan) {
 
 export const getLoanPaymentSchedule = generateWeeklyPaymentSchedule;
 
+export function formatMoneyMethod(method) {
+  return method === 'YAPE' ? 'Yape' : method === 'CASH' ? 'Efectivo' : 'No registrado';
+}
+
 export function generateLoanConstanciaMessage(loan) {
   if (!loan) return '';
   const clientName = loan.clientName || loan.client_name || loan.name || 'Cliente';
@@ -775,7 +779,8 @@ export function generateLoanConstanciaMessage(loan) {
     scheduleSection = `\n\n⚠️ *Aviso de Fechas:* ${scheduleResult.inconsistencyReason}`;
   }
 
-  const yapeSection = '\n\n📲 *Yape:* 906329361 - Leonardo Rod*';
+  const deliverySection = `\n\n*Préstamo efectuado en:* ${formatMoneyMethod(loan.disbursementMethod ?? loan.disbursement_method)}`;
+  const yapeSection = '\n\n📲 *Yape:* 906329361 - Leonardo Rod';
   const footerSection = '\n\n_Gracias por su confianza. Ante cualquier consulta estamos para atenderle._';
 
   return `📄 *CONSTANCIA DE PRÉSTAMO - PRESTAMOSLEO*
@@ -786,7 +791,7 @@ export function generateLoanConstanciaMessage(loan) {
 📈 *Interés / Comisión:* ${interest}${penalty}
 💵 *Monto Total a Pagar:* ${totalToPay}
 📆 *Fecha de Vencimiento:* ${dueDate}
-${paymentLine}${scheduleSection}${yapeSection}${footerSection}`;
+${paymentLine}${scheduleSection}${deliverySection}${yapeSection}${footerSection}`;
 }
 
 /**

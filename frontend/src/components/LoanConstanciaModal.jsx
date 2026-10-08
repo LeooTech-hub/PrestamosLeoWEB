@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   formatCurrency,
+  formatMoneyMethod,
   formatDatePE,
   formatPaymentAmount,
   formatScheduleAmount,
@@ -229,6 +230,10 @@ export function LoanConstanciaModal({
           )}
 
           {/* Pre-formatted Message Box */}
+          <div className="bg-[#FAF8F5] border border-[#E6DCD2] rounded-xl p-3 text-xs">
+            <span className="text-[#6E615A]">Préstamo efectuado en:</span>{' '}
+            <strong className="text-[#2C221E]">{formatMoneyMethod(loan.disbursementMethod ?? loan.disbursement_method)}</strong>
+          </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-[#6E615A] flex items-center gap-1">
               <MessageSquare className="w-3.5 h-3.5 text-[#2D7A5D]" />

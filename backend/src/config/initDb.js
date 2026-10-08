@@ -1,5 +1,6 @@
 import pool from './db.js';
 import bcrypt from 'bcryptjs';
+import { readFileSync } from 'node:fs';
 
 function generateUUID() {
   return 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
@@ -206,6 +207,9 @@ export async function initDb() {
     await safeAddColumn('payments', 'collected_by_user_id', 'VARCHAR(255) NULL');
     await safeAddColumn('payments', 'created_by', 'VARCHAR(255) NULL');
     await safeAddColumn('payments', 'late_fee', 'DECIMAL(10,2) DEFAULT 0.00');
+
+    // Idempotente y sin valores retroactivos; falla de forma visible si no puede aplicarse.
+    await pool.query(readFileSync(new URL('../../migrations/20261008_add_money_methods.sql', import.meta.url), 'utf8'));
 
     await safeAddColumn('activity_logs', 'client_id', 'VARCHAR(255) NULL');
     await safeAddColumn('activity_logs', 'ip', 'VARCHAR(64) NULL');

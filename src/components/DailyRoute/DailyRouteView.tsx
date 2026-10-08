@@ -28,7 +28,8 @@ interface DailyRouteViewProps {
     loanId: string,
     amount: number,
     notes?: string,
-    lateFee?: number
+    lateFee?: number,
+    paymentMethod?: import('@/types').MoneyMethod
   ) => Promise<{ updatedLoan: Loan }>;
   onReorderClients?: (orderedClientIds: string[]) => Promise<void>;
 }

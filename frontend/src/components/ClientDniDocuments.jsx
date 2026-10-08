@@ -23,11 +23,12 @@ const DniCard = ({
   onSelect,
   onDelete,
   onPreview,
+  compact = false,
 }) => (
-  <div className="rounded-2xl border border-[#E6DCD2] bg-[#FAF8F5] p-3 space-y-2">
+  <div className={`rounded-xl border border-[#E6DCD2] bg-[#FAF8F5] ${compact ? 'p-2 space-y-1.5' : 'p-3 space-y-2'}`}>
     <div className="flex items-center justify-between gap-2">
-      <span className="text-xs font-extrabold text-[#2C221E] flex items-center gap-1.5">
-        <FileImage className="w-4 h-4 text-[#D96B27]" />
+      <span className={`${compact ? 'text-[11px]' : 'text-xs'} font-extrabold text-[#2C221E] flex items-center gap-1.5`}>
+        <FileImage className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-[#D96B27]`} />
         {label}
       </span>
       {busy && <Loader2 className="w-4 h-4 animate-spin text-[#D96B27]" />}
@@ -37,16 +38,16 @@ const DniCard = ({
       <button
         type="button"
         onClick={onPreview}
-        className="w-full h-32 overflow-hidden rounded-xl border border-[#E6DCD2] bg-white relative group"
+        className={`w-full ${compact ? 'h-20 sm:h-24' : 'h-32'} overflow-hidden rounded-lg border border-[#E6DCD2] bg-white relative group`}
         title={`Ver ${label}`}
       >
         <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
         <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
-          <Eye className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition" />
+          <Eye className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition" />
         </span>
       </button>
     ) : (
-      <div className="h-32 rounded-xl border border-dashed border-[#D7C8BD] bg-white flex items-center justify-center text-[11px] text-[#6E615A]">
+      <div className={`${compact ? 'h-20 sm:h-24 text-[10px]' : 'h-32 text-[11px]'} rounded-lg border border-dashed border-[#D7C8BD] bg-white flex items-center justify-center text-[#6E615A]`}>
         Sin imagen
       </div>
     )}
@@ -54,8 +55,8 @@ const DniCard = ({
     {(canUpload || (canDelete && imageUrl)) && (
       <div className="flex items-center gap-2">
         {canUpload && (
-          <label className="flex-1 cursor-pointer flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-[#E6DCD2] text-[11px] font-bold text-[#D96B27] hover:bg-[#FDF3ED]">
-            <Upload className="w-3.5 h-3.5" />
+          <label className={`flex-1 cursor-pointer flex items-center justify-center gap-1.5 ${compact ? 'px-2 py-1.5 text-[10px]' : 'px-3 py-2 text-[11px]'} rounded-xl bg-white border border-[#E6DCD2] font-bold text-[#D96B27] hover:bg-[#FDF3ED]`}>
+            <Upload className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
             {imageUrl ? 'Cambiar' : 'Subir imagen'}
             <input
               type="file"
@@ -76,10 +77,10 @@ const DniCard = ({
             type="button"
             onClick={() => onDelete(side)}
             disabled={busy}
-            className="px-3 py-2 rounded-xl border border-[#C84B31]/30 bg-[#FDF2F0] text-[#C84B31] text-[11px] font-bold hover:bg-[#FBE8E4] disabled:opacity-50"
+            className={`${compact ? 'px-2 py-1.5 text-[10px]' : 'px-3 py-2 text-[11px]'} rounded-xl border border-[#C84B31]/30 bg-[#FDF2F0] text-[#C84B31] font-bold hover:bg-[#FBE8E4] disabled:opacity-50`}
             title="Eliminar imagen"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
           </button>
         )}
       </div>
@@ -96,6 +97,7 @@ export function ClientDniDocuments({
   backFile = null,
   onFrontFileChange,
   onBackFileChange,
+  compact = false,
 }) {
   const role = String(user?.role || '').toUpperCase();
   const canView = ['ADMIN', 'COBRADOR'].includes(role);
@@ -186,11 +188,11 @@ export function ClientDniDocuments({
   const backUrl = staged ? stagedBackUrl : documents.back?.url;
 
   return (
-    <div className="space-y-2">
+    <div className={compact ? 'space-y-1.5' : 'space-y-2'}>
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h4 className="text-xs font-extrabold text-[#2C221E]">Fotos del DNI</h4>
-          <p className="text-[10px] text-[#6E615A]">JPG, PNG o WEBP. Máximo 5 MB por imagen.</p>
+          <h4 className={`${compact ? 'text-[11px]' : 'text-xs'} font-extrabold text-[#2C221E]`}>Fotos del DNI</h4>
+          {!compact && <p className="text-[10px] text-[#6E615A]">JPG, PNG o WEBP. Máximo 5 MB por imagen.</p>}
         </div>
       </div>
 
@@ -200,7 +202,7 @@ export function ClientDniDocuments({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className={`grid ${compact ? 'grid-cols-2 gap-2' : 'grid-cols-1 sm:grid-cols-2 gap-3'}`}>
         <DniCard
           label="DNI Frontal"
           side="front"
@@ -211,6 +213,7 @@ export function ClientDniDocuments({
           onSelect={handleSelect}
           onDelete={handleDelete}
           onPreview={() => setPreview({ label: 'DNI Frontal', url: frontUrl })}
+          compact={compact}
         />
         <DniCard
           label="DNI Reverso"
@@ -222,6 +225,7 @@ export function ClientDniDocuments({
           onSelect={handleSelect}
           onDelete={handleDelete}
           onPreview={() => setPreview({ label: 'DNI Reverso', url: backUrl })}
+          compact={compact}
         />
       </div>
 

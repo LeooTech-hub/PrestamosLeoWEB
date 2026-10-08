@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { MoneyMethodSelector } from './MoneyMethodSelector';
 import { X, CheckCircle2, DollarSign, Calendar, FileText } from 'lucide-react';
 
 export function EditPaymentModal({ payment, isOpen, onClose, onConfirmEditPayment }) {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (payment) {
       queueMicrotask(() => {
         setAmount(payment.amount || '');
-        setDate(payment.date || new Date().toISOString().split('T')[0]);
+        setDate(payment.payment_date || payment.date || '');
+        setPaymentMethod(payment.paymentMethod ?? payment.payment_method ?? '');
         setNotes(payment.notes || '');
       });
     }
@@ -33,6 +36,7 @@ export function EditPaymentModal({ payment, isOpen, onClose, onConfirmEditPaymen
         amount: numAmount,
         date,
         notes: notes.trim(),
+        ...(paymentMethod ? { paymentMethod } : {}),
       });
       onClose();
     } catch (err) {
@@ -79,6 +83,8 @@ export function EditPaymentModal({ payment, isOpen, onClose, onConfirmEditPaymen
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          <MoneyMethodSelector label="Método de pago:" value={paymentMethod} onChange={setPaymentMethod} />
+          {!paymentMethod && <p className="text-xs text-[#6E615A]">Método: No registrado. Puedes conservar el dato histórico.</p>}
           <div>
             <label className="block text-xs font-bold text-[#6E615A] mb-1">
               Monto del Abono (S/.):

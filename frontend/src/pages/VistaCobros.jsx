@@ -1,19 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Pencil, Trash2, Receipt, Calendar, Filter, ChevronDown, Search, User } from "lucide-react";
 import api from "../api";
-import { formatCurrency } from "../utils/loanHelpers";
+import { formatPaymentAmount as formatCurrency, formatDatePE, formatMoneyMethod } from "../utils/loanHelpers";
 import { EditPaymentModal } from "../components/EditPaymentModal";
 
-function formatDateWithTime(dateStr, createdAtStr) {
-  const str = createdAtStr || dateStr;
-  if (!str) return "—";
-  const d = new Date(str);
-  if (isNaN(d.getTime())) return dateStr || "—";
-  const day = d.getDate();
-  const month = d.toLocaleString("es-ES", { month: "long" });
-  const time = d.toLocaleString("es-ES", { hour: "numeric", minute: "2-digit", hour12: true });
-  return `${day} ${month} || ${time.toLowerCase()}`;
-}
+const historyDate = value => value ? formatDatePE(value) : 'No registrado';
 
 function todayISO() { return new Date().toISOString().split("T")[0]; }
 function weekStartISO() {
@@ -31,6 +22,7 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
   const [endDate, setEndDate] = useState(todayISO());
   const [collectorId, setCollectorId] = useState("");
   const [searchText, setSearchText] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [payments, setPayments] = useState([]);
   const [collectors, setCollectors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +115,7 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
 
   const filtered = safePayments.filter(p => {
     if (!p) return false;
+    if (paymentMethod && (p.paymentMethod ?? p.payment_method) !== paymentMethod) return false;
     if (!searchText.trim()) return true;
     const q = searchText.toLowerCase();
     const op = (p.operationNumber || p.operation_number || "").toLowerCase();
@@ -133,6 +126,7 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
   });
 
   const totalRecaudado = filtered.reduce((s, p) => s + Number(p?.amount || 0), 0);
+  const methodTotal = method => filtered.reduce((sum, p) => sum + ((p.paymentMethod ?? p.payment_method) === method ? Number(p.amount || 0) : 0), 0);
 
   const handleDelete = async (payment) => {
     if (!onDeletePayment) return;
@@ -182,11 +176,25 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
           <span className="text-[11px] font-medium text-[#6E615A] dark:text-[#C2B29F] mt-1">
             {filtered.length} {filtered.length === 1 ? "cobro" : "cobros"}
           </span>
+          <span className="text-[11px] text-[#6E615A] dark:text-[#C2B29F] mt-1">
+            Yape: {formatCurrency(methodTotal('YAPE'))} · Efectivo: {formatCurrency(methodTotal('CASH'))}
+          </span>
+          {filtered.some(p => !(p.paymentMethod ?? p.payment_method)) && (
+            <span className="text-[11px] text-[#6E615A] dark:text-[#C2B29F]">No registrado: {formatCurrency(totalRecaudado - methodTotal('YAPE') - methodTotal('CASH'))}</span>
+          )}
         </div>
       </div>
 
       {/* Filters */}
       <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border border-[#E6DCD2] dark:border-[#332F2C] p-4 shadow-sm space-y-3">
+        <div className="flex items-center gap-2 flex-wrap" aria-label="Filtrar por método de pago">
+          {[['', 'Todos'], ['YAPE', 'Yape'], ['CASH', 'Efectivo']].map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={paymentMethod === value} onClick={() => setPaymentMethod(value)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${paymentMethod === value ? 'terracotta-gradient text-white border-transparent' : 'bg-[#FAF8F5] dark:bg-[#24211E] border-[#E6DCD2] dark:border-[#332F2C] text-[#6E615A] dark:text-[#C2B29F]'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] font-semibold text-[#6E615A] dark:text-[#C2B29F] uppercase tracking-wide flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5 text-[#D96B27]" /> Período rápido:
@@ -254,7 +262,7 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
       ) : (
         <div className="space-y-3">
           <div className="hidden md:grid grid-cols-[2fr_1.5fr_1fr_1fr_1.5fr_80px] gap-3 px-4 py-2 bg-[#FAF8F5] dark:bg-[#18181B] rounded-xl border border-[#E6DCD2] dark:border-[#27272A]">
-            {["Cliente", "Fecha y Hora", "Día", "Monto", "Cobrador", ""].map(h => (
+            {["Cliente", "Día de Inicio", "Día de Cancelación", "Monto", "Método de Pago", ""].map(h => (
               <span key={h} className="text-[10px] font-bold text-[#6E615A] dark:text-[#C2B29F] uppercase tracking-widest">{h}</span>
             ))}
           </div>
@@ -276,14 +284,15 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
                     )}
                   </div>
                   <p className="text-xs text-[#6E615A] dark:text-[#C2B29F]">{p.notes || "Pago registrado"}</p>
-                  <p className="text-xs text-[#9A8A84] dark:text-[#6E615A]">{formatDateWithTime(p.date, p.created_at)}</p>
+                  <p className="text-xs text-[#9A8A84] dark:text-[#C2B29F]">Inicio: {historyDate(p.loanStartDate ?? p.loan_start_date)}</p>
+                  <p className="text-xs text-[#9A8A84] dark:text-[#C2B29F]">Cancelación: {historyDate(p.paymentDate ?? p.payment_date ?? p.date)}</p>
                   <div className="flex items-center gap-2 flex-wrap pt-1">
                     <span className="bg-[#FFF3EB] text-[#D95D39] border border-[#FAD7C0] dark:bg-[#2C221E] dark:text-[#E07A5F] dark:border-[#D96B27]/40 px-3 py-1 rounded-full text-xs font-bold">
-                      Día {p.day_number ?? 1}
+                      {formatMoneyMethod(p.paymentMethod ?? p.payment_method)}
                     </span>
                     <span className="bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] dark:bg-[#1E2D27] dark:text-[#3D9970] dark:border-[#2D7A5D]/40 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1">
                       <User className="w-3 h-3 shrink-0" />
-                      {p.collector_name || "ADMIN"}
+                      Cobrado por: {p.collector_name || "Admin"}
                     </span>
                   </div>
                 </div>
@@ -322,17 +331,18 @@ export function VistaCobros({ user, onUpdatePayment, onDeletePayment, onRefreshD
                   </div>
                   <p className="text-xs text-[#9A8A84] dark:text-[#6E615A] truncate">{p.notes || "Pago registrado"}</p>
                 </div>
-                <div className="text-xs text-[#6E615A] dark:text-[#C2B29F] font-medium">{formatDateWithTime(p.date, p.created_at)}</div>
+                <div className="text-xs text-[#6E615A] dark:text-[#C2B29F] font-medium">{historyDate(p.loanStartDate ?? p.loan_start_date)}</div>
                 <div>
                   <span className="bg-[#FFF3EB] text-[#D95D39] border border-[#FAD7C0] dark:bg-[#2C221E] dark:text-[#E07A5F] dark:border-[#D96B27]/40 px-3 py-1 rounded-full text-xs font-bold inline-block">
-                    Día {p.day_number ?? 1}
+                    {historyDate(p.paymentDate ?? p.payment_date ?? p.date)}
                   </span>
                 </div>
                 <div className="text-[#059669] dark:text-[#3D9970] font-black text-xl">+{formatCurrency(p.amount)}</div>
                 <div>
+                  <strong className="block text-xs text-[#2C221E] dark:text-[#F3F4F6] mb-1">{formatMoneyMethod(p.paymentMethod ?? p.payment_method)}</strong>
                   <span className="bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] dark:bg-[#1E2D27] dark:text-[#3D9970] dark:border-[#2D7A5D]/40 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1">
                     <User className="w-3 h-3 shrink-0" />
-                    {p.collector_name || "ADMIN"}
+                    Cobrado por: {p.collector_name || "Admin"}
                   </span>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">

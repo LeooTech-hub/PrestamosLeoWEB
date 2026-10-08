@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency, formatDatePE, formatPaymentAmount, getLoanPaymentTerms } from '../utils/loanHelpers';
 import { X, Calendar, FileText, CheckCircle2, Calculator, Percent } from 'lucide-react';
+import { MoneyMethodSelector } from './MoneyMethodSelector';
 
 function addDays(startISO, days) {
   if (!startISO || !days) return '';
@@ -88,6 +89,7 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
   const [penaltyAmount, setPenaltyAmount] = useState(0);
   const [penaltyDecision, setPenaltyDecision] = useState('pending');
   const [notes, setNotes] = useState('');
+  const [disbursementMethod, setDisbursementMethod] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -117,6 +119,7 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
         }
 
         setNotes(loan.notes || '');
+        setDisbursementMethod(loan.disbursementMethod || loan.disbursement_method || '');
         if (loan.interestAmount != null && loan.interestAmount !== Math.round((loan.capital || 0) * 0.20)) {
           setUseCustomCommission(true);
           setCommissionInput(String(loan.interestAmount));
@@ -236,6 +239,8 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
         remaining_amount: Math.max(0, totalToPay - (loan.paidAmount || 0)),
         daily_amount: dailyPaymentAmount,
         notes: notes || undefined,
+        disbursementMethod: disbursementMethod || undefined,
+        disbursement_method: disbursementMethod || undefined,
       });
       onClose();
     } catch (err) {
@@ -321,6 +326,14 @@ export function EditLoanModal({ loan, isOpen, onClose, onConfirmEditLoan }) {
               <option value="WEEKLY">Semanal</option>
               <option value="AGREED_DATE">Fecha acordada</option>
             </select>
+          </div>
+
+          <div className="mb-4">
+            <MoneyMethodSelector
+              label={disbursementMethod ? "Método de entrega del préstamo:" : "Método de entrega: No registrado"}
+              value={disbursementMethod}
+              onChange={(val) => setDisbursementMethod(val)}
+            />
           </div>
 
           {/* Fechas: Inicio y Vencimiento */}

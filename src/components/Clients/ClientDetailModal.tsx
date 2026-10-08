@@ -85,8 +85,8 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-        <div className="bg-white dark:bg-[#26221F] rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow-lg overflow-hidden transition-colors duration-300">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+        <div className="bg-white dark:bg-[#26221F] rounded-3xl max-w-2xl sm:max-w-3xl md:max-w-4xl w-full h-[92vh] max-h-[92vh] flex flex-col border border-[#E6DCD2] dark:border-[#3D352E] warm-shadow-lg overflow-hidden transition-colors duration-300">
           {/* Modal Header */}
           <div className="bg-gradient-to-r from-[#2C221E] to-[#3D302A] text-white p-5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">

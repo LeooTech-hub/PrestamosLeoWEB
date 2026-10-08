@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { MoneyMethodSelector } from '@/components/MoneyMethodSelector';
+import { MoneyMethod } from '@/types';
+import { formatMoneyMethod } from '@/services/loanService';
 import { Client, NewClientLoanFormData } from '@/types';
 import { calculate20PercentLoan, formatCurrency, formatDatePE } from '@/services/loanService';
 import confetti from 'canvas-confetti';
@@ -45,6 +48,8 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
   const [notes, setNotes] = useState<string>('');
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [disbursementMethod, setDisbursementMethod] = useState<MoneyMethod | ''>('');
+  const [methodError, setMethodError] = useState('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Capital presets
@@ -89,6 +94,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!disbursementMethod) { setMethodError('Selecciona el método de entrega: Yape o Efectivo.'); return; }
 
     if (!clientName.trim()) {
       alert('Por favor ingresa o selecciona un cliente');
@@ -109,6 +115,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
       setIsSubmitting(true);
       await onSubmitLoan({
         clientId: selectedClientId === 'new' ? undefined : selectedClientId,
+        disbursementMethod,
         clientName: clientName.trim(),
         clientAlias: clientAlias.trim(),
         alias: clientAlias.trim(),
@@ -141,6 +148,8 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
       setSuccessMessage(
         `¡Cliente ${clientName} registrado con préstamo de ${formatCurrency(capital)} a ${parsedPaymentDays} días!`
       );
+      setDisbursementMethod('');
+      setMethodError('');
 
       setTimeout(() => {
         setSuccessMessage(null);
@@ -511,6 +520,9 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
             </div>
 
             {/* Terms Summary */}
+            <div className="flex justify-between text-xs text-white">
+              <span>Método de entrega:</span><strong>{formatMoneyMethod(disbursementMethod)}</strong>
+            </div>
             <div className="text-xs text-[#D5C8BC] bg-black/20 rounded-2xl p-3.5 space-y-1.5 border border-white/5">
               <div className="flex justify-between">
                 <span>Fecha Inicio:</span>
@@ -526,8 +538,11 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
               </div>
             </div>
 
+            <MoneyMethodSelector label="Método de entrega del préstamo:" value={disbursementMethod}
+              onChange={value => { setDisbursementMethod(value); setMethodError(''); }} error={methodError} />
             <button
               type="submit"
+              aria-label="Confirmar y Otorgar Préstamo"
               disabled={isSubmitting}
               className="w-full mt-6 py-4 px-6 rounded-2xl terracotta-gradient text-white font-extrabold text-base shadow-lg hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >

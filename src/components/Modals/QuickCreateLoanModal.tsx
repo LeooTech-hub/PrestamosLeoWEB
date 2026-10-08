@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { MoneyMethodSelector } from '@/components/MoneyMethodSelector';
+import { MoneyMethod } from '@/types';
 import { Client, NewClientLoanFormData } from '@/types';
 import { calculate20PercentLoan, formatCurrency, formatDatePE } from '@/services/loanService';
 import confetti from 'canvas-confetti';
@@ -39,6 +41,11 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
   );
   const [notes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [disbursementMethod, setDisbursementMethod] = useState<MoneyMethod | ''>('');
+  const [methodError, setMethodError] = useState('');
+  useEffect(() => {
+    if (isOpen) queueMicrotask(() => { setDisbursementMethod(''); setMethodError(''); });
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -76,6 +83,7 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!disbursementMethod) { setMethodError('Selecciona el método de entrega: Yape o Efectivo.'); return; }
 
     if (!selectedClient) {
       alert('Por favor selecciona un cliente de la lista predictiva');
@@ -91,6 +99,7 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
       setIsSubmitting(true);
       await onSubmitLoan({
         clientId: selectedClient.id,
+        disbursementMethod,
         clientName: selectedClient.name,
         clientPhone: selectedClient.phone,
         clientAddress: selectedClient.address,
@@ -381,6 +390,8 @@ export const QuickCreateLoanModal: React.FC<QuickCreateLoanModalProps> = ({
             </div>
           </div>
 
+          <MoneyMethodSelector label="Método de entrega del préstamo:" value={disbursementMethod}
+            onChange={value => { setDisbursementMethod(value); setMethodError(''); }} error={methodError} />
           <div className="pt-2 flex gap-3">
             <button
               type="button"
